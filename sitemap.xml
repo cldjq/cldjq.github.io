@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml"><url>
-    <loc>https://tinklespring.com/posts/</loc><lastmod>2023-05-19T17:11:21+08:00</lastmod></url><url>
-    <loc>https://tinklespring.com/</loc><lastmod>2023-05-19T17:11:21+08:00</lastmod></url><url>
-    <loc>https://tinklespring.com/posts/%E7%AC%AC%E4%B8%80%E7%AB%A0/</loc><lastmod>2023-05-19T17:11:21+08:00</lastmod></url><url>
-    <loc>https://tinklespring.com/posts/1/</loc><lastmod>2023-05-19T11:27:50+08:00</lastmod></url><url>
-    <loc>https://tinklespring.com/categories/</loc></url><url>
-    <loc>https://tinklespring.com/tags/</loc></url></urlset>
+    <loc>https://tinklespring.com/tags/linux/</loc><lastmod>2023-05-22T16:51:53+08:00</lastmod></url><url>
+    <loc>https://tinklespring.com/posts/</loc><lastmod>2023-05-22T16:51:53+08:00</lastmod></url><url>
+    <loc>https://tinklespring.com/posts/rsync&#43;inotify%E6%95%B0%E6%8D%AE%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5/</loc><lastmod>2023-05-22T16:51:53+08:00</lastmod></url><url>
+    <loc>https://tinklespring.com/tags/</loc><lastmod>2023-05-22T16:51:53+08:00</lastmod></url><url>
+    <loc>https://tinklespring.com/</loc><lastmod>2023-05-22T16:51:53+08:00</lastmod></url><url>
+    <loc>https://tinklespring.com/tags/%E7%89%A9%E7%90%86%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5/</loc><lastmod>2023-05-22T16:51:53+08:00</lastmod></url><url>
+    <loc>https://tinklespring.com/categories/</loc></url></urlset>
