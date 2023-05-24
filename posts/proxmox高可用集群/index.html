@@ -1,43 +1,68 @@
 <!DOCTYPE html>
 <html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="supported-color-schemes" content="light dark"><title>K3s初体验&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.003a667cf21024ef30f2985fb57c9bd6f6873cf899ee14e9302e68e9f04b681df9440cec4ebdaa101dca533a262c242f.css" integrity="sha384-ADpmfPIQJO8w8phftXyb1vaHPPiZ7hTpMC5o6fBLaB35RAzsTr2qEB3KUzomLCQv"><meta name="twitter:card" content="summary" />
-<meta name="twitter:title" content="K3s初体验" /><body><section id="header">
+<meta name="supported-color-schemes" content="light dark"><title>Proxmox高可用集群&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.003a667cf21024ef30f2985fb57c9bd6f6873cf899ee14e9302e68e9f04b681df9440cec4ebdaa101dca533a262c242f.css" integrity="sha384-ADpmfPIQJO8w8phftXyb1vaHPPiZ7hTpMC5o6fBLaB35RAzsTr2qEB3KUzomLCQv"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Proxmox高可用集群" /><body><section id="header">
     <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><span class="site name">承离的觉前</span></a></span>
         <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
-    <h1 class="article title">K3s初体验</h1><p class="article date">Tuesday, May 23, 2023</p></section><article class="article markdown-body"><blockquote>
-<p>本文使用离线安装方式</p>
+    <h1 class="article title">Proxmox高可用集群</h1><p class="article date">Wednesday, May 24, 2023</p></section><article class="article markdown-body"><blockquote>
+<p>接上文proxmox安装～</p>
 </blockquote>
-<p>1.下载k3s 二进制程序与images <code>https://github.com/k3s-io/k3s/releases</code><br>
-2.下载安装脚本 <code>https://get.k3s.io</code></p>
-<p>将tar 文件放到下边这个目录内。</p>
-<pre tabindex="0"><code>mkdir -p /var/lib/rancher/k3s/agent/images/
-cp ./k3s-airgap-images-$ARCH.tar /var/lib/rancher/k3s/agent/images/
-</code></pre><p>执行脚本
-<code>INSTALL_K3S_SKIP_DOWNLOAD=true ./install.sh</code></p>
-<pre tabindex="0"><code>[INFO]  Skipping k3s download and verify
-[INFO]  Skipping installation of SELinux RPM
-[INFO]  Creating /usr/local/bin/kubectl symlink to k3s
-[INFO]  Creating /usr/local/bin/crictl symlink to k3s
-[INFO]  Creating /usr/local/bin/ctr symlink to k3s
-[INFO]  Creating killall script /usr/local/bin/k3s-killall.sh
-[INFO]  Creating uninstall script /usr/local/bin/k3s-uninstall.sh
-[INFO]  env: Creating environment file /etc/systemd/system/k3s.service.env
-[INFO]  systemd: Creating service file /etc/systemd/system/k3s.service
-[INFO]  systemd: Enabling k3s unit
-Created symlink /etc/systemd/system/multi-user.target.wants/k3s.service → /etc/systemd/system/k3s.service.
-[INFO]  systemd: Starting k3s
-</code></pre><p>至此单节点安装完成。只部署server 端，即可拥有全部功能。</p>
-<p>扩展增加agent节点：<br>
-获取token:<br>
-<code>cat /var/lib/rancher/k3s/server/token</code></p>
-<p>将<code>SERVER_IP</code>与token换成对应的，执行如下命令添加agent节点</p>
-<pre tabindex="0"><code>INSTALL_K3S_SKIP_DOWNLOAD=true K3S_URL=https://&lt;SERVER_IP&gt;:6443 K3S_TOKEN=&lt;YOUR_TOKEN&gt; ./install.sh
-</code></pre><p>升级：<br>
-升级也比较简单，只需将新版本images与k3s二进制程序替换，重新执行安装脚本即可</p>
-</article><section class="article labels"><a class="category" href=/categories/cloudnative/>CloudNative</a><a class="tag" href=/tags/k3s/>k3s</a></section>
+<h4 id="安装集群顺序">安装集群顺序</h4>
+<ol>
+<li>安装proxmox</li>
+<li>创建并加入集群</li>
+<li>创建<code>pveceph</code>分布式存储</li>
+<li>创建高可用</li>
+<li>创建虚拟机并测试</li>
+</ol>
+<h4 id="创建bond网络">创建Bond网络</h4>
+<ol>
+<li>创建bond，&ldquo;slaves&rdquo; 选择需要做bond的网卡名字，以空格区分</li>
+<li>创建Linux Bridge，桥接端口选择bond网卡名字</li>
+<li>若需要虚拟机网络隔离，则需要继续创建 Linux Vlan</li>
+</ol>
+<h4 id="安装pveceph">安装pveceph</h4>
+<ol>
+<li>所有节点执行 <code>pveceph install</code></li>
+<li>任意一个节点执行初始化pveceph存储网络 <code>pveceph init --network 10.255.255.0/24</code></li>
+<li>至少需要三个节点执行，创建ceph监视器 <code>pveceph createmon</code></li>
+<li>创建ceph osd:</li>
+</ol>
+<ul>
+<li>选择物理节点</li>
+<li>ceph &ndash;&gt; osd</li>
+<li>点击创建，每次只能加一个</li>
+<li>多个节点则依次排着添加</li>
+</ul>
+<ol start="5">
+<li>创建 <code>ceph osd crush rule</code></li>
+</ol>
+<pre tabindex="0"><code>ceph osd crush rule create-replicated rule-ssd default  host ssd
+ceph osd crush rule create-replicated rule-hdd default  host hdd
+</code></pre><ol start="6">
+<li>查看：<code>ceph osd crush rule ls</code></li>
+<li>创建ceph pools
+<code>of_PGs</code> 官方建议：少于5个osd，值为128；5-10个，值为512；10-50个，值为4096；</li>
+</ol>
+<blockquote>
+<p>这里没找到具体实际的，设置4096貌似报错了～
+<code>crush rule</code>根据osd类型选择对应的。</p>
+</blockquote>
+<ol start="8">
+<li>创建高可用组</li>
+</ol>
+<ul>
+<li>选择 &lsquo;数据中心&rsquo;</li>
+<li>选择 &lsquo;HA&rsquo; &ndash;&gt; &lsquo;群组&rsquo;</li>
+<li>选择创建，将所需节点添加</li>
+<li>选择 &lsquo;HA&rsquo; &ndash;&gt; &lsquo;资源&rsquo;</li>
+<li>选择添加，将需要的vm加入即可，请求状态为 started</li>
+</ul>
+<p>此时，即可使 vm 成为高可用，当宿主机宕机后，vm会漂移至其他节点。</p>
+</article><section class="article labels"><a class="category" href=/categories/linux/>Linux</a><a class="tag" href=/tags/%E8%99%9A%E6%8B%9F%E5%8C%96/>虚拟化</a></section>
 </div>
-<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/proxmox%E9%AB%98%E5%8F%AF%E7%94%A8%E9%9B%86%E7%BE%A4/"><span class="iconfont icon-article"></span>Proxmox高可用集群</a></p><p><a class="link" href="/posts/proxmox%E5%AE%89%E8%A3%85/"><span class="iconfont icon-article"></span>Proxmox安装</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/k3s%E5%88%9D%E4%BD%93%E9%AA%8C/"><span class="iconfont icon-article"></span>K3s初体验</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
     window.disqus_config = function () {
     
