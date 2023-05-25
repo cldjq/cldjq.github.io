@@ -5,10 +5,46 @@
     <description>Recent content in Linux on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Wed, 24 May 2023 09:25:07 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 25 May 2023 13:37:48 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/categories/linux/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>ssh密钥类型选择</title>
+      <link>https://tinklespring.com/posts/ssh%E5%AF%86%E9%92%A5%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9/</link>
+      <pubDate>Thu, 25 May 2023 13:37:48 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/ssh%E5%AF%86%E9%92%A5%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9/</guid>
+      <description>&lt;p&gt;As everyone knows，ssh key can improve ssh connection security.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;RSA（Rivest–Shamir–Adleman）是最早的公钥密码系统之一，被广泛用于安全数据传输。它的安全性取决于整数分解，因此永远不需要安全的RNG（随机数生成器）。与DSA相比，RSA的签名验证速度更快，但生成速度较慢。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;DSA（数字签名算法）是用于数字签名的联邦信息处理标准。它的安全性取决于离散的对数问题。与RSA相比，DSA的签名生成速度更快，但验证速度较慢。如果使用错误的数字生成器，可能会破坏安全性。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;ECDSA（椭圆曲线数字签名算法）是DSA（数字签名算法）的椭圆曲线实现。椭圆曲线密码术能够以较小的密钥提供与RSA相对相同的安全级别。它还具有DSA对不良RNG敏感的缺点。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;EdDSA（爱德华兹曲线数字签名算法）是一种使用基于扭曲爱德华兹曲线的Schnorr签名变体的数字签名方案。签名创建在EdDSA中是确定性的，其安全性是基于某些离散对数问题的难处理性，因此它比DSA和ECDSA更安全，后者要求每个签名都具有高质量的随机性。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Ed25519是EdDSA签名方案，但使用SHA-512 / 256和Curve25519；它是一条安全的椭圆形曲线，比DSA，ECDSA和EdDSA 提供更好的安全性，并且具有更好的性能（人为注意）。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ssh key的类型有四种，分别是dsa、rsa、 ecdsa、ed25519。&lt;/p&gt;
+&lt;p&gt;根据数学特性，这四种类型又可以分为两大类，dsa/rsa是一类，ecdsa/ed25519是一类，后者算法更先进。&lt;/p&gt;
+&lt;p&gt;dsa因为安全问题，已不再使用了。&lt;/p&gt;
+&lt;p&gt;ecdsa因为政治原因和技术原因，也不推荐使用。&lt;/p&gt;
+&lt;p&gt;rsa是目前兼容性最好的，应用最广泛的key类型，在用ssh-keygen工具生成key的时候，默认使用的也是这种类型。不过在生成key时，如果指定的key size太小的话，也是有安全问题的，推荐key size是3072或更大。&lt;/p&gt;
+&lt;p&gt;ed25519是目前最安全、加解密速度最快的key类型，由于其数学特性，它的key的长度比rsa小很多，优先推荐使用。它目前唯一的问题就是兼容性，即在旧版本的ssh工具集中可能无法使用。&lt;/p&gt;
+&lt;h2 id=&#34;综合来看优先选择ed25519&#34;&gt;综合来看，优先选择ed25519&lt;/h2&gt;
+&lt;p&gt;下面来简介下如何生成&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ssh-keygen -t ed25519 -C &amp;#34;yourname&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
     
     <item>
       <title>Proxmox高可用集群</title>

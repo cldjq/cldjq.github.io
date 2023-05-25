@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="supported-color-schemes" content="light dark"><title>Proxmox高可用集群&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.003a667cf21024ef30f2985fb57c9bd6f6873cf899ee14e9302e68e9f04b681df9440cec4ebdaa101dca533a262c242f.css" integrity="sha384-ADpmfPIQJO8w8phftXyb1vaHPPiZ7hTpMC5o6fBLaB35RAzsTr2qEB3KUzomLCQv"><meta name="twitter:card" content="summary" />
-<meta name="twitter:title" content="Proxmox高可用集群" />
+<meta name="supported-color-schemes" content="light dark"><title>ssh密钥类型选择&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.003a667cf21024ef30f2985fb57c9bd6f6873cf899ee14e9302e68e9f04b681df9440cec4ebdaa101dca533a262c242f.css" integrity="sha384-ADpmfPIQJO8w8phftXyb1vaHPPiZ7hTpMC5o6fBLaB35RAzsTr2qEB3KUzomLCQv"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="ssh密钥类型选择" />
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -15,64 +15,36 @@
 <body><section id="header">
     <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><span class="site name">承离的觉前</span></a></span>
         <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
-    <h1 class="article title">Proxmox高可用集群</h1><p class="article date">Wednesday, May 24, 2023</p></section><article class="article markdown-body"><blockquote>
-<p>接上文proxmox安装～</p>
-</blockquote>
-<h4 id="安装集群顺序">安装集群顺序</h4>
-<ol>
-<li>安装proxmox</li>
-<li>创建并加入集群</li>
-<li>创建<code>pveceph</code>分布式存储</li>
-<li>创建高可用</li>
-<li>创建虚拟机并测试</li>
-</ol>
-<h4 id="创建bond网络">创建Bond网络</h4>
-<ol>
-<li>创建bond，&ldquo;slaves&rdquo; 选择需要做bond的网卡名字，以空格区分</li>
-<li>创建Linux Bridge，桥接端口选择bond网卡名字</li>
-<li>若需要虚拟机网络隔离，则需要继续创建 Linux Vlan</li>
-</ol>
-<h4 id="安装pveceph">安装pveceph</h4>
-<ol>
-<li>所有节点执行 <code>pveceph install</code></li>
-<li>任意一个节点执行初始化pveceph存储网络 <code>pveceph init --network 10.255.255.0/24</code></li>
-<li>至少需要三个节点执行，创建ceph监视器 <code>pveceph createmon</code></li>
-<li>创建ceph osd:</li>
-</ol>
+    <h1 class="article title">ssh密钥类型选择</h1><p class="article date">Thursday, May 25, 2023</p></section><article class="article markdown-body"><p>As everyone knows，ssh key can improve ssh connection security.</p>
 <ul>
-<li>选择物理节点</li>
-<li>ceph &ndash;&gt; osd</li>
-<li>点击创建，每次只能加一个</li>
-<li>多个节点则依次排着添加</li>
+<li>
+<p>RSA（Rivest–Shamir–Adleman）是最早的公钥密码系统之一，被广泛用于安全数据传输。它的安全性取决于整数分解，因此永远不需要安全的RNG（随机数生成器）。与DSA相比，RSA的签名验证速度更快，但生成速度较慢。</p>
+</li>
+<li>
+<p>DSA（数字签名算法）是用于数字签名的联邦信息处理标准。它的安全性取决于离散的对数问题。与RSA相比，DSA的签名生成速度更快，但验证速度较慢。如果使用错误的数字生成器，可能会破坏安全性。</p>
+</li>
+<li>
+<p>ECDSA（椭圆曲线数字签名算法）是DSA（数字签名算法）的椭圆曲线实现。椭圆曲线密码术能够以较小的密钥提供与RSA相对相同的安全级别。它还具有DSA对不良RNG敏感的缺点。</p>
+</li>
+<li>
+<p>EdDSA（爱德华兹曲线数字签名算法）是一种使用基于扭曲爱德华兹曲线的Schnorr签名变体的数字签名方案。签名创建在EdDSA中是确定性的，其安全性是基于某些离散对数问题的难处理性，因此它比DSA和ECDSA更安全，后者要求每个签名都具有高质量的随机性。</p>
+</li>
+<li>
+<p>Ed25519是EdDSA签名方案，但使用SHA-512 / 256和Curve25519；它是一条安全的椭圆形曲线，比DSA，ECDSA和EdDSA 提供更好的安全性，并且具有更好的性能（人为注意）。</p>
+</li>
 </ul>
-<ol start="5">
-<li>创建 <code>ceph osd crush rule</code></li>
-</ol>
-<pre tabindex="0"><code>ceph osd crush rule create-replicated rule-ssd default  host ssd
-ceph osd crush rule create-replicated rule-hdd default  host hdd
-</code></pre><ol start="6">
-<li>查看：<code>ceph osd crush rule ls</code></li>
-<li>创建ceph pools
-<code>of_PGs</code> 官方建议：少于5个osd，值为128；5-10个，值为512；10-50个，值为4096；</li>
-</ol>
-<blockquote>
-<p>这里没找到具体实际的，设置4096貌似报错了～
-<code>crush rule</code>根据osd类型选择对应的。</p>
-</blockquote>
-<ol start="8">
-<li>创建高可用组</li>
-</ol>
-<ul>
-<li>选择 &lsquo;数据中心&rsquo;</li>
-<li>选择 &lsquo;HA&rsquo; &ndash;&gt; &lsquo;群组&rsquo;</li>
-<li>选择创建，将所需节点添加</li>
-<li>选择 &lsquo;HA&rsquo; &ndash;&gt; &lsquo;资源&rsquo;</li>
-<li>选择添加，将需要的vm加入即可，请求状态为 started</li>
-</ul>
-<p>此时，即可使 vm 成为高可用，当宿主机宕机后，vm会漂移至其他节点。</p>
-</article><section class="article labels"><a class="category" href=/categories/linux/>Linux</a><a class="tag" href=/tags/%E8%99%9A%E6%8B%9F%E5%8C%96/>虚拟化</a></section>
+<p>ssh key的类型有四种，分别是dsa、rsa、 ecdsa、ed25519。</p>
+<p>根据数学特性，这四种类型又可以分为两大类，dsa/rsa是一类，ecdsa/ed25519是一类，后者算法更先进。</p>
+<p>dsa因为安全问题，已不再使用了。</p>
+<p>ecdsa因为政治原因和技术原因，也不推荐使用。</p>
+<p>rsa是目前兼容性最好的，应用最广泛的key类型，在用ssh-keygen工具生成key的时候，默认使用的也是这种类型。不过在生成key时，如果指定的key size太小的话，也是有安全问题的，推荐key size是3072或更大。</p>
+<p>ed25519是目前最安全、加解密速度最快的key类型，由于其数学特性，它的key的长度比rsa小很多，优先推荐使用。它目前唯一的问题就是兼容性，即在旧版本的ssh工具集中可能无法使用。</p>
+<h2 id="综合来看优先选择ed25519">综合来看，优先选择ed25519</h2>
+<p>下面来简介下如何生成</p>
+<pre tabindex="0"><code>ssh-keygen -t ed25519 -C &#34;yourname&#34;
+</code></pre></article><section class="article labels"><a class="category" href=/categories/linux/>Linux</a></section>
 </div>
-<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/ssh%E5%AF%86%E9%92%A5%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9/"><span class="iconfont icon-article"></span>ssh密钥类型选择</a></p><p><a class="link" href="/posts/k3s%E5%88%9D%E4%BD%93%E9%AA%8C/"><span class="iconfont icon-article"></span>K3s初体验</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/proxmox%E9%AB%98%E5%8F%AF%E7%94%A8%E9%9B%86%E7%BE%A4/"><span class="iconfont icon-article"></span>Proxmox高可用集群</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
     window.disqus_config = function () {
     
