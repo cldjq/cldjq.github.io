@@ -5,10 +5,144 @@
     <description>Recent content in Categories on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Thu, 25 May 2023 13:37:48 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 25 May 2023 15:16:11 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/categories/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>1.golang语法基础</title>
+      <link>https://tinklespring.com/posts/1.golang%E8%AF%AD%E6%B3%95%E5%9F%BA%E7%A1%80/</link>
+      <pubDate>Thu, 25 May 2023 15:16:11 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/1.golang%E8%AF%AD%E6%B3%95%E5%9F%BA%E7%A1%80/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;go 语言打怪升级之路～&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;出发&#34;&gt;出发～&lt;/h1&gt;
+&lt;p&gt;让我们先来看一段代码&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+	fmt.Println(&amp;#34;Hello,World!&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;package main&lt;/code&gt; 这行表示文件中的所有其余代码都属于 &amp;ldquo;main&amp;rdquo; 包。&lt;br&gt;
+&lt;code&gt;import &amp;quot;fmt&amp;quot;&lt;/code&gt; 表示将使用 &amp;ldquo;fmt&amp;rdquo; 包中的文本格式代码。
+&lt;code&gt;func main()&lt;/code&gt;  &amp;ldquo;main&amp;rdquo; 函数比较特殊，当程序运行时它首先运行。&lt;br&gt;
+&lt;code&gt;fmt.Println&lt;/code&gt;  通过从 &amp;ldquo;fmt&amp;rdquo; 包调用 &amp;ldquo;Println&amp;rdquo; 函数来实现。&lt;br&gt;
+&lt;code&gt;Hello,World!&lt;/code&gt; 这一行会显示在终端或者web浏览器上。&lt;/p&gt;
+&lt;p&gt;每个go文件最后一部分都是实际代码，通常被分割成一个或多个function（函数）。function是由一行或多行代码组成的组，可以从程序中的其他位置调用（运行）。当一个程序运行时，会寻找一个名为main的函数并首先运行它，这就是为什么将这个函数命名为main的原因。&lt;/p&gt;
+&lt;h2 id=&#34;font-color0099ff-size3-face黑体go文件布局font&#34;&gt;&lt;font color=#0099ff size=3 face=&#34;黑体&#34;&gt;go文件布局&lt;/font&gt;&lt;/h2&gt;
+&lt;p&gt;可以发现几乎每个go文件中都是这三个部分。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;package 子句 &lt;code&gt;package main&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;任何import语句 &lt;code&gt;import &amp;quot;fmt&amp;quot;&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;实际代码&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        fmt.Println(&amp;#34;Hello,World!&amp;#34;) 
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;go 编译器带有标准格式化工具 &lt;code&gt;go fmt&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;调用函数&#34;&gt;调用函数&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;fmt.Pringln(&amp;quot;First argument&amp;quot;, &amp;quot;Second argument&amp;quot;)&lt;/code&gt;&lt;br&gt;
+&lt;code&gt;fmt&lt;/code&gt; 为包名；&lt;br&gt;
+&lt;code&gt;Println&lt;/code&gt; 为函数名；&lt;/p&gt;
+&lt;h1 id=&#34;函数返回值&#34;&gt;函数返回值&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;math&amp;#34;
+	&amp;#34;strings&amp;#34;
+)
+
+func main() {
+	math.Floor(2.75)
+	strings.Title(&amp;#34;how are you&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这个程序不产生任何输出。&lt;br&gt;
+要查看函数调用的结果，需要获取返回值并将其传递给 &lt;code&gt;fmt.Println&lt;/code&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;math&amp;#34;
+	&amp;#34;strings&amp;#34;
+)
+
+func main() {
+	fmt.Println(math.Floor(2.75))
+	fmt.Println(strings.Title(&amp;#34;how are you&amp;#34;))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;字符串&#34;&gt;字符串&lt;/h1&gt;
+&lt;p&gt;字符串是一系列字节，表示文本字符，在代码中可以使用字符串字面量来定义字符串：双引号之间的文本，go将其视为字符串。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;转义序列&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;值&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;\n&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;换行符&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;\t&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;制表符&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;\&amp;quot;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;双引号&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;\\&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;反斜杠&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;示例&lt;/font&gt;&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;输入&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;输出&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;&amp;quot;Hello,\nGo!&amp;quot;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;hello,&lt;br&gt;Go!&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;&amp;quot;Hello,\tGo!&amp;quot;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;Hello, Go!&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;&amp;quot;Quotes: \&amp;quot;\&amp;quot;&amp;quot;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;Quotes: &amp;quot;&amp;quot;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;&amp;quot;Backslash: \\&amp;quot;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;Backslash: \&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h1 id=&#34;符文&#34;&gt;符文&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;字符串通常表示一系列文本字符，go的符文（&lt;code&gt;rune&lt;/code&gt;）则用于表示单个字符。&lt;/li&gt;
+&lt;li&gt;字符串字面量由双引号 &lt;code&gt;&amp;quot;&amp;quot;&lt;/code&gt; 包围，但 &lt;code&gt;rune&lt;/code&gt; 字面量由单引号 &lt;code&gt;&#39;&#39;&lt;/code&gt; 包围。&lt;/li&gt;
+&lt;li&gt;go可以使用地球上任何语言的任何字符，因为go 使用Unicode标准来存储rune，rune被保存为数字代码，而不是字符本身，如果把rune传递给 &lt;code&gt;fmt.Println&lt;/code&gt; ，会在输出中看到数字代码，而不是原始字符。&lt;/li&gt;
+&lt;li&gt;与字符串字面量一样，转义序列也可以用在rune字面量中，用来表示程序代码中难以包含的字符。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;布尔值&#34;&gt;布尔值&lt;/h1&gt;
+&lt;blockquote&gt;
+&lt;p&gt;未完待续 ～&lt;/p&gt;
+&lt;/blockquote&gt;
+</description>
+    </item>
     
     <item>
       <title>ssh密钥类型选择</title>
