@@ -46,7 +46,7 @@ func main() {
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;go 编译器带有标准格式化工具 &lt;code&gt;go fmt&lt;/code&gt;&lt;/p&gt;
 &lt;h1 id=&#34;调用函数&#34;&gt;调用函数&lt;/h1&gt;
-&lt;p&gt;&lt;code&gt;fmt.Pringln(&amp;quot;First argument&amp;quot;, &amp;quot;Second argument&amp;quot;)&lt;/code&gt;&lt;br&gt;
+&lt;p&gt;&lt;code&gt;fmt.Println(&amp;quot;First argument&amp;quot;, &amp;quot;Second argument&amp;quot;)&lt;/code&gt;&lt;br&gt;
 &lt;code&gt;fmt&lt;/code&gt; 为包名；&lt;br&gt;
 &lt;code&gt;Println&lt;/code&gt; 为函数名；&lt;/p&gt;
 &lt;h1 id=&#34;函数返回值&#34;&gt;函数返回值&lt;/h1&gt;
@@ -138,9 +138,149 @@ func main() {
 &lt;li&gt;与字符串字面量一样，转义序列也可以用在rune字面量中，用来表示程序代码中难以包含的字符。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;布尔值&#34;&gt;布尔值&lt;/h1&gt;
-&lt;blockquote&gt;
-&lt;p&gt;未完待续 ～&lt;/p&gt;
-&lt;/blockquote&gt;
+&lt;p&gt;布尔值只能是两个值的其中一个：&lt;code&gt;true&lt;/code&gt; 或 &lt;code&gt;false&lt;/code&gt; .&lt;/p&gt;
+&lt;p&gt;他们对条件语句特别有用，条件语句只在条件为 &lt;code&gt;true&lt;/code&gt; 或 &lt;code&gt;false&lt;/code&gt; 时才会运行代码。&lt;/p&gt;
+&lt;h1 id=&#34;数字&#34;&gt;数字&lt;/h1&gt;
+&lt;p&gt;还可以直接在代码中定义数字，比字符串字面量更简单：只需要输入数字即可。&lt;/p&gt;
+&lt;p&gt;go 将整数和浮点数视为不同的类型，可以使用小数点来区分整数和浮点数。&lt;/p&gt;
+&lt;h1 id=&#34;数学运算与比较&#34;&gt;数学运算与比较&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;+&lt;/code&gt; 表示加法&lt;br&gt;
+&lt;code&gt;-&lt;/code&gt; 表示减法&lt;br&gt;
+&lt;code&gt;*&lt;/code&gt; 表示乘法&lt;br&gt;
+&lt;code&gt;/&lt;/code&gt; 表示除法&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;&amp;lt;&lt;/code&gt; 与 &lt;code&gt;&amp;gt;&lt;/code&gt; 比较两个值&lt;br&gt;
+&lt;code&gt;&amp;gt;=&lt;/code&gt; 与 &lt;code&gt;&amp;lt;=&lt;/code&gt; 比较两个值大于等于或小于等于&lt;br&gt;
+&lt;code&gt;==&lt;/code&gt;  比较两个是否相等&lt;br&gt;
+&lt;code&gt;!=&lt;/code&gt;  比较两个值是否不相等&lt;/p&gt;
+&lt;p&gt;比较的结果是一个&lt;code&gt;布尔值&lt;/code&gt;，&lt;code&gt;true&lt;/code&gt; 和 &lt;code&gt;false&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;类型&#34;&gt;类型&lt;/h1&gt;
+&lt;p&gt;go中的值都被划分为不同的类型，这些类型指定了这些值的用途。整数可以用在数学运算中，但是字符串不可以；字符串可以大写，但是数字不能。&lt;/p&gt;
+&lt;p&gt;go是静态类型的，在程序运行之前就知道值的类型。&lt;br&gt;
+函数期望它们的参数具有特定的类型，返回值也具有类型（可能与参数类型相同，也可能不同）。&lt;br&gt;
+&lt;font color=#0099ff size=3 face=&#34;黑体&#34;&gt;go是静态类型，在错误的位置使用了错误的值类型，go会告诉你。&lt;/font&gt;&lt;/p&gt;
+&lt;p&gt;可以将任何值传递给reflect包的TypeOf函数：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;reflect&amp;#34;
+)
+
+func main() {
+	fmt.Println(reflect.TypeOf(42))
+	fmt.Println(reflect.TypeOf(3.1415))
+	fmt.Println(reflect.TypeOf(true))
+	fmt.Println(reflect.TypeOf(&amp;#34;Hello, World!&amp;#34;))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;int
+float64
+bool
+string
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;类型用途：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;类型&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;int&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;整型。保存数字&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;float64&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;浮点数。保存带小数部分的数字（类型名中的64是因为要用64位的数据来保存数字。这意味着四舍五入之前，float64值可以相当精确，但不能无限精确）&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;bool&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;布尔值。只能是true或false&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;string&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;字符串，通常表示文本字符的一系列数据&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h1 id=&#34;声明变量&#34;&gt;声明变量&lt;/h1&gt;
+&lt;p&gt;在go中，变量是包含值的一块存储。可以使用变量声明为变量命名，使用关键字&lt;code&gt;var&lt;/code&gt;，后跟所需的名称以及变量将保存的值的类型 &lt;code&gt;var 变量名 类型&lt;/code&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var quantity int
+var length, width float64
+var customerName string
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;声明变量后，可以用 &lt;code&gt;=&lt;/code&gt; 为其分配该类型的任何值。&lt;/p&gt;
+&lt;p&gt;可以在同一语句中为多个变量赋值，将变量名放在 &lt;code&gt;=&lt;/code&gt; 左边，将相同数量的值放右边，用逗号分隔，如：&lt;br&gt;
+&lt;code&gt;length, width = 1.2, 2.4&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;给变量赋值后，可以在任何使用要使用原始值的上下文中使用：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+)
+
+func main() {
+	//声明变量
+	var quantity int
+	var length, width float64
+	var customerName string
+
+	//给变量赋值
+	quantity = 4
+	length, width = 1.2, 2.4
+	customerName = &amp;#34;Domain cole&amp;#34;
+
+	//使用变量
+	fmt.Println(customerName)
+	fmt.Println(&amp;#34;has ordered&amp;#34;, quantity, &amp;#34;sheets&amp;#34;)
+	fmt.Println(&amp;#34;each with an area of&amp;#34;)
+	fmt.Println(length*width, &amp;#34;squence meters&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Domain cole
+has ordered 4 sheets
+each with an area of
+2.88 squence meters
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若提前知道变量值是什么，可以在声明变量时一起赋值：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//声明变量并赋值
+var quantity int = 4
+var length, width float64 = 1.2, 2.4
+var customerName string = &amp;#34;Domain cole&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以为现有变量分配新值，但必须是相同类型的值。go的静态类型确保不会将错误的类型赋值给变量。&lt;/p&gt;
+&lt;p&gt;在声明变量的同时赋值，可以在变量声明中省略变量类型，分配给变量的值的类型将用作该变量的类型。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var quantity = 4
+var length, width = 1.2, 2.4
+var customerName = &amp;#34;Domain cole&amp;#34;
+fmt.Println(reflect.TypeOf(quantity))
+fmt.Println(reflect.TypeOf(length))
+fmt.Println(reflect.TypeOf(width))
+fmt.Println(reflect.TypeOf(customerName))
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;零值&#34;&gt;零值&lt;/h1&gt;
+&lt;p&gt;若声明一个变量而没有给其赋值，则该变量将包含其类型的零值。对于数值类型，零值就是0。&lt;br&gt;
+&lt;code&gt;int&lt;/code&gt; 变量零值 &lt;code&gt;0&lt;/code&gt;&lt;br&gt;
+&lt;code&gt;float64&lt;/code&gt; 变量零值 &lt;code&gt;0&lt;/code&gt;&lt;br&gt;
+&lt;code&gt;string&lt;/code&gt;  变量零值 &lt;code&gt;空字符串&lt;/code&gt;&lt;br&gt;
+&lt;code&gt;bool&lt;/code&gt; 变量零值 &lt;code&gt;false&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;短变量声明&#34;&gt;短变量声明&lt;/h1&gt;
+&lt;p&gt;若声明变量时就知道初始值，可以使用短变量声明。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+)
+
+func main() {
+	quantity := 4
+	length, width := 1.2, 2.4
+	customerName := &amp;#34;Domain cole&amp;#34;
+
+	fmt.Println(customerName)
+	fmt.Println(&amp;#34;has ordered&amp;#34;, quantity, &amp;#34;sheets&amp;#34;)
+	fmt.Println(&amp;#34;each with an area of&amp;#34;)
+	fmt.Println(length*width, &amp;#34;squence meters&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不需要声明变量的类型，赋给变量的值的类型成为该变量的类型。&lt;/p&gt;
+&lt;h1 id=&#34;命名规则&#34;&gt;命名规则&lt;/h1&gt;
 </description>
     </item>
     

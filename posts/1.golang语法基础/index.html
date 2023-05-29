@@ -45,7 +45,7 @@ func main() {
 }
 </code></pre><p>go 编译器带有标准格式化工具 <code>go fmt</code></p>
 <h1 id="调用函数">调用函数</h1>
-<p><code>fmt.Pringln(&quot;First argument&quot;, &quot;Second argument&quot;)</code><br>
+<p><code>fmt.Println(&quot;First argument&quot;, &quot;Second argument&quot;)</code><br>
 <code>fmt</code> 为包名；<br>
 <code>Println</code> 为函数名；</p>
 <h1 id="函数返回值">函数返回值</h1>
@@ -137,9 +137,149 @@ func main() {
 <li>与字符串字面量一样，转义序列也可以用在rune字面量中，用来表示程序代码中难以包含的字符。</li>
 </ul>
 <h1 id="布尔值">布尔值</h1>
-<blockquote>
-<p>未完待续 ～</p>
-</blockquote>
+<p>布尔值只能是两个值的其中一个：<code>true</code> 或 <code>false</code> .</p>
+<p>他们对条件语句特别有用，条件语句只在条件为 <code>true</code> 或 <code>false</code> 时才会运行代码。</p>
+<h1 id="数字">数字</h1>
+<p>还可以直接在代码中定义数字，比字符串字面量更简单：只需要输入数字即可。</p>
+<p>go 将整数和浮点数视为不同的类型，可以使用小数点来区分整数和浮点数。</p>
+<h1 id="数学运算与比较">数学运算与比较</h1>
+<p><code>+</code> 表示加法<br>
+<code>-</code> 表示减法<br>
+<code>*</code> 表示乘法<br>
+<code>/</code> 表示除法</p>
+<p><code>&lt;</code> 与 <code>&gt;</code> 比较两个值<br>
+<code>&gt;=</code> 与 <code>&lt;=</code> 比较两个值大于等于或小于等于<br>
+<code>==</code>  比较两个是否相等<br>
+<code>!=</code>  比较两个值是否不相等</p>
+<p>比较的结果是一个<code>布尔值</code>，<code>true</code> 和 <code>false</code></p>
+<h1 id="类型">类型</h1>
+<p>go中的值都被划分为不同的类型，这些类型指定了这些值的用途。整数可以用在数学运算中，但是字符串不可以；字符串可以大写，但是数字不能。</p>
+<p>go是静态类型的，在程序运行之前就知道值的类型。<br>
+函数期望它们的参数具有特定的类型，返回值也具有类型（可能与参数类型相同，也可能不同）。<br>
+<font color=#0099ff size=3 face="黑体">go是静态类型，在错误的位置使用了错误的值类型，go会告诉你。</font></p>
+<p>可以将任何值传递给reflect包的TypeOf函数：</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+	&#34;reflect&#34;
+)
+
+func main() {
+	fmt.Println(reflect.TypeOf(42))
+	fmt.Println(reflect.TypeOf(3.1415))
+	fmt.Println(reflect.TypeOf(true))
+	fmt.Println(reflect.TypeOf(&#34;Hello, World!&#34;))
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>int
+float64
+bool
+string
+</code></pre><p>类型用途：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">类型</th>
+<th style="text-align:center">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><code>int</code></td>
+<td style="text-align:center">整型。保存数字</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>float64</code></td>
+<td style="text-align:center">浮点数。保存带小数部分的数字（类型名中的64是因为要用64位的数据来保存数字。这意味着四舍五入之前，float64值可以相当精确，但不能无限精确）</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>bool</code></td>
+<td style="text-align:center">布尔值。只能是true或false</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>string</code></td>
+<td style="text-align:center">字符串，通常表示文本字符的一系列数据</td>
+</tr>
+</tbody>
+</table>
+<h1 id="声明变量">声明变量</h1>
+<p>在go中，变量是包含值的一块存储。可以使用变量声明为变量命名，使用关键字<code>var</code>，后跟所需的名称以及变量将保存的值的类型 <code>var 变量名 类型</code></p>
+<pre tabindex="0"><code>var quantity int
+var length, width float64
+var customerName string
+</code></pre><p>声明变量后，可以用 <code>=</code> 为其分配该类型的任何值。</p>
+<p>可以在同一语句中为多个变量赋值，将变量名放在 <code>=</code> 左边，将相同数量的值放右边，用逗号分隔，如：<br>
+<code>length, width = 1.2, 2.4</code></p>
+<p>给变量赋值后，可以在任何使用要使用原始值的上下文中使用：</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+)
+
+func main() {
+	//声明变量
+	var quantity int
+	var length, width float64
+	var customerName string
+
+	//给变量赋值
+	quantity = 4
+	length, width = 1.2, 2.4
+	customerName = &#34;Domain cole&#34;
+
+	//使用变量
+	fmt.Println(customerName)
+	fmt.Println(&#34;has ordered&#34;, quantity, &#34;sheets&#34;)
+	fmt.Println(&#34;each with an area of&#34;)
+	fmt.Println(length*width, &#34;squence meters&#34;)
+}
+</code></pre><p>输出:</p>
+<pre tabindex="0"><code>Domain cole
+has ordered 4 sheets
+each with an area of
+2.88 squence meters
+</code></pre><p>若提前知道变量值是什么，可以在声明变量时一起赋值：</p>
+<pre tabindex="0"><code>//声明变量并赋值
+var quantity int = 4
+var length, width float64 = 1.2, 2.4
+var customerName string = &#34;Domain cole&#34;
+</code></pre><p>可以为现有变量分配新值，但必须是相同类型的值。go的静态类型确保不会将错误的类型赋值给变量。</p>
+<p>在声明变量的同时赋值，可以在变量声明中省略变量类型，分配给变量的值的类型将用作该变量的类型。</p>
+<pre tabindex="0"><code>var quantity = 4
+var length, width = 1.2, 2.4
+var customerName = &#34;Domain cole&#34;
+fmt.Println(reflect.TypeOf(quantity))
+fmt.Println(reflect.TypeOf(length))
+fmt.Println(reflect.TypeOf(width))
+fmt.Println(reflect.TypeOf(customerName))
+</code></pre><h1 id="零值">零值</h1>
+<p>若声明一个变量而没有给其赋值，则该变量将包含其类型的零值。对于数值类型，零值就是0。<br>
+<code>int</code> 变量零值 <code>0</code><br>
+<code>float64</code> 变量零值 <code>0</code><br>
+<code>string</code>  变量零值 <code>空字符串</code><br>
+<code>bool</code> 变量零值 <code>false</code></p>
+<h1 id="短变量声明">短变量声明</h1>
+<p>若声明变量时就知道初始值，可以使用短变量声明。</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+)
+
+func main() {
+	quantity := 4
+	length, width := 1.2, 2.4
+	customerName := &#34;Domain cole&#34;
+
+	fmt.Println(customerName)
+	fmt.Println(&#34;has ordered&#34;, quantity, &#34;sheets&#34;)
+	fmt.Println(&#34;each with an area of&#34;)
+	fmt.Println(length*width, &#34;squence meters&#34;)
+}
+</code></pre><p>不需要声明变量的类型，赋给变量的值的类型成为该变量的类型。</p>
+<h1 id="命名规则">命名规则</h1>
 </article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
 <div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/ssh%E5%AF%86%E9%92%A5%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9/"><span class="iconfont icon-article"></span>ssh密钥类型选择</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
