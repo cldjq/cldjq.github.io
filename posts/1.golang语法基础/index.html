@@ -280,9 +280,51 @@ func main() {
 }
 </code></pre><p>不需要声明变量的类型，赋给变量的值的类型成为该变量的类型。</p>
 <h1 id="命名规则">命名规则</h1>
+<p>适用于变量、函数和类型的名称：</p>
+<ul>
+<li>名称必须以字母开头，可以有任意数量的额外的字母和数字。</li>
+<li>若变量、函数或类型的名称以大写字母开头，则认为是可导出的，可以从当前包之外的包访问它。</li>
+<li>若变量、函数或类型的名称以小写字母开头，则认为该名称是未导出的，只能在当前包中使用。</li>
+</ul>
+<p>以上是go语言强制执行的唯一规则。</p>
+<p>社区约定：</p>
+<ul>
+<li>若一个名称由多个单词组成，那么第一个单词之后的每个单词的首字母大写，且连接在一起，中间没有空格。（第一个单词首字母，只有想从包中导出时才应大写。）</li>
+<li>当名称的含义在上下文中很明显时，社区惯例是缩写，用i代替index，max代替maximum等。</li>
+</ul>
+<h1 id="转换">转换</h1>
+<p>go中的数学运算和比较运算要求包含的值应具有相同的类型，若不同，则会运行报错。
+<font color=#0099ff size=2 face="黑体">示例</font></p>
+<pre tabindex="0"><code>var length float64 = 1.2
+var width int = 2
+fmt.Println(&#34;Area is&#34;, length*width)
+fmt.Println(&#34;length &gt; width?&#34;, length &gt; width)
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>invalid operation: length * width (mismatched types float64 and int)
+invalid operation: length &gt; width (mismatched types float64 and int)
+</code></pre><p>为变量分配新值也一样，若所赋值的类型与变量的声明类型不匹配也会报错：<br>
+将int值赋给float64变量&hellip;</p>
+<pre tabindex="0"><code>var length float64 = 1.2
+var width int = 2
+length = width
+fmt.Println(length)
+</code></pre><p>报错：</p>
+<pre tabindex="0"><code>cannot use width (type int) as type float64 in assignment
+</code></pre><p>怎么解决呢？当然是使用转换，转换允许将值从一种类型转换为另一种类型，只需提供要将值转换成的类型，后面紧接着是在圆括号中要转换的值。</p>
+<pre tabindex="0"><code>var myInt int = 2
+float64(myInt)
+</code></pre><p>结果是所需类型的新值。</p>
+<p>对整型变量中的值调用TypeOf，在转换为float64后对相同的值再次调用TypeOf：</p>
+<pre tabindex="0"><code>var myInt int = 2
+fmt.Println(reflect.TypeOf(myInt))
+fmt.Println(reflect.TypeOf(float64(myInt)))
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>int
+float64
+</code></pre><p>在进行转换时，它们可能会更改结果值，float64变量可以存储小数值，但int不可以，将float64转换为int时，小数部分会被删掉。</p>
 </article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
-<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/ssh%E5%AF%86%E9%92%A5%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9/"><span class="iconfont icon-article"></span>ssh密钥类型选择</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/2.%E6%9D%A1%E4%BB%B6%E4%B8%8E%E5%BE%AA%E7%8E%AF/"><span class="iconfont icon-article"></span>2.条件与循环</a></p><p><a class="link" href="/posts/ssh%E5%AF%86%E9%92%A5%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9/"><span class="iconfont icon-article"></span>ssh密钥类型选择</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
     window.disqus_config = function () {
     
