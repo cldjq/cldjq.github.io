@@ -354,7 +354,58 @@ for x &lt;= 3 {
 }
 fmt.Println(&#34;after loop&#34;)
 </code></pre><p>在循环第一次迭代中，“before break”被打印出，但随后break立即跳出循环，不打印 “after break”，也不再运行循环。</p>
-<h1 id="中断猜测循环">中断猜测循环</h1>
+<h1 id="完整代码">完整代码</h1>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;bufio&#34;
+	&#34;fmt&#34;
+	&#34;log&#34;
+	&#34;math/rand&#34;
+	&#34;os&#34;
+	&#34;strconv&#34;
+	&#34;strings&#34;
+	&#34;time&#34;
+)
+
+func main() {
+	seconds := time.Now().Unix() //获取当前日期和时间的整数形式
+	rand.Seed(seconds)           //播种随机数生成器
+	target := rand.Intn(100) + 1 //生成一个介于1-100之间的整数
+	fmt.Println(&#34;I&#39;ve chosen a random number between 1 and 100.&#34;)
+	fmt.Println(&#34;Can you guess it?&#34;)
+
+	reader := bufio.NewReader(os.Stdin) //创建一个buffio.Reader 允许读取键盘输入
+	success := false                    //设置为默认打印失败信息
+	for guesses := 0; guesses &lt; 10; guesses++ {
+		fmt.Println(&#34;you have&#34;, 10-guesses, &#34;guesses left.&#34;)
+		fmt.Print(&#34;Make a guess: &#34;)
+		input, err := reader.ReadString(&#39;\n&#39;) //读取用户输入，直到按enter键
+		if err != nil {
+			log.Fatal(err)
+		} //若出现错误则打印信息并退出
+		input = strings.TrimSpace(input)  //删除换行符
+		guess, err := strconv.Atoi(input) //将输入字符转换为整数
+		if err != nil {
+			log.Fatal(err)
+		} //若出现错误则打印信息并退出
+
+		if guess &lt; target {
+			fmt.Println(&#34;your guess was low&#34;)
+		} else if guess &gt; target {
+			fmt.Println(&#34;your guess was high&#34;)
+		} else {
+			success = true //阻止显示失败信息
+			fmt.Println(&#34;good job! you guessed it!&#34;)
+			break //退出循环
+		}
+	}
+
+	if !success { //如果 “success” 是false，告诉玩家结果
+		fmt.Println(&#34;sorry,you didn&#39;t guess number.It was:&#34;, target)
+	}
+}
+</code></pre><p>在循环之后，添加了一个if块来打印失败消息，if块只有在条件的计算结果为true时运行，我们希望success为false时执行打印，所以添加布尔求反运算符<code>!</code>。</p>
 </article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
 <div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/1-1.golang25%E4%B8%AA%E4%BF%9D%E7%95%99%E5%85%B3%E9%94%AE%E5%AD%97/"><span class="iconfont icon-article"></span>1-1.golang25个保留关键字</a></p><p><a class="link" href="/posts/1.golang%E8%AF%AD%E6%B3%95%E5%9F%BA%E7%A1%80/"><span class="iconfont icon-article"></span>1.golang语法基础</a></p></section><section class="article discussion"><div id="disqus_thread"></div>

@@ -5,10 +5,19 @@
     <description>Recent content in Posts on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Wed, 31 May 2023 11:33:55 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 29 Jun 2023 11:14:17 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/posts/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>3.函数</title>
+      <link>https://tinklespring.com/posts/3.%E5%87%BD%E6%95%B0/</link>
+      <pubDate>Thu, 29 Jun 2023 11:14:17 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/3.%E5%87%BD%E6%95%B0/</guid>
+      <description></description>
+    </item>
     
     <item>
       <title>1-1.golang25个保留关键字</title>
@@ -991,7 +1000,58 @@ for x &amp;lt;= 3 {
 }
 fmt.Println(&amp;#34;after loop&amp;#34;)
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在循环第一次迭代中，“before break”被打印出，但随后break立即跳出循环，不打印 “after break”，也不再运行循环。&lt;/p&gt;
-&lt;h1 id=&#34;中断猜测循环&#34;&gt;中断猜测循环&lt;/h1&gt;
+&lt;h1 id=&#34;完整代码&#34;&gt;完整代码&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;bufio&amp;#34;
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;log&amp;#34;
+	&amp;#34;math/rand&amp;#34;
+	&amp;#34;os&amp;#34;
+	&amp;#34;strconv&amp;#34;
+	&amp;#34;strings&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	seconds := time.Now().Unix() //获取当前日期和时间的整数形式
+	rand.Seed(seconds)           //播种随机数生成器
+	target := rand.Intn(100) + 1 //生成一个介于1-100之间的整数
+	fmt.Println(&amp;#34;I&amp;#39;ve chosen a random number between 1 and 100.&amp;#34;)
+	fmt.Println(&amp;#34;Can you guess it?&amp;#34;)
+
+	reader := bufio.NewReader(os.Stdin) //创建一个buffio.Reader 允许读取键盘输入
+	success := false                    //设置为默认打印失败信息
+	for guesses := 0; guesses &amp;lt; 10; guesses++ {
+		fmt.Println(&amp;#34;you have&amp;#34;, 10-guesses, &amp;#34;guesses left.&amp;#34;)
+		fmt.Print(&amp;#34;Make a guess: &amp;#34;)
+		input, err := reader.ReadString(&amp;#39;\n&amp;#39;) //读取用户输入，直到按enter键
+		if err != nil {
+			log.Fatal(err)
+		} //若出现错误则打印信息并退出
+		input = strings.TrimSpace(input)  //删除换行符
+		guess, err := strconv.Atoi(input) //将输入字符转换为整数
+		if err != nil {
+			log.Fatal(err)
+		} //若出现错误则打印信息并退出
+
+		if guess &amp;lt; target {
+			fmt.Println(&amp;#34;your guess was low&amp;#34;)
+		} else if guess &amp;gt; target {
+			fmt.Println(&amp;#34;your guess was high&amp;#34;)
+		} else {
+			success = true //阻止显示失败信息
+			fmt.Println(&amp;#34;good job! you guessed it!&amp;#34;)
+			break //退出循环
+		}
+	}
+
+	if !success { //如果 “success” 是false，告诉玩家结果
+		fmt.Println(&amp;#34;sorry,you didn&amp;#39;t guess number.It was:&amp;#34;, target)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在循环之后，添加了一个if块来打印失败消息，if块只有在条件的计算结果为true时运行，我们希望success为false时执行打印，所以添加布尔求反运算符&lt;code&gt;!&lt;/code&gt;。&lt;/p&gt;
 </description>
     </item>
     
