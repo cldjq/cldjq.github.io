@@ -1,0 +1,1815 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Categories on 承离的觉前</title>
+    <link>https://tinklespring.com/categories/</link>
+    <description>Recent content in Categories on 承离的觉前</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Thu, 29 Jun 2023 11:14:17 +0800</lastBuildDate>
+    
+        <atom:link href="https://tinklespring.com/categories/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>3.函数</title>
+      <link>https://tinklespring.com/posts/3.%E5%87%BD%E6%95%B0/</link>
+      <pubDate>Thu, 29 Jun 2023 11:14:17 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/3.%E5%87%BD%E6%95%B0/</guid>
+      <description>&lt;h1 id=&#34;printf-与-sprintf-格式化输出&#34;&gt;Printf 与 Sprintf 格式化输出&lt;/h1&gt;
+&lt;p&gt;Printf 代表“带格式的打印”，接受一个字符串并将一个或多个值插入其中，以特定的方式进行格式化，然后打印结果字符串。&lt;br&gt;
+Sprintf函数（也是fmt包的一部分）的工作方式与Printf 类似，不过返回格式化的字符串而不是打印。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Printf(&amp;#34;About one-third: %0.2f\n&amp;#34;, 1.0/3.0)
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;resultString := fmt.Sprintf(&amp;#34;About one-third: %0.2f\n&amp;#34;, 1.0/3.0)
+fmt.Printf(resultString)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Printf的两个特性：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;格式化动词（字符串中的%0.2f是动词）&lt;/li&gt;
+&lt;li&gt;值的宽度（动词中间的0.2）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;格式化动词&#34;&gt;格式化动词&lt;/h1&gt;
+&lt;p&gt;Printf第一个参数是一个字符串，用于格式化输出，大部分格式与字符串中显示的格式完全相同，但是任何 &lt;code&gt;%&lt;/code&gt; 都将被视为格式化动词的开始，字符串的一部分将被特定格式的值所替换，其余参数用作这些动词的值。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;%&lt;/code&gt; 后面的字母表示要使用哪个动词，常见动词：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;动词&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;输出&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;%f&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;浮点数&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;%d&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;十进制整数&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;%s&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;字符串&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;%t&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;布尔值（true或false）&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;%v&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;任何值（根据所提供的值的类型选择适当的格式）&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;%#v&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;任何值，按其在go程序代码中显示的格式进行格式化&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;%T&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;所提供值的类型（int、string）&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;%%&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;一个完全的百分号&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;示例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Printf(&amp;#34;A float: %f\n&amp;#34;, 3.1415)
+fmt.Printf(&amp;#34;An integer: %d\n&amp;#34;, 15)
+fmt.Printf(&amp;#34;A string: %s\n&amp;#34;, &amp;#34;hello&amp;#34;)
+fmt.Printf(&amp;#34;A boolean: %t\n&amp;#34;, false)
+fmt.Printf(&amp;#34;Values: %v %v %v\n&amp;#34;, 1.2, &amp;#34;\t&amp;#34;, true)
+fmt.Printf(&amp;#34;Values: %#v %#v %#v\n&amp;#34;, 1.2, &amp;#34;\t&amp;#34;, true)
+fmt.Printf(&amp;#34;Types: %T %T %T\n&amp;#34;, 1.2, &amp;#34;\t&amp;#34;, true)
+fmt.Printf(&amp;#34;Percent sign: %%\n&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;A float: 3.141500
+An integer: 15
+A string: hello
+A boolean: false
+Values: 1.2       true
+Values: 1.2  &amp;#34;\t&amp;#34; true
+Types: float64 string bool
+Percent sign: %
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;确保使用 \n 转义序列在每个格式化字符串的末尾添加一个换行符，因为与Println不同，Printf不会自动添加新行。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Printf(&amp;#34;%v %v %v&amp;#34;, &amp;#34;&amp;#34;, &amp;#34;\t&amp;#34;, &amp;#34;\n&amp;#34;)
+fmt.Printf(&amp;#34;%#v %#v %#v&amp;#34;, &amp;#34;&amp;#34;, &amp;#34;\t&amp;#34;, &amp;#34;\n&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+&amp;#34;&amp;#34; &amp;#34;\t&amp;#34; &amp;#34;\n&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;%#v 可以显示一些值，不实用%#v，这些值可能会在输出中隐藏，上述 空字符串、制表符、换行符，在 %v 打印时是不可见的。&lt;/p&gt;
+&lt;h1 id=&#34;格式化宽度&#34;&gt;格式化宽度&lt;/h1&gt;
+&lt;p&gt;可以在格式化动词的百分号后面指定最小宽度，若该动词参数比最小宽度短，则使用空格填充。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Printf(&amp;#34;%12s | %s\n&amp;#34;, &amp;#34;Product&amp;#34;, &amp;#34;Cost in Cents&amp;#34;)
+fmt.Printf(&amp;#34;%12s | %s\n&amp;#34;, &amp;#34;Stamps&amp;#34;, 50)
+fmt.Printf(&amp;#34;%12s | %s\n&amp;#34;, &amp;#34;Paper Clips&amp;#34;, 5)
+fmt.Printf(&amp;#34;%12s | %s\n&amp;#34;, &amp;#34;Tape&amp;#34;, 99)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;     Product | Cost in Cents
+      Stamps | 50
+ Paper Clips |  5
+        Tape | 99
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;格式化小数宽度&#34;&gt;格式化小数宽度&lt;/h1&gt;
+&lt;p&gt;整个数的最小宽度包括数字位和小数点，若包括，较短的数将在开始处填充空格，直到达到这个宽度，若省略，则不会添加任何空格。&lt;br&gt;
+小数点后的宽度是要显示的小数位数，若是更精确的数字，将被四舍五入。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Printf(&amp;#34;%%7.3f: %7.3f\n&amp;#34;, 12.3456)
+fmt.Printf(&amp;#34;%%7.2f: %7.2f\n&amp;#34;, 12.3456)
+fmt.Printf(&amp;#34;%%7.1f: %7.1f\n&amp;#34;, 12.3456)
+fmt.Printf(&amp;#34;%%.1f: %.1f\n&amp;#34;, 12.3456)
+fmt.Printf(&amp;#34;%%.2f: %.2f\n&amp;#34;, 12.3456)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;%7.3f:   12.346
+%7.2f:    12.35
+%7.1f:     12.3
+%.1f:  12.3
+%.2f:  12.35
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;%.2f&lt;/code&gt; 将允许取任意精度的浮点数，并将它们四舍五入到小数点后两位。（不会做任何不必要的填充）。&lt;/p&gt;
+&lt;h1 id=&#34;声明函数&#34;&gt;声明函数&lt;/h1&gt;
+&lt;p&gt;声明以func关键字开头，后面跟希望函数具有的名称、一对圆括号()，然后是包含函数代码的块。&lt;br&gt;
+一旦声明了一个函数，就可以在包的其他地方调用，只需输入函数名，后面跟一对圆括号。当执行此操作时，函数快中的代码就会运行。&lt;/p&gt;
+&lt;p&gt;示例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+import &amp;#34;fmt&amp;#34;
+func sayHi() {
+       fmt.Println(&amp;#34;Hi!&amp;#34;)
+}
+func main() {
+       sayHi()
+}
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>1-1.golang25个保留关键字</title>
+      <link>https://tinklespring.com/posts/1-1.golang25%E4%B8%AA%E4%BF%9D%E7%95%99%E5%85%B3%E9%94%AE%E5%AD%97/</link>
+      <pubDate>Wed, 31 May 2023 11:33:55 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/1-1.golang25%E4%B8%AA%E4%BF%9D%E7%95%99%E5%85%B3%E9%94%AE%E5%AD%97/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;golang 有25个保留关键字，比26个英文字母还少一个～&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;break&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;default&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;func&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;interface&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;select&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;case&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;defer&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;go&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;map&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;struct&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;chan&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;else&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;goto&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;package&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;switch&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;const&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;fallthrough&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;if&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;range&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;type&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;continue&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;for&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;import&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;return&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;var&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Go 25个关键字不能用作标识符，分为3类：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;包管理：
+import  package
+
+程序实体声明与定义：
+chan const func interface map struct type var
+
+程序流程控制：
+break  case         continue  default  defer
+else   fallthrough  for       go       goto
+if     range        return    select   switch
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;包管理&#34;&gt;包管理&lt;/h1&gt;
+&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;import&lt;/font&gt;&lt;br&gt;
+用于导入包，这样就可以使用包中被导出的标识符。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;import (
+    _ &amp;#34;package path&amp;#34;
+    . &amp;#34;package path&amp;#34;
+    alias &amp;#34;package path&amp;#34;
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;包路径前面有三种修饰符：&lt;br&gt;
+&lt;code&gt;_&lt;/code&gt; 下划线即空白标识符，表示不使用包中的标识符，计算包级变量的初始化表达式和执行导入包的init初始化函数。&lt;br&gt;
+&lt;code&gt;.&lt;/code&gt; 点号代替包的别名，表示访问包中的导出标识符无需使用包名。&lt;br&gt;
+&lt;code&gt;alias&lt;/code&gt; 表示包的别名。&lt;/p&gt;
+&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;package&lt;/font&gt; &lt;br&gt;
+package用于声明包的名称，需要放在go文件所有代码的最前面，一个包由一个或多个go源文件组成，需放在同一个目录下，且同一个目录下的这些go文件的package的名字只能有一个。&lt;/p&gt;
+&lt;h1 id=&#34;程序实体声明与定义&#34;&gt;程序实体声明与定义&lt;/h1&gt;
+&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;chan&lt;/font&gt;&lt;br&gt;
+&lt;code&gt;chan&lt;/code&gt; 用于声明信道（channel）。&lt;br&gt;
+信道提供一种机制使两个并发执行的函数实现同步，并通过传递具体元素类型的值来通信，未初始化的信道值为&lt;code&gt;nil&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;声明格式：
+&lt;code&gt;chan T&lt;/code&gt;   可以被用来发送和接收类型T的值。&lt;br&gt;
+&lt;code&gt;chan&amp;lt;- T&lt;/code&gt; 只能被用来发送类型T的值。&lt;br&gt;
+&lt;code&gt;&amp;lt;-chan T&lt;/code&gt; 只能被用来接收类型T的值。&lt;br&gt;
+其中 &lt;code&gt;&amp;lt;-&lt;/code&gt; 操作符指定信道的方向，发送或接收，没有给定方向，则信道是双向的，信道可以通过类型转换或赋值被强制为只发送或只接收。&lt;br&gt;
+信道的初始化可以通过 make 函数来实现，其结果值充当了对底层数据结构的引用。初始化时可以为信道设置缓冲区大小，默认值是零，表示不带缓冲的或同步的信道。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;ci := make(chan int)&lt;/code&gt;           整数类型的无缓冲信道&lt;br&gt;
+&lt;code&gt;cj := make(chan int, 0)&lt;/code&gt;        整数类型的无缓冲信道&lt;br&gt;
+&lt;code&gt;cp := make(chan *os.file, 100)&lt;/code&gt; 指向文件指针的带缓冲信道&lt;/p&gt;
+&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;const&lt;/font&gt;&lt;br&gt;
+const 用于声明常量，需指明初始值，一旦创建不可修改。&lt;br&gt;
+由于编译时的限制，定义它们的表达式必须也是可被编译器求值的常量表达式。例如 1&amp;laquo;3 就是一个常量表达式，而 math.Sin(math.Pi/4) 则不是，因为对 math.Sin 的函数调用在运行时才会发生。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const name T = value                    // 指明类型
+const name0, name1 T = value0, value1   // 指明类型，定义多个常量
+const name = value                      // 无类型常量
+const name0, name1 = value0, value1     // 无类型常量，可定义多个
+
+// const name0 T, name1 T = value0, value1	// 错误，const 不能在同一行出现多个类型名（同一类型也不行）
+
+// 将常量定义放在小括号中
+const (
+	name0 = value0
+	name1 = value1
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在小括号中的常量声明列表，const 常与iota常量生成器联用，用来申明连续的 数值常量集。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 无类型数值常量集（可转为整型或浮点型）
+const (
+	Sunday = iota       // 0
+	Monday	            // 1
+	Tuesday	            // 2
+	Wednesday           // 3
+	Thursday            // 4
+	Friday	            // 5
+	Partyday            // 6
+	numberOfDays        // 7，该常量未导出
+)
+
+// 无类型数值常量集（可转为浮点型）
+const (
+	Sunday = iota + 0.1   // 0.1
+	Monday		      // 1.1
+	Tuesday		      // 2.1
+	Wednesday	      // 3.1
+	Thursday	      // 4.1
+	Friday		      // 5.1
+	Partyday	      // 6.1
+	numberOfDays 	      // 7.1，该常量未导出
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;关于go的常量还有：
+1）常量可以是类型化的或无类型化的。字面常量，true，false， iota 和某些只包含无类型化操作数的常量表达式是无类型化的；&lt;br&gt;
+2）常量可由常量声明或类型转换显式地赋予其类型， 也可由变量声明或赋值以及作为表达式中的操作数隐式地赋予其类型。若常量的值不能由其类型表示就会产生一个错误。 例如，3.0 可赋予任何整数或浮点数类型的常量，而 2147483648.0 （等价于 1&amp;laquo;31）则只能赋予 float32, float64 或 uint32 类型的常量，而不能赋予 int32 或 string类型的常量；&lt;br&gt;
+3）尽管数值常量在该语言中可拥有任意精度， 但编译器可能使用其有限精度的内部表示来实现它们。即，每个实现必须：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;使用至少256位表示整数常量；&lt;/li&gt;
+&lt;li&gt;使用至少256位表示浮点常量，包括复数常量及尾数部分，和至少16位的有符号指数；&lt;/li&gt;
+&lt;li&gt;若无法精确表示一个整数常量，则给出一个错误；&lt;/li&gt;
+&lt;li&gt;若由于溢出而无法表示一个浮点或复数常量，则给出一个错误；&lt;/li&gt;
+&lt;li&gt;若由于精度限制而无法表示一个浮点或复数常量，则舍入为最近似的可表示常量。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这些要求适用于 字面常量 和 常量表达式 的求值结果。&lt;/p&gt;
+&lt;p&gt;golang中的const 不支持 C/C++ 中修饰函数的参数和返回值，如下语句是非法的：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func test(const name *string)
+func test(name *string) const *string
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;func&lt;/font&gt;&lt;br&gt;
+func 用于定义函数，go函数支持变参且返回值支持多个，但不支持默认参数，若函数存在多个返回值形参则需要使用小括号括起来，格式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func funcName(){}			    //无参无返回值
+func funcName(t T) T {}			    //有参有返回值
+func funcName(t T, list ...T) (T1,T1) {}    //有变参有多个返回值
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;格式上要注意，函数体的第一个大括号必须函数名同行。&lt;/p&gt;
+&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;interface&lt;/font&gt;&lt;br&gt;
+interface 用于定义接口。一个接口是一个方法集，如果一个类型实现了一个接口中的所有方法集，那么说明该类型实现此接口。接口类型变量可以存储任何实现了该接口的类型的值。特别的，&lt;code&gt;interface{}&lt;/code&gt;表示空接口类型，默认地，所有类型均实现了空接口，所以&lt;code&gt;interface{}&lt;/code&gt;可以接收任意类型值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 空接口
+interface{}
+
+// 一个简单的 File 接口
+type File interface {
+	Read(b Buffer) bool
+	Write(b Buffer) bool
+	Close()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;map&lt;/font&gt;&lt;br&gt;
+map 用于声明映射变量。映射属容器类类型，是一个同种类型元素的无序组，通过唯一的键可以获取对应的值。可以使用 make 创建 map 变量，在定义 map 时可以省略容量，超出容量时会自动扩容，但尽量提供一个合理的初始值。未初始化的映射值为 nil。&lt;/p&gt;
+&lt;p&gt;// 由于map底层是一个hash map，其并没有具体的容量，指定容量也是一个建议值，所以无法使用 &lt;code&gt;cap()&lt;/code&gt;函数来获取map的容量。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 错误示例
+func main() {
+    m := make(map[string]int, 99)
+    println(cap(m))     // error: invalid argument m1 (type map[string]int) for cap  
+}    
+&lt;/code&gt;&lt;/pre&gt;&lt;h6 id=&#34;创建map&#34;&gt;创建map&lt;/h6&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 创建 0 容量的 map
+var myMap = make(map[T1]T2) 
+var myMap = map[T1]T2{}
+
+// 创建指定容量的 map
+var myMap = make(map[T1]T2, hint) 
+
+// 创建并初始化 map
+var myMap = map[string]int {
+	&amp;#34;dable&amp;#34; : 27,
+	&amp;#34;cat&amp;#34; : 28,
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;示例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+	nameAge := make(map[string]int)
+	nameAge[&amp;#34;bob&amp;#34;] = 18                     //增
+	nameAge[&amp;#34;tom&amp;#34;] = 16                     //增
+	delete(nameAge, &amp;#34;bob&amp;#34;)                  //删
+	nameAge[&amp;#34;tom&amp;#34;] = 19                     //改
+	v := nameAge[&amp;#34;tom&amp;#34;]                     //查
+	fmt.Println(&amp;#34;v=&amp;#34;,v)
+	v, ok := nameAge[&amp;#34;tom&amp;#34;]                 //查，推荐用法
+	if ok { 
+		fmt.Println(&amp;#34;v=&amp;#34;,v,&amp;#34;ok=&amp;#34;,ok)
+	}   
+	for k, v :=range nameAge {      		//遍历
+		fmt.Println(k, v)
+	}   
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出结果：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;v= 19
+v= 19 ok= true
+tom 19
+&lt;/code&gt;&lt;/pre&gt;&lt;h6 id=&#34;map-遍历&#34;&gt;map 遍历&lt;/h6&gt;
+&lt;p&gt;遍历所有key&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 方式一
+for k := range mapVar {
+	...
+}
+
+// 方式二（不推荐）
+for k, _ := range mapVar {
+	...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;遍历所有value&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for _, v := range mapVar {
+	...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;遍历所有key与value&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for k, v := range mapVar {
+	...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;// map 在没有被修改的情况下，使用range多次遍历map时输出的key和value的顺序可能不同，这是go设计者有意为之，在每次range时的顺序被随机化，旨在提示开发者，go底层实现并不保证map遍历顺序稳定，请大家不要依赖range遍历结果顺序。&lt;a href=&#34;https://go.dev/blog/maps&#34;target=&#34;_blank&#34; rel=&#34;noopener noreferrer&#34;&gt;Go maps in action&lt;/a&gt;
+&lt;/p&gt;
+&lt;h6 id=&#34;map增删改查&#34;&gt;map增删改查&lt;/h6&gt;
+&lt;p&gt;向map写入元素时，键值对不存在会自动添加，键值存在时将被新值覆盖。使用 &lt;code&gt;delete()&lt;/code&gt; 删除某键值对，使用 &lt;code&gt;len()&lt;/code&gt; 获取元素个数。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 新增或修改
+m[&amp;#34;name&amp;#34;] = &amp;#34;wade&amp;#34;
+ 
+// 删除，key 不存在则啥也不干
+delete(m, &amp;#34;name&amp;#34;)
+ 
+// 三种查询方式 
+// 查询，key 不存在返回 value 类型的零值
+v := m[&amp;#34;name&amp;#34;]
+v, ok := m[&amp;#34;name&amp;#34;]
+_, ok := m[&amp;#34;name&amp;#34;]
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+&lt;p&gt;map使用需注意：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;map默认初始值为 &lt;code&gt;nil&lt;/code&gt;
+map 声明时未初始化的情况下值为 nil。对 nil map 取值，返回对应类型的零值，不会引发 panic；但写入会引发 panic，所以推荐做法是向 map 写入时先判断 map 是否为 nil；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;map range 的顺序是随机的&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;map 值传递表现出引用传递的效果
+Go 没有引用传递，只有值传递与指针传递。所以 map 作为函数实参传递时本质上也是值传递，只不过因为 map 底层数据结构是通过指针指向实际的元素存储空间，在被调函数中修改 map，对调用者同样可见，所以 map 作为函数实参传递时表现出了引用传递的效果。因此，传递 map 时，函数形参无需使用指针；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;map 的元素不可选址
+map 中的元素并不是一个变量，而是一个值，对 map 元素取值将报运行时错误，因此当 map 的元素为结构体类型的值，那么无法直接修改结构体中的字段值。如果想修改，有两个解决办法，一是存储 struct 的指针类型，二是使用临时变量，每次取出来后再设置回去；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;map 并发读写不安全
+需要加锁，或只用 &lt;code&gt;sync.Map&lt;/code&gt; ，否则会引发panic。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;示例：&lt;a href=&#34;https://dablelv.blog.csdn.net/article/details/90729484&#34;target=&#34;_blank&#34; rel=&#34;noopener noreferrer&#34;&gt;go map 三板斧&lt;/a&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;struct&lt;/font&gt;&lt;br&gt;
+&lt;code&gt;struct&lt;/code&gt; 用于定义结构体，结构体属容器类型，是多个相同或不同类型值的集合。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Vertex struct {
+	X, Y int
+}
+
+var (
+	v1 = Vertex{1, 2}  // 类型为 Vertex
+	v2 = Vertex{X: 1}  // Y:0 被省略
+	v3 = Vertex{}      // X:0 和 Y:0
+	p  = &amp;amp;Vertex{1, 2} // 类型为 *Vertex
+)
+
+func main() {
+	fmt.Printf(&amp;#34;%#v %#v %#v %#v\n&amp;#34;, v1, v2, v3, p)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;type&lt;/font&gt;&lt;br&gt;
+&lt;code&gt;type&lt;/code&gt; 用于定义类型，比如定义struct、interface、func与等价类型。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 定义struct
+type Person struct { name string }
+
+// 定义接口
+type Person interface {
+	speak(word string)
+}
+
+// 定义函数类型
+type FuncType func(int, int) int
+
+// 定义等价类型，rune等价于int32
+type rune int32
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;var&lt;/font&gt;&lt;br&gt;
+&lt;code&gt;var&lt;/code&gt; 用于声明函数级变量和包级变量。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var name T							// 指明类型，使用类型零值
+var name T = value					// 指明类型，指明初始值
+var name0, name1 T					// 指明类型，使用类型零值定义多个变量
+var name0, name1 T = value0, value1	// 指明类型，指明初始值定义多个变量
+
+var name = value					// 根据值推断变量类型
+var name0, name1 = value0, value1	// 根据值推断变量类型，可定义多个不同类型变量
+
+// var name0 T, name1 T				// 错误，var 不能在同一行出现多个类型名（同一类型也不行）
+
+// 将变量定义放在括号中
+var (
+	name0 = value0
+	name1 = value1
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;定义变量可以使用短变量声明方式（:=） 替代var，但短变量声明方式只能用于函数体内声明函数级变量，且需指明初始值，声明时不能指明变量类型，类型由初始化确定。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;name := value			// 申明一个变量
+name0, name1 := value0, value1	// 申明多个变量，变量类型可以不同
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;声明多个变量时候，只要有一个是新的即可。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	oldVar := 1
+	oldVar, newVar := 2, 3
+	fmt.Printf(&amp;#34;oldVar=%v newVar=%v\n&amp;#34;, oldVar, newVar) // oldVar=2 newVar=3
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;var&lt;/code&gt; 与 &lt;code&gt;:=&lt;/code&gt; 区别：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;var 既可以声明函数级变量，也可以声明包级变量，而短变量只能声明函数级变量&lt;/li&gt;
+&lt;li&gt;var 可以不指定初始值，短变量声明方式必须指定初始值&lt;/li&gt;
+&lt;li&gt;var 可以指定数据类型，短变量声明方式不能指定数据类型&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;程序流程控制&#34;&gt;程序流程控制&lt;/h1&gt;
+&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;for range break continue&lt;/font&gt;&lt;br&gt;
+for 是go 中唯一用于循环结构的关键词，有三种使用方式，分别是单个循环条件，经典的初始化/条件/后续形式，还有和 range 关键词结合使用来遍历容器类对象（数组、切片、映射、信道）。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 单条件
+i := 1
+for i &amp;lt;= 3 {
+	fmt.Println(i)
+	i = i + 1
+}
+
+// 初始化/条件/后续形式
+// 注意 Go 中没有前置自增与自减运算符，即++i是非法的
+for i:=0; i &amp;lt; 3; i++ {
+	fmt.Println(i)
+}
+
+// for range 遍历数组
+array :=[...]int{0,1,2,3,4,5}
+for i, v :=range array{
+	fmt.Println(i,v)
+}
+
+// 只遍历下标
+for i := range array {
+	fmt.Println(i)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;break&lt;/code&gt; 用于终止最内层的 &lt;code&gt;for&lt;/code&gt; &lt;code&gt;switch&lt;/code&gt; &lt;code&gt;select&lt;/code&gt; 语句的执行，break 可以携带标签，用于跳出多层，若存在标签，则标签必须放在&lt;code&gt;for&lt;/code&gt; &lt;code&gt;switch&lt;/code&gt; &lt;code&gt;select&lt;/code&gt; 语句的开始处。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 终止for
+L:
+for i &amp;lt; n {
+	switch i {
+	case 5:
+		break L
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;continue&lt;/code&gt; 用于结束当前循环，提前进入下一轮循环。也可以像break一样携带标签，此时程序的执行流跳转到标签的指定位置，可用于跳出多层&lt;code&gt;for&lt;/code&gt; &lt;code&gt;switch&lt;/code&gt; &lt;code&gt;select&lt;/code&gt; ，提前进入下一轮执行。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 提前进入下一轮循环
+for i:=0; i &amp;lt; 3; i++ { 
+	if i == 1 {
+		continue
+	}
+	fmt.Println(i)
+}
+// 输出结果
+0
+2
+
+// 提前进入标签处for的下一轮循环
+L:
+for i:=0; i &amp;lt; 2; i++ { 
+	for j:=0; j &amp;lt; 3; j++{
+		if j == 1 {
+			continue L
+		}
+		fmt.Println(i, j)
+	}
+}
+//输出结果
+0 0
+1 0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;goto&lt;/font&gt;&lt;br&gt;
+&lt;code&gt;goto&lt;/code&gt; 用于将程序的执行转移到与其标签相应的语句。可以使用 goto 退出多层&lt;code&gt;for&lt;/code&gt; &lt;code&gt;switch&lt;/code&gt; &lt;code&gt;select&lt;/code&gt;，功能类似于break携带标签。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 终止for
+L:
+	for i &amp;lt; n {
+		switch i {
+		case 5:
+			goto L
+		}
+	}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;注意事项：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;执行&lt;code&gt;goto&lt;/code&gt; 不能在跳转过程中跳过变量的定义，否则编译报错。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;	goto L  //编译报错
+	v := 3
+L:
+	fmt.Println(v)
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;在块外的goto语句不能跳转至该块中的标签。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if n%2 == 1 {
+	goto L1
+}
+for n &amp;gt; 0 {
+	f()
+	n--
+L1:
+	f()
+	n--
+}
+//是错误的，因为标签L1在for语句中的块而goto则不在。
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;程序设计时，尽量避免使用goto语句，因为程序执行流的随意跳转会破坏结构化设计风格，导致代码可读性下降。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;switch case default fallthrough&lt;/font&gt;&lt;br&gt;
+这四个关键词是结合使用的。switch 语句提供多路执行，表达式或类型说明符与 switch 中的 case 相比较从而决定执行哪一分支。如果存在一个且最多只能存在一个 default 默认分支，所有的 case 分支都不满足时将执行 default 分支，且 default 分支不一定要放在最后的位置。Go switch 语句在执行完某个 case 子句后，不会再顺序地执行后面的 case 子句，而是结束当前 switch 语句。使用 fallthrough 可以继续执行下一个 case 或 default 子句。case 表达式可以提供多个待匹配的值，使用逗号分隔。&lt;/p&gt;
+&lt;p&gt;switch 有两种形式，表达式选择 和 类型选择 。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;表达式选择
+表达式选择可以没有表达式，缺省为 true，这种写法也习惯地取代 if-else-if-else 语句链。表达式可以不是常量。表达式前面可以有简单语句，比如短变量申明语句。可见 Go switch 相对于 C 有较大的区别且更加灵活。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;switch tag {
+default: s3()		// default 子句可以出现在任意位置，不一定是最后一个
+case 0, 1, 2, 3: s1()	// case 表达式可以提供多个待匹配的值，使用逗号分隔
+case 4, 5, 6, 7: s2()
+}
+
+switch {		// 缺失的表达式为 true
+case x &amp;lt; y: f1()
+fallthrough		// 强制执行下一个 case 子句
+case x &amp;lt; z: f2()
+// 此处没有 fallthrough，switch 执行流在此终止	
+case x == 4: f3()
+}
+
+switch x := f() {	// 缺省表达式试为 true 且前面存在一条短变量申明语句
+case x &amp;lt; 0: return -x	// case 表达式无需为常量
+default: return x
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;类型选择&lt;br&gt;
+类型选择比较类型而不是值。它类似于表达式选择，由一个特殊的表达式表示类型，该表达式的形式是使用保留字 type 的类型断言而不是实际的类型。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;switch x.(type) {
+// cases
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用实际类型 T 与表达式 x 的动态类型进行匹配。与类型断言一样，x 必须是接口类型，列出的每个非接口类型T必须实现 x 且不能相同。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;switch i := x.(type) {
+case int:
+	printInt(i)                            // i 类型为 int
+case float64:
+	printFloat64(i)                        // i 类型为 float64
+case func(int) float64:
+	printFunction(i)                       // i 类型为 func(int) float64
+case bool, string:
+	printString(&amp;#34;type is bool or string&amp;#34;)  // i 类型为 bool or string
+default:
+	printString(&amp;#34;don&amp;#39;t know the type&amp;#34;)     // i 类型未知
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;if else&lt;/font&gt;&lt;br&gt;
+if 与else 实现条件控制：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;可省略条件表达式的括号&lt;/li&gt;
+&lt;li&gt;支持初始化语句，可定义代码块局部变量&lt;/li&gt;
+&lt;li&gt;if 与 else 块中只有一条语句也需要添加大括号&lt;/li&gt;
+&lt;li&gt;起始大括号必须与 if 和 else 同行&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if err := file.Chmod(0664); err != nil {
+	log.Print(err)
+	return err
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;return&lt;/font&gt;&lt;br&gt;
+return 用于函数执行的终止并可选地提供一个或多个返回值。 任何在函数 F 中被推迟的函数会在 F 返回给其调用者前执行。如果返回值在函数返回形参中指定了名字，那么 return 时可不带返回值列表。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 无返回值
+func noResult() {
+	return
+}
+
+// 单返回值
+func simpleF() int {
+	return 2
+}
+
+// 多返回值
+func complexF2() (float64, float64) {
+	re = 7.0
+	im = 4.0
+	return re, im
+}
+
+// 返回值已具名
+unc complexF3() (re float64, im float64) {
+	re = 7.0
+	im = 4.0
+	return
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;defer&lt;/font&gt;&lt;br&gt;
+defer 用于预设一个函数调用，推迟函数的执行。 被推迟的函数会在执行 defer 的函数返回之前立即执行。 例如无论以何种路径返回，都必须释放资源的函数。 典型的例子就是解锁和关闭文件。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//将文件的内容作为字符串返回。
+func Contents(filename string) (string, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return &amp;#34;&amp;#34;, err
+	}
+	defer f.Close()  // f.Close 会在函数结束后运行
+
+	var result []byte
+	buf := make([]byte, 100)
+	for {
+		n, err := f.Read(buf[0:])
+		result = append(result, buf[0:n]...)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return &amp;#34;&amp;#34;, err  // 我们在这里返回后，f 就会被关闭
+		}
+	}
+	return string(result), nil // 我们在这里返回后，f 就会被关闭
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;推迟诸如 Close 之类的函数调用有两点好处：&lt;br&gt;
+第一，它能确保你不会忘记关闭文件。如果你以后又为该函数添加了新的返回路径时，这种情况往往就会发生；&lt;br&gt;
+第二，它意味着“关闭”离“打开”很近，这总比将它放在函数结尾处要清晰明了。&lt;/p&gt;
+&lt;p&gt;使用 &lt;code&gt;defer&lt;/code&gt; 注意的点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;defer 函数的入参在defer 时确定&lt;br&gt;
+被推迟函数的实参（如果该函数为方法还包括接收者）在推迟执行时就会求值，而不是在调用执行时才求值。这样不仅无需担心变量在 defer 函数执行前被改变，还意味着可以给 defer 函数传递不同实参。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for i := 0; i &amp;lt; 5; i++ {
+	defer fmt.Printf(&amp;#34;%d &amp;#34;, i)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;多个defer函数的执行顺序为后进先出&lt;br&gt;
+被推迟的函数按照后进先出（Last In First Out，LIFO）的顺序执行，因此以上代码在函数返回时会打印 4 3 2 1 0。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;defer 函数在 return 语句赋值返回值与ret之间执行&lt;br&gt;
+return 语句不是原子操作，而是被拆成了两步&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;rval = xxx
+ret
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;而defer函数就是在这两条语句之间执行&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;rval = xxx
+defer_func
+ret
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;所以被defer 的函数可以读取和修改带名称的返回值&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 返回值为 2
+func c() (i int) {
+    defer func() { i++ }()
+    return 1
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;go&lt;/font&gt;&lt;br&gt;
+go 用于创建 Go 程（goroutine），实现并发编程。Go 程是与其它 Go 程并发运行在同一地址空间的函数，相比于线程与进程，它是轻量级的。Go 程在多线程操作系统上可实现多路复用，因此若一个线程阻塞，比如说等待 I/O，那么其它的线程就会运行。Go 程的设计隐藏了线程创建和管理的诸多复杂性。&lt;/p&gt;
+&lt;p&gt;在函数或方法前添加 go 关键字能够在新的 Go 程中调用它。当调用完成后，该 Go 程也会安静地退出。效果有点像 Unix Shell 中的 &amp;amp; 符号，它能让命令在后台运行。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;   
+	&amp;#34;time&amp;#34;  
+)
+
+func main() {
+	go func(){ 
+		fmt.Println(&amp;#34;in first goroutine&amp;#34;)
+	}()     
+	go func(){ 
+		fmt.Println(&amp;#34;in second goroutine&amp;#34;)
+	}()     
+
+	fmt.Println(&amp;#34;main thread start sleep, and other goroutine start execute&amp;#34;)
+	time.Sleep(10*time.Second)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出结果：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;main thread start sleep, and other goroutine start execute
+in second goroutine
+in first goroutine
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出结果得知，go程 的执行顺序和创建的顺序是没有关系的，也就是说存在多个 go程 时，其执行顺序是随机的。&lt;/p&gt;
+&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;select&lt;/font&gt;&lt;br&gt;
+select 语句用来选择一组中某个 case 中的发送或接收操作可以被立即执行。它类似于 switch 语句，但是它的 case 必须是一个通信操作。&lt;/p&gt;
+&lt;p&gt;也就是说 select 是用来监听和 channel 有关的 IO 操作，它与 select，poll，epoll 相似，当 IO 操作发生时，触发相应的动作，实现 IO 多路复用。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+    ch1 := make(chan int, 1)
+    ch2 := make(chan int, 1)
+
+    ch1 &amp;lt;- 3
+    ch2 &amp;lt;- 5
+
+    select {
+    case &amp;lt;- ch1:
+        fmt.Println(&amp;#34;ch1 selected&amp;#34;)
+    case &amp;lt;- ch2:
+        fmt.Println(&amp;#34;ch2 selected&amp;#34;)
+	default:
+		// 如果ch1与ch2没有数据到来，则进入default处理流程。如果没有default子句，则select一直阻塞等待ch1与ch2的数据到来
+		fmt.Println(&amp;#34;default&amp;#34;)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ch1 selected
+
+// 或者
+ch2 selected
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;从输出结果得知，当存在多个case满足条件，即有多个 channel 存在数据时，会随机地选择一个执行。&lt;br&gt;
+若想让某个 go程 永久阻塞，可以使用没有case和default语句的select：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;select{}
+
+# 等效于
+for{}
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>2.条件与循环</title>
+      <link>https://tinklespring.com/posts/2.%E6%9D%A1%E4%BB%B6%E4%B8%8E%E5%BE%AA%E7%8E%AF/</link>
+      <pubDate>Wed, 31 May 2023 11:18:24 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/2.%E6%9D%A1%E4%BB%B6%E4%B8%8E%E5%BE%AA%E7%8E%AF/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;接下来，go的条件与循环～&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;调用方法&#34;&gt;调用方法&lt;/h1&gt;
+&lt;p&gt;定义方法：与给定类型的值相关联的函数。&lt;/p&gt;
+&lt;p&gt;示例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	var now time.Time = time.Now()
+	var year int = now.Year()
+	fmt.Println(year)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;time 包有一个表示日期（年、月、日）和时间（小时、分钟、秒等）的Time类型。每一个&lt;code&gt;time.Time&lt;/code&gt;值都有一个返回年份的Year方法。&lt;br&gt;
+time.Now 函数返回当前日期和时间的新Time值，将其存储在now变量中，然后对now引用的值调用Year方法。&lt;br&gt;
+&lt;code&gt;方法是特定类型的值关联的函数&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;strings 包有一个Replacer类型，可以在字符串中搜索子字符串，并且在每次该子字符串出现的地方用另一个字符串替换它：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;strings&amp;#34;
+)
+
+func main() {
+	broken := &amp;#34;G# r#cks!&amp;#34;
+	replacer := strings.NewReplacer(&amp;#34;#&amp;#34;, &amp;#34;o&amp;#34;)
+	fixed := replacer.Replace(broken)
+	fmt.Println(fixed)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;strings.NewReplacer 函数接受要替换的字符串（&amp;quot;#&amp;quot;）和要替换为的字符串(&amp;ldquo;o&amp;rdquo;) 的参数，并返回给 strings.Replacer。当我们将一个字符串传递给 Replacer 值的 Replace 方法时，将返回一个完成了替换的字符串。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;点表示右边的东西属于左边&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;函数属于一个包，方法属于一个单独的值，这个值出现在点的左边。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;now.Year()
+replacer.Replace(broken)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上边 &lt;code&gt;now&lt;/code&gt; 为 值，&lt;code&gt;Year&lt;/code&gt; 为 方法名&lt;br&gt;
+&lt;code&gt;replacer&lt;/code&gt; 为 值， &lt;code&gt;Replace&lt;/code&gt; 为方法名&lt;/p&gt;
+&lt;h1 id=&#34;评分&#34;&gt;评分&lt;/h1&gt;
+&lt;p&gt;写一个程序：输入百分比分数，60% 分数及格，不足则不及格，输入的百分比大于或等于60，程序需要给出响应。&lt;/p&gt;
+&lt;h4 id=&#34;获取分数&#34;&gt;获取分数&lt;/h4&gt;
+&lt;p&gt;输入百分比分数，按回车键，把输入的数字存在一个变量中。
+当有一个值时，通常会分配一个变量，但不打算使用时，可以使用空白标识符。为空白标识符分配一个值实际上会丢弃它。在赋值语句中输入一个下划线 &lt;code&gt;_&lt;/code&gt; ，通常在这里输入的是变量名。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;bufio&amp;#34;
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;os&amp;#34;
+)
+
+func main() {
+	fmt.Print(&amp;#34;Enter a grade: &amp;#34;)
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString(&amp;#39;\n&amp;#39;)
+	fmt.Println(input)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;处理错误&#34;&gt;处理错误&lt;/h1&gt;
+&lt;p&gt;若从 ReadString 方法中得到一个错误返回，空白标识符只会导致错误忽略，程序依然继续运行，可能会使用无效的数据。&lt;br&gt;
+log 包有一个 Fatal 函数，可以同时为我们完成两步：将一条消息记录到终端并停止程序运行。（在上下文中，Fatal 是报告一个错误，并杀死你的程序。）&lt;br&gt;
+去掉空白标识符用一个 err 变量替换，可以记录错误，然后将使用 Fatal 函数来记录错误并停止程序运行。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;bufio&amp;#34;
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;log&amp;#34;
+	&amp;#34;os&amp;#34;
+)
+
+func main() {
+	fmt.Print(&amp;#34;Enter a grade: &amp;#34;)
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString(&amp;#39;\n&amp;#39;)
+	log.Fatal(err)
+	fmt.Println(input)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;条件&#34;&gt;条件&lt;/h1&gt;
+&lt;p&gt;若从键盘读取输入时遇到问题，将其设置为报告错误并停止运行，但是一切正常也停止运行。&lt;br&gt;
+ReadString 这样的函数和方法返回一个错误值nil，基本上意味着什么都没有，如果 err 为 nil ，表示没有错误，我们的程序被设置为只简单报告nil错误，正确做法是，当err变量的值不是nil时才退出程序。&lt;/p&gt;
+&lt;p&gt;可以使用条件语句，只有在满足某个条件时，才导致代码块（一个或多个由花括号&lt;code&gt;{}&lt;/code&gt;包围的语句）被执行的语句。&lt;/p&gt;
+&lt;p&gt;计算表达式，若结果为 true，则执行条件块体中的代码，若为false ，则跳过条件块。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if true {
+      fmt.Println(&amp;#34;xxxx&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if 1 &amp;lt; 2 {
+     fmt.Println(&amp;#34;xxxx&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;go支持条件语句中的多个分支：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if grade == 100 {
+           fmt.Println(&amp;#34;Perfect!&amp;#34;)
+} else if grade &amp;gt;= 60 {
+           fmt.Println(&amp;#34;Pass!&amp;#34;)
+} else {
+           fmt.Println(&amp;#34;Fail!&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;条件语句依赖布尔表达式（计算结果为true或false）来决定是否执行包含的代码。&lt;/p&gt;
+&lt;p&gt;当在条件为假时执行，可以使用 &lt;code&gt;!&lt;/code&gt; 布尔求反运算符。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if !true {
+    fmt.Println(&amp;#34;xxx&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;希望两个条件都为真时运行，使用&lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; （“与”）运算符，两者之一为真时运行，使用&lt;code&gt;||&lt;/code&gt;（“或”）运算符。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if true &amp;amp;&amp;amp; true {
+    fmt.Println(&amp;#34;xxxxx&amp;#34;)
+}
+
+if false || true {
+    fmt.Println(&amp;#34;xxxxx&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;go语言不要求 if 语句的条件用圆括号括起来。&lt;/p&gt;
+&lt;h1 id=&#34;有条件地记录致命错误&#34;&gt;有条件地记录致命错误&lt;/h1&gt;
+&lt;p&gt;若 err 变量中的值为 nil ，表示从键盘读取成功。更新代码记录错误，在err不是 nil 时退出。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;bufio&amp;#34;
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;log&amp;#34;
+	&amp;#34;os&amp;#34;
+)
+
+func main() {
+	fmt.Print(&amp;#34;Enter a grade: &amp;#34;)
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString(&amp;#39;\n&amp;#39;)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(input)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;重新运行程序，可以看到可以正常运行，若读取用户输入有错误，也可以看到这些错误。&lt;/p&gt;
+&lt;h1 id=&#34;避免遮盖名字&#34;&gt;避免遮盖名字&lt;/h1&gt;
+&lt;p&gt;避免使用缩写，但是命名 error变量不对，会遮盖一个名为 error 的类型名称。&lt;br&gt;
+声明变量时，应确保与任何现有的函数、包、类型或其他变量的名称不同。 若在封闭范围内存在同名的东西，变量将对其进行遮盖，也就是说优先级高，这不是一件好事。&lt;br&gt;
+但是若想访问变量遮盖的类型、函数或包，将得到变量中的值，此时，会导致编译错误。&lt;/p&gt;
+&lt;h1 id=&#34;将字符串转换为数字&#34;&gt;将字符串转换为数字&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;strings&lt;/code&gt; 包中有个 &lt;code&gt;TrimSpace&lt;/code&gt;函数，删除字符串开头和结尾的所有空白字符（换行符、制表符和常规空格）。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;s := &amp;#34;\t xxx \n&amp;#34;
+fmt.Println(strings.TrimSpace(s))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;字符串转换为数字，使用 &lt;code&gt;strconv&lt;/code&gt;包中的 &lt;code&gt;ParseFloat&lt;/code&gt;函数转换为 float64值。&lt;br&gt;
+&lt;code&gt;grade, err := strconv.ParseFloat(input, 64)&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;块和变量的作用域&#34;&gt;块和变量的作用域&lt;/h1&gt;
+&lt;p&gt;声明的每个变量都有一个作用域，可以在作用域内的任何地方被访问，但是在作用域之外访问会报错。&lt;br&gt;
+变量的作用域由其声明所在的块和嵌套在该块中任何块组成。&lt;/p&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/2-%e6%9d%a1%e4%bb%b6%e4%b8%8e%e5%be%aa%e7%8e%af/%e5%9d%97%e5%92%8c%e5%8f%98%e9%87%8f%e4%bd%9c%e7%94%a8%e5%9f%9f.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;packageVar 变量的作用域是整个 main 包，可以在包中定义的任何函数内的任何位置访问 packageVar。&lt;/li&gt;
+&lt;li&gt;functionVar 变量作用域是其声明所在的整个函数，包括嵌套在该函数中的if块。&lt;/li&gt;
+&lt;li&gt;conditionalVar 变量作用域仅限于if块，当试图在if块外访问conditionalVar，将报错。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;修改后的程序&#34;&gt;修改后的程序&lt;/h1&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/2-%e6%9d%a1%e4%bb%b6%e4%b8%8e%e5%be%aa%e7%8e%af/%e5%ae%8c%e6%95%b4%e7%a8%8b%e5%ba%8f.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h1 id=&#34;短变量声明中只有一个变量必须是新的&#34;&gt;短变量声明中只有一个变量必须是新的&lt;/h1&gt;
+&lt;p&gt;不能对一个变量声明两次。&lt;br&gt;
+但是当一个变量名在同一个作用域中被声明两次时，会编译报错。&lt;/p&gt;
+&lt;p&gt;但是，短变量声明中至少有一个变量名是新的，新变量名被视为声明，现有的被视为赋值。&lt;/p&gt;
+&lt;h1 id=&#34;练习&#34;&gt;练习&lt;/h1&gt;
+&lt;p&gt;需求：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;生成一个1到100之间的随机数，将其存储为目标数，供玩家猜测。&lt;/li&gt;
+&lt;li&gt;提示玩家猜测目标数是什么，存储他们的回答。&lt;/li&gt;
+&lt;li&gt;若玩家猜测的数小于目标数，就说“你猜低了”，若大于目标数，就说“你猜高了” 。&lt;/li&gt;
+&lt;li&gt;允许最多猜10次，在每次猜之前，让他们知道还剩多少次。&lt;/li&gt;
+&lt;li&gt;若猜的与目标数相同，就说“你猜对了”，然后不再问新的猜测。&lt;/li&gt;
+&lt;li&gt;若玩家用完了所有轮次也没猜对，就说“sorry，你没猜对，它是：[目标数]”&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;包名与导入路径&#34;&gt;包名与导入路径&lt;/h1&gt;
+&lt;p&gt;math/rand  包有一个 Intn 函数，可以生成一个随机数。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import ()
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;math/rand&amp;#34;
+
+func main() {
+    target := rand.Intn(100) + 1
+    fmt.Println(target)
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;math/rand&lt;/code&gt; 指的是包的导入路径，不是名称，导入路径是一个独特的字符串，用于标识包以及在导入语句中使用的包，一旦导入包，就可以通过包名来引用。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;导入路径&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;包名&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;fmt&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;fmt&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;log&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;log&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;strings&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;strings&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;archive&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;archive&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;archive/tar&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;tar&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;archive/zip&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;zip&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;math&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;math&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;math/cmplx&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;cmplx&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;math/rand&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;rand&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;有些包，导入路径与包名都相同，有些包属于类似的类别，被分组在类似的导入路径前缀。&lt;br&gt;
+go语言不要求包名与其导入路径有任何关系，按惯例，导入路径的最后（或唯一）一段也用作包名，比如“archive” 包名为 archive，若导入路径为 “archive/zip” 则包名为 zip 。&lt;/p&gt;
+&lt;h1 id=&#34;生成随机数&#34;&gt;生成随机数&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;math/rand&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	seconds := time.Now().Unix()
+	rand.Seed(seconds)
+	target := rand.Intn(100) + 1
+	fmt.Println(&amp;#34;I&amp;#39;ve chosen a random number between 1 and 100.&amp;#34;)
+	fmt.Println(&amp;#34;Can you guess it?&amp;#34;)
+	fmt.Println(target)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;从键盘获取整数&#34;&gt;从键盘获取整数&lt;/h1&gt;
+&lt;p&gt;不需要将输入转换为float64，需要将其转换为int（因为只使用整数）。将把从键盘读取的字符串传递给 strconv 包的 Atoi （字符串转整数）函数，不是它的 ParseFloat 函数，Atoi会给一个整数作为其返回值。&lt;/p&gt;
+&lt;h1 id=&#34;将猜测与目标进行比较&#34;&gt;将猜测与目标进行比较&lt;/h1&gt;
+&lt;p&gt;下一步将用户的猜测与随机生成的数字进行比较；&lt;br&gt;
+若值低于目标值，打印信息，说猜低了，否则若猜测值大于目标值，打印信息说猜高了。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;bufio&amp;#34;
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;log&amp;#34;
+	&amp;#34;math/rand&amp;#34;
+	&amp;#34;os&amp;#34;
+	&amp;#34;strconv&amp;#34;
+	&amp;#34;strings&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	seconds := time.Now().Unix()
+	rand.Seed(seconds)
+	target := rand.Intn(100) + 1
+	fmt.Println(&amp;#34;I&amp;#39;ve chosen a random number between 1 and 100.&amp;#34;)
+	fmt.Println(&amp;#34;Can you guess it?&amp;#34;)
+	fmt.Println(target)
+
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Print(&amp;#34;Make a guess: &amp;#34;)
+	input, err := reader.ReadString(&amp;#39;\n&amp;#39;)
+	if err != nil {
+		log.Fatal(err)
+	}
+	input = strings.TrimSpace(input)
+	guess, err := strconv.Atoi(input)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if guess &amp;lt; target {
+		fmt.Println(&amp;#34;your guess was low&amp;#34;)
+	} else if guess &amp;gt; target {
+		fmt.Println(&amp;#34;your guess was high&amp;#34;)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;循环&#34;&gt;循环&lt;/h1&gt;
+&lt;p&gt;循环以 for 关键字开头：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;一个初始化（或init）语句，用于初始化一个变量&lt;/li&gt;
+&lt;li&gt;一个条件表达式，用于决定何时中断循环&lt;/li&gt;
+&lt;li&gt;一个标志（post）语句，在循环的每次迭代后运行&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/2-%e6%9d%a1%e4%bb%b6%e4%b8%8e%e5%be%aa%e7%8e%af/%e5%be%aa%e7%8e%af.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;++&lt;/code&gt; 与 &lt;code&gt;--&lt;/code&gt; 经常用于循环的标志（post）语句中，&lt;code&gt;++&lt;/code&gt; 在每次求值时都会加1， &lt;code&gt;--&lt;/code&gt; 则会减1。&lt;/p&gt;
+&lt;p&gt;还包括赋值运算:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;+=&lt;/code&gt; 加上另一个值，然后将结果赋回给该变量&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-=&lt;/code&gt; 减去另一个值，然后将结果赋回给该变量
+&lt;code&gt;+=&lt;/code&gt; 与 &lt;code&gt;-=&lt;/code&gt; 可以在循环中用于1以外的增量计数。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for x := 1; x &amp;lt;= 5; x += 2 {
+       fmt.Println(x)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;初始化和标志post语句是可选的&#34;&gt;初始化和标志（post）语句是可选的&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;x := 1
+for x &amp;lt;= 3 {
+       fmt.Println(x)
+       x++
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用continue与break跳过循环&#34;&gt;使用“continue”与“break”跳过循环&lt;/h1&gt;
+&lt;p&gt;go 提供了两个控制循环流的两个关键字：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;continue ：立即跳转到循环的下一个迭代，不需要在循环块中运行任何其他代码&lt;/li&gt;
+&lt;li&gt;break：    立即跳出循环，不再执行循环块中的代码，也不再运行循环，执行将移动到循环之后的语句中。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for x := 1, x &amp;lt;= 3; x++ {
+       fmt.Println(&amp;#34;before continue&amp;#34;)
+       continue
+       fmt.Println(&amp;#34;after continue&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;字符串“after continue”将永远不会打印输出。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for x := 1; x &amp;lt;= 3; x++ {
+       fmt.Println(&amp;#34;before break&amp;#34;)
+       break
+       fmt.Println(&amp;#34;after break&amp;#34;)
+}
+fmt.Println(&amp;#34;after loop&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在循环第一次迭代中，“before break”被打印出，但随后break立即跳出循环，不打印 “after break”，也不再运行循环。&lt;/p&gt;
+&lt;h1 id=&#34;完整代码&#34;&gt;完整代码&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;bufio&amp;#34;
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;log&amp;#34;
+	&amp;#34;math/rand&amp;#34;
+	&amp;#34;os&amp;#34;
+	&amp;#34;strconv&amp;#34;
+	&amp;#34;strings&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	seconds := time.Now().Unix() //获取当前日期和时间的整数形式
+	rand.Seed(seconds)           //播种随机数生成器
+	target := rand.Intn(100) + 1 //生成一个介于1-100之间的整数
+	fmt.Println(&amp;#34;I&amp;#39;ve chosen a random number between 1 and 100.&amp;#34;)
+	fmt.Println(&amp;#34;Can you guess it?&amp;#34;)
+
+	reader := bufio.NewReader(os.Stdin) //创建一个buffio.Reader 允许读取键盘输入
+	success := false                    //设置为默认打印失败信息
+	for guesses := 0; guesses &amp;lt; 10; guesses++ {
+		fmt.Println(&amp;#34;you have&amp;#34;, 10-guesses, &amp;#34;guesses left.&amp;#34;)
+		fmt.Print(&amp;#34;Make a guess: &amp;#34;)
+		input, err := reader.ReadString(&amp;#39;\n&amp;#39;) //读取用户输入，直到按enter键
+		if err != nil {
+			log.Fatal(err)
+		} //若出现错误则打印信息并退出
+		input = strings.TrimSpace(input)  //删除换行符
+		guess, err := strconv.Atoi(input) //将输入字符转换为整数
+		if err != nil {
+			log.Fatal(err)
+		} //若出现错误则打印信息并退出
+
+		if guess &amp;lt; target {
+			fmt.Println(&amp;#34;your guess was low&amp;#34;)
+		} else if guess &amp;gt; target {
+			fmt.Println(&amp;#34;your guess was high&amp;#34;)
+		} else {
+			success = true //阻止显示失败信息
+			fmt.Println(&amp;#34;good job! you guessed it!&amp;#34;)
+			break //退出循环
+		}
+	}
+
+	if !success { //如果 “success” 是false，告诉玩家结果
+		fmt.Println(&amp;#34;sorry,you didn&amp;#39;t guess number.It was:&amp;#34;, target)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在循环之后，添加了一个if块来打印失败消息，if块只有在条件的计算结果为true时运行，我们希望success为false时执行打印，所以添加布尔求反运算符&lt;code&gt;!&lt;/code&gt;。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>1.golang语法基础</title>
+      <link>https://tinklespring.com/posts/1.golang%E8%AF%AD%E6%B3%95%E5%9F%BA%E7%A1%80/</link>
+      <pubDate>Thu, 25 May 2023 15:16:11 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/1.golang%E8%AF%AD%E6%B3%95%E5%9F%BA%E7%A1%80/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;go 语言打怪升级之路～&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;出发&#34;&gt;出发～&lt;/h1&gt;
+&lt;p&gt;让我们先来看一段代码&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+	fmt.Println(&amp;#34;Hello,World!&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;package main&lt;/code&gt; 这行表示文件中的所有其余代码都属于 &amp;ldquo;main&amp;rdquo; 包。&lt;br&gt;
+&lt;code&gt;import &amp;quot;fmt&amp;quot;&lt;/code&gt; 表示将使用 &amp;ldquo;fmt&amp;rdquo; 包中的文本格式代码。
+&lt;code&gt;func main()&lt;/code&gt;  &amp;ldquo;main&amp;rdquo; 函数比较特殊，当程序运行时它首先运行。&lt;br&gt;
+&lt;code&gt;fmt.Println&lt;/code&gt;  通过从 &amp;ldquo;fmt&amp;rdquo; 包调用 &amp;ldquo;Println&amp;rdquo; 函数来实现。&lt;br&gt;
+&lt;code&gt;Hello,World!&lt;/code&gt; 这一行会显示在终端或者web浏览器上。&lt;/p&gt;
+&lt;p&gt;每个go文件最后一部分都是实际代码，通常被分割成一个或多个function（函数）。function是由一行或多行代码组成的组，可以从程序中的其他位置调用（运行）。当一个程序运行时，会寻找一个名为main的函数并首先运行它，这就是为什么将这个函数命名为main的原因。&lt;/p&gt;
+&lt;h2 id=&#34;font-color0099ff-size3-face黑体go文件布局font&#34;&gt;&lt;font color=#0099ff size=3 face=&#34;黑体&#34;&gt;go文件布局&lt;/font&gt;&lt;/h2&gt;
+&lt;p&gt;可以发现几乎每个go文件中都是这三个部分。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;package 子句 &lt;code&gt;package main&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;任何import语句 &lt;code&gt;import &amp;quot;fmt&amp;quot;&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;实际代码&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        fmt.Println(&amp;#34;Hello,World!&amp;#34;) 
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;go 编译器带有标准格式化工具 &lt;code&gt;go fmt&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;调用函数&#34;&gt;调用函数&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;fmt.Println(&amp;quot;First argument&amp;quot;, &amp;quot;Second argument&amp;quot;)&lt;/code&gt;&lt;br&gt;
+&lt;code&gt;fmt&lt;/code&gt; 为包名；&lt;br&gt;
+&lt;code&gt;Println&lt;/code&gt; 为函数名；&lt;/p&gt;
+&lt;h1 id=&#34;函数返回值&#34;&gt;函数返回值&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;math&amp;#34;
+	&amp;#34;strings&amp;#34;
+)
+
+func main() {
+	math.Floor(2.75)
+	strings.Title(&amp;#34;how are you&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这个程序不产生任何输出。&lt;br&gt;
+要查看函数调用的结果，需要获取返回值并将其传递给 &lt;code&gt;fmt.Println&lt;/code&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;math&amp;#34;
+	&amp;#34;strings&amp;#34;
+)
+
+func main() {
+	fmt.Println(math.Floor(2.75))
+	fmt.Println(strings.Title(&amp;#34;how are you&amp;#34;))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;字符串&#34;&gt;字符串&lt;/h1&gt;
+&lt;p&gt;字符串是一系列字节，表示文本字符，在代码中可以使用字符串字面量来定义字符串：双引号之间的文本，go将其视为字符串。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;转义序列&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;值&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;\n&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;换行符&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;\t&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;制表符&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;\&amp;quot;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;双引号&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;\\&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;反斜杠&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;示例&lt;/font&gt;&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;输入&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;输出&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;&amp;quot;Hello,\nGo!&amp;quot;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;hello,&lt;br&gt;Go!&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;&amp;quot;Hello,\tGo!&amp;quot;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;Hello, Go!&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;&amp;quot;Quotes: \&amp;quot;\&amp;quot;&amp;quot;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;Quotes: &amp;quot;&amp;quot;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;&amp;quot;Backslash: \\&amp;quot;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;Backslash: \&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h1 id=&#34;符文&#34;&gt;符文&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;字符串通常表示一系列文本字符，go的符文（&lt;code&gt;rune&lt;/code&gt;）则用于表示单个字符。&lt;/li&gt;
+&lt;li&gt;字符串字面量由双引号 &lt;code&gt;&amp;quot;&amp;quot;&lt;/code&gt; 包围，但 &lt;code&gt;rune&lt;/code&gt; 字面量由单引号 &lt;code&gt;&#39;&#39;&lt;/code&gt; 包围。&lt;/li&gt;
+&lt;li&gt;go可以使用地球上任何语言的任何字符，因为go 使用Unicode标准来存储rune，rune被保存为数字代码，而不是字符本身，如果把rune传递给 &lt;code&gt;fmt.Println&lt;/code&gt; ，会在输出中看到数字代码，而不是原始字符。&lt;/li&gt;
+&lt;li&gt;与字符串字面量一样，转义序列也可以用在rune字面量中，用来表示程序代码中难以包含的字符。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;布尔值&#34;&gt;布尔值&lt;/h1&gt;
+&lt;p&gt;布尔值只能是两个值的其中一个：&lt;code&gt;true&lt;/code&gt; 或 &lt;code&gt;false&lt;/code&gt; .&lt;/p&gt;
+&lt;p&gt;他们对条件语句特别有用，条件语句只在条件为 &lt;code&gt;true&lt;/code&gt; 或 &lt;code&gt;false&lt;/code&gt; 时才会运行代码。&lt;/p&gt;
+&lt;h1 id=&#34;数字&#34;&gt;数字&lt;/h1&gt;
+&lt;p&gt;还可以直接在代码中定义数字，比字符串字面量更简单：只需要输入数字即可。&lt;/p&gt;
+&lt;p&gt;go 将整数和浮点数视为不同的类型，可以使用小数点来区分整数和浮点数。&lt;/p&gt;
+&lt;h1 id=&#34;数学运算与比较&#34;&gt;数学运算与比较&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;+&lt;/code&gt; 表示加法&lt;br&gt;
+&lt;code&gt;-&lt;/code&gt; 表示减法&lt;br&gt;
+&lt;code&gt;*&lt;/code&gt; 表示乘法&lt;br&gt;
+&lt;code&gt;/&lt;/code&gt; 表示除法&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;&amp;lt;&lt;/code&gt; 与 &lt;code&gt;&amp;gt;&lt;/code&gt; 比较两个值&lt;br&gt;
+&lt;code&gt;&amp;gt;=&lt;/code&gt; 与 &lt;code&gt;&amp;lt;=&lt;/code&gt; 比较两个值大于等于或小于等于&lt;br&gt;
+&lt;code&gt;==&lt;/code&gt;  比较两个是否相等&lt;br&gt;
+&lt;code&gt;!=&lt;/code&gt;  比较两个值是否不相等&lt;/p&gt;
+&lt;p&gt;比较的结果是一个&lt;code&gt;布尔值&lt;/code&gt;，&lt;code&gt;true&lt;/code&gt; 和 &lt;code&gt;false&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;类型&#34;&gt;类型&lt;/h1&gt;
+&lt;p&gt;go中的值都被划分为不同的类型，这些类型指定了这些值的用途。整数可以用在数学运算中，但是字符串不可以；字符串可以大写，但是数字不能。&lt;/p&gt;
+&lt;p&gt;go是静态类型的，在程序运行之前就知道值的类型。&lt;br&gt;
+函数期望它们的参数具有特定的类型，返回值也具有类型（可能与参数类型相同，也可能不同）。&lt;br&gt;
+&lt;font color=#0099ff size=3 face=&#34;黑体&#34;&gt;go是静态类型，在错误的位置使用了错误的值类型，go会告诉你。&lt;/font&gt;&lt;/p&gt;
+&lt;p&gt;可以将任何值传递给reflect包的TypeOf函数：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;reflect&amp;#34;
+)
+
+func main() {
+	fmt.Println(reflect.TypeOf(42))
+	fmt.Println(reflect.TypeOf(3.1415))
+	fmt.Println(reflect.TypeOf(true))
+	fmt.Println(reflect.TypeOf(&amp;#34;Hello, World!&amp;#34;))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;int
+float64
+bool
+string
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;类型用途：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;类型&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;int&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;整型。保存数字&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;float64&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;浮点数。保存带小数部分的数字（类型名中的64是因为要用64位的数据来保存数字。这意味着四舍五入之前，float64值可以相当精确，但不能无限精确）&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;bool&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;布尔值。只能是true或false&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;string&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;字符串，通常表示文本字符的一系列数据&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h1 id=&#34;声明变量&#34;&gt;声明变量&lt;/h1&gt;
+&lt;p&gt;在go中，变量是包含值的一块存储。可以使用变量声明为变量命名，使用关键字&lt;code&gt;var&lt;/code&gt;，后跟所需的名称以及变量将保存的值的类型 &lt;code&gt;var 变量名 类型&lt;/code&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var quantity int
+var length, width float64
+var customerName string
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;声明变量后，可以用 &lt;code&gt;=&lt;/code&gt; 为其分配该类型的任何值。&lt;/p&gt;
+&lt;p&gt;可以在同一语句中为多个变量赋值，将变量名放在 &lt;code&gt;=&lt;/code&gt; 左边，将相同数量的值放右边，用逗号分隔，如：&lt;br&gt;
+&lt;code&gt;length, width = 1.2, 2.4&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;给变量赋值后，可以在任何使用要使用原始值的上下文中使用：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+)
+
+func main() {
+	//声明变量
+	var quantity int
+	var length, width float64
+	var customerName string
+
+	//给变量赋值
+	quantity = 4
+	length, width = 1.2, 2.4
+	customerName = &amp;#34;Domain cole&amp;#34;
+
+	//使用变量
+	fmt.Println(customerName)
+	fmt.Println(&amp;#34;has ordered&amp;#34;, quantity, &amp;#34;sheets&amp;#34;)
+	fmt.Println(&amp;#34;each with an area of&amp;#34;)
+	fmt.Println(length*width, &amp;#34;squence meters&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Domain cole
+has ordered 4 sheets
+each with an area of
+2.88 squence meters
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若提前知道变量值是什么，可以在声明变量时一起赋值：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//声明变量并赋值
+var quantity int = 4
+var length, width float64 = 1.2, 2.4
+var customerName string = &amp;#34;Domain cole&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以为现有变量分配新值，但必须是相同类型的值。go的静态类型确保不会将错误的类型赋值给变量。&lt;/p&gt;
+&lt;p&gt;在声明变量的同时赋值，可以在变量声明中省略变量类型，分配给变量的值的类型将用作该变量的类型。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var quantity = 4
+var length, width = 1.2, 2.4
+var customerName = &amp;#34;Domain cole&amp;#34;
+fmt.Println(reflect.TypeOf(quantity))
+fmt.Println(reflect.TypeOf(length))
+fmt.Println(reflect.TypeOf(width))
+fmt.Println(reflect.TypeOf(customerName))
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;零值&#34;&gt;零值&lt;/h1&gt;
+&lt;p&gt;若声明一个变量而没有给其赋值，则该变量将包含其类型的零值。对于数值类型，零值就是0。&lt;br&gt;
+&lt;code&gt;int&lt;/code&gt; 变量零值 &lt;code&gt;0&lt;/code&gt;&lt;br&gt;
+&lt;code&gt;float64&lt;/code&gt; 变量零值 &lt;code&gt;0&lt;/code&gt;&lt;br&gt;
+&lt;code&gt;string&lt;/code&gt;  变量零值 &lt;code&gt;空字符串&lt;/code&gt;&lt;br&gt;
+&lt;code&gt;bool&lt;/code&gt; 变量零值 &lt;code&gt;false&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;短变量声明&#34;&gt;短变量声明&lt;/h1&gt;
+&lt;p&gt;若声明变量时就知道初始值，可以使用短变量声明。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+)
+
+func main() {
+	quantity := 4
+	length, width := 1.2, 2.4
+	customerName := &amp;#34;Domain cole&amp;#34;
+
+	fmt.Println(customerName)
+	fmt.Println(&amp;#34;has ordered&amp;#34;, quantity, &amp;#34;sheets&amp;#34;)
+	fmt.Println(&amp;#34;each with an area of&amp;#34;)
+	fmt.Println(length*width, &amp;#34;squence meters&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不需要声明变量的类型，赋给变量的值的类型成为该变量的类型。&lt;/p&gt;
+&lt;h1 id=&#34;命名规则&#34;&gt;命名规则&lt;/h1&gt;
+&lt;p&gt;适用于变量、函数和类型的名称：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;名称必须以字母开头，可以有任意数量的额外的字母和数字。&lt;/li&gt;
+&lt;li&gt;若变量、函数或类型的名称以大写字母开头，则认为是可导出的，可以从当前包之外的包访问它。&lt;/li&gt;
+&lt;li&gt;若变量、函数或类型的名称以小写字母开头，则认为该名称是未导出的，只能在当前包中使用。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;以上是go语言强制执行的唯一规则。&lt;/p&gt;
+&lt;p&gt;社区约定：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;若一个名称由多个单词组成，那么第一个单词之后的每个单词的首字母大写，且连接在一起，中间没有空格。（第一个单词首字母，只有想从包中导出时才应大写。）&lt;/li&gt;
+&lt;li&gt;当名称的含义在上下文中很明显时，社区惯例是缩写，用i代替index，max代替maximum等。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;转换&#34;&gt;转换&lt;/h1&gt;
+&lt;p&gt;go中的数学运算和比较运算要求包含的值应具有相同的类型，若不同，则会运行报错。
+&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;示例&lt;/font&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var length float64 = 1.2
+var width int = 2
+fmt.Println(&amp;#34;Area is&amp;#34;, length*width)
+fmt.Println(&amp;#34;length &amp;gt; width?&amp;#34;, length &amp;gt; width)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;invalid operation: length * width (mismatched types float64 and int)
+invalid operation: length &amp;gt; width (mismatched types float64 and int)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;为变量分配新值也一样，若所赋值的类型与变量的声明类型不匹配也会报错：&lt;br&gt;
+将int值赋给float64变量&amp;hellip;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var length float64 = 1.2
+var width int = 2
+length = width
+fmt.Println(length)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;报错：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;cannot use width (type int) as type float64 in assignment
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;怎么解决呢？当然是使用转换，转换允许将值从一种类型转换为另一种类型，只需提供要将值转换成的类型，后面紧接着是在圆括号中要转换的值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var myInt int = 2
+float64(myInt)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;结果是所需类型的新值。&lt;/p&gt;
+&lt;p&gt;对整型变量中的值调用TypeOf，在转换为float64后对相同的值再次调用TypeOf：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var myInt int = 2
+fmt.Println(reflect.TypeOf(myInt))
+fmt.Println(reflect.TypeOf(float64(myInt)))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;int
+float64
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在进行转换时，它们可能会更改结果值，float64变量可以存储小数值，但int不可以，将float64转换为int时，小数部分会被删掉。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>ssh密钥类型选择</title>
+      <link>https://tinklespring.com/posts/ssh%E5%AF%86%E9%92%A5%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9/</link>
+      <pubDate>Thu, 25 May 2023 13:37:48 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/ssh%E5%AF%86%E9%92%A5%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9/</guid>
+      <description>&lt;p&gt;As everyone knows，ssh key can improve ssh connection security.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;RSA（Rivest–Shamir–Adleman）是最早的公钥密码系统之一，被广泛用于安全数据传输。它的安全性取决于整数分解，因此永远不需要安全的RNG（随机数生成器）。与DSA相比，RSA的签名验证速度更快，但生成速度较慢。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;DSA（数字签名算法）是用于数字签名的联邦信息处理标准。它的安全性取决于离散的对数问题。与RSA相比，DSA的签名生成速度更快，但验证速度较慢。如果使用错误的数字生成器，可能会破坏安全性。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;ECDSA（椭圆曲线数字签名算法）是DSA（数字签名算法）的椭圆曲线实现。椭圆曲线密码术能够以较小的密钥提供与RSA相对相同的安全级别。它还具有DSA对不良RNG敏感的缺点。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;EdDSA（爱德华兹曲线数字签名算法）是一种使用基于扭曲爱德华兹曲线的Schnorr签名变体的数字签名方案。签名创建在EdDSA中是确定性的，其安全性是基于某些离散对数问题的难处理性，因此它比DSA和ECDSA更安全，后者要求每个签名都具有高质量的随机性。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Ed25519是EdDSA签名方案，但使用SHA-512 / 256和Curve25519；它是一条安全的椭圆形曲线，比DSA，ECDSA和EdDSA 提供更好的安全性，并且具有更好的性能（人为注意）。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ssh key的类型有四种，分别是dsa、rsa、 ecdsa、ed25519。&lt;/p&gt;
+&lt;p&gt;根据数学特性，这四种类型又可以分为两大类，dsa/rsa是一类，ecdsa/ed25519是一类，后者算法更先进。&lt;/p&gt;
+&lt;p&gt;dsa因为安全问题，已不再使用了。&lt;/p&gt;
+&lt;p&gt;ecdsa因为政治原因和技术原因，也不推荐使用。&lt;/p&gt;
+&lt;p&gt;rsa是目前兼容性最好的，应用最广泛的key类型，在用ssh-keygen工具生成key的时候，默认使用的也是这种类型。不过在生成key时，如果指定的key size太小的话，也是有安全问题的，推荐key size是3072或更大。&lt;/p&gt;
+&lt;p&gt;ed25519是目前最安全、加解密速度最快的key类型，由于其数学特性，它的key的长度比rsa小很多，优先推荐使用。它目前唯一的问题就是兼容性，即在旧版本的ssh工具集中可能无法使用。&lt;/p&gt;
+&lt;h2 id=&#34;综合来看优先选择ed25519&#34;&gt;综合来看，优先选择ed25519&lt;/h2&gt;
+&lt;p&gt;下面来简介下如何生成&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ssh-keygen -t ed25519 -C &amp;#34;yourname&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Proxmox高可用集群</title>
+      <link>https://tinklespring.com/posts/proxmox%E9%AB%98%E5%8F%AF%E7%94%A8%E9%9B%86%E7%BE%A4/</link>
+      <pubDate>Wed, 24 May 2023 09:25:07 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/proxmox%E9%AB%98%E5%8F%AF%E7%94%A8%E9%9B%86%E7%BE%A4/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;接上文proxmox安装～&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h4 id=&#34;安装集群顺序&#34;&gt;安装集群顺序&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;安装proxmox&lt;/li&gt;
+&lt;li&gt;创建并加入集群&lt;/li&gt;
+&lt;li&gt;创建&lt;code&gt;pveceph&lt;/code&gt;分布式存储&lt;/li&gt;
+&lt;li&gt;创建高可用&lt;/li&gt;
+&lt;li&gt;创建虚拟机并测试&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;创建bond网络&#34;&gt;创建Bond网络&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;创建bond，&amp;ldquo;slaves&amp;rdquo; 选择需要做bond的网卡名字，以空格区分&lt;/li&gt;
+&lt;li&gt;创建Linux Bridge，桥接端口选择bond网卡名字&lt;/li&gt;
+&lt;li&gt;若需要虚拟机网络隔离，则需要继续创建 Linux Vlan&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;安装pveceph&#34;&gt;安装pveceph&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;所有节点执行 &lt;code&gt;pveceph install&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;任意一个节点执行初始化pveceph存储网络 &lt;code&gt;pveceph init --network 10.255.255.0/24&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;至少需要三个节点执行，创建ceph监视器 &lt;code&gt;pveceph createmon&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;创建ceph osd:&lt;/li&gt;
+&lt;/ol&gt;
+&lt;ul&gt;
+&lt;li&gt;选择物理节点&lt;/li&gt;
+&lt;li&gt;ceph &amp;ndash;&amp;gt; osd&lt;/li&gt;
+&lt;li&gt;点击创建，每次只能加一个&lt;/li&gt;
+&lt;li&gt;多个节点则依次排着添加&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ol start=&#34;5&#34;&gt;
+&lt;li&gt;创建 &lt;code&gt;ceph osd crush rule&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ceph osd crush rule create-replicated rule-ssd default  host ssd
+ceph osd crush rule create-replicated rule-hdd default  host hdd
+&lt;/code&gt;&lt;/pre&gt;&lt;ol start=&#34;6&#34;&gt;
+&lt;li&gt;查看：&lt;code&gt;ceph osd crush rule ls&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;创建ceph pools
+&lt;code&gt;of_PGs&lt;/code&gt; 官方建议：少于5个osd，值为128；5-10个，值为512；10-50个，值为4096；&lt;/li&gt;
+&lt;/ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;这里没找到具体实际的，设置4096貌似报错了～
+&lt;code&gt;crush rule&lt;/code&gt;根据osd类型选择对应的。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;ol start=&#34;8&#34;&gt;
+&lt;li&gt;创建高可用组&lt;/li&gt;
+&lt;/ol&gt;
+&lt;ul&gt;
+&lt;li&gt;选择 &amp;lsquo;数据中心&amp;rsquo;&lt;/li&gt;
+&lt;li&gt;选择 &amp;lsquo;HA&amp;rsquo; &amp;ndash;&amp;gt; &amp;lsquo;群组&amp;rsquo;&lt;/li&gt;
+&lt;li&gt;选择创建，将所需节点添加&lt;/li&gt;
+&lt;li&gt;选择 &amp;lsquo;HA&amp;rsquo; &amp;ndash;&amp;gt; &amp;lsquo;资源&amp;rsquo;&lt;/li&gt;
+&lt;li&gt;选择添加，将需要的vm加入即可，请求状态为 started&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;此时，即可使 vm 成为高可用，当宿主机宕机后，vm会漂移至其他节点。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>K3s初体验</title>
+      <link>https://tinklespring.com/posts/k3s%E5%88%9D%E4%BD%93%E9%AA%8C/</link>
+      <pubDate>Tue, 23 May 2023 14:13:37 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/k3s%E5%88%9D%E4%BD%93%E9%AA%8C/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;本文使用离线安装方式&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;1.下载k3s 二进制程序与images &lt;code&gt;https://github.com/k3s-io/k3s/releases&lt;/code&gt;&lt;br&gt;
+2.下载安装脚本 &lt;code&gt;https://get.k3s.io&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;将tar 文件放到下边这个目录内。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;mkdir -p /var/lib/rancher/k3s/agent/images/
+cp ./k3s-airgap-images-$ARCH.tar /var/lib/rancher/k3s/agent/images/
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;执行脚本
+&lt;code&gt;INSTALL_K3S_SKIP_DOWNLOAD=true ./install.sh&lt;/code&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[INFO]  Skipping k3s download and verify
+[INFO]  Skipping installation of SELinux RPM
+[INFO]  Creating /usr/local/bin/kubectl symlink to k3s
+[INFO]  Creating /usr/local/bin/crictl symlink to k3s
+[INFO]  Creating /usr/local/bin/ctr symlink to k3s
+[INFO]  Creating killall script /usr/local/bin/k3s-killall.sh
+[INFO]  Creating uninstall script /usr/local/bin/k3s-uninstall.sh
+[INFO]  env: Creating environment file /etc/systemd/system/k3s.service.env
+[INFO]  systemd: Creating service file /etc/systemd/system/k3s.service
+[INFO]  systemd: Enabling k3s unit
+Created symlink /etc/systemd/system/multi-user.target.wants/k3s.service → /etc/systemd/system/k3s.service.
+[INFO]  systemd: Starting k3s
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;至此单节点安装完成。只部署server 端，即可拥有全部功能。&lt;/p&gt;
+&lt;p&gt;扩展增加agent节点：&lt;br&gt;
+获取token:&lt;br&gt;
+&lt;code&gt;cat /var/lib/rancher/k3s/server/token&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;将&lt;code&gt;SERVER_IP&lt;/code&gt;与token换成对应的，执行如下命令添加agent节点&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;INSTALL_K3S_SKIP_DOWNLOAD=true K3S_URL=https://&amp;lt;SERVER_IP&amp;gt;:6443 K3S_TOKEN=&amp;lt;YOUR_TOKEN&amp;gt; ./install.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;升级：&lt;br&gt;
+升级也比较简单，只需将新版本images与k3s二进制程序替换，重新执行安装脚本即可&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Proxmox安装</title>
+      <link>https://tinklespring.com/posts/proxmox%E5%AE%89%E8%A3%85/</link>
+      <pubDate>Tue, 23 May 2023 10:24:44 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/proxmox%E5%AE%89%E8%A3%85/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;本文使用非系统镜像模式安装&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;安装debian系统&#34;&gt;安装debian系统&lt;/h1&gt;
+&lt;h1 id=&#34;配置debian网卡&#34;&gt;配置debian网卡&lt;/h1&gt;
+&lt;blockquote&gt;
+&lt;p&gt;服务器需要使用两个网口，一个access，一个trunk，这里使用access 口，trunk 口给Linux Bridge使用。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;auto ens3
+iface ens3 inet static
+address 192.168.100.80
+netmask 255.255.255.0
+gateway 192.168.100.254
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;安装proxmox&#34;&gt;安装proxmox&lt;/h1&gt;
+&lt;blockquote&gt;
+&lt;p&gt;将主机名写入hosts文件&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;echo &amp;#34;10.20.0.10    pve-00&amp;#34; &amp;gt;&amp;gt; /etc/hosts
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;配置debian11-apt源&#34;&gt;配置debian11 apt源&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;cat &amp;gt; /etc/apt/sources.list &amp;lt;&amp;lt; EOF
+deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye main contrib non-free
+deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye main contrib non-free
+deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye-updates main contrib non-free
+deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye-updates main contrib non-free
+deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye-backports main contrib non-free
+deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye-backports main contrib non-free
+deb https://mirrors.tuna.tsinghua.edu.cn/debian-security bullseye-security main contrib non-free
+deb-src https://mirrors.tuna.tsinghua.edu.cn/debian-security bullseye-security main contrib non-free
+EOF
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;添加pve源&#34;&gt;添加pve源&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;echo &amp;quot;deb [arch=amd64] https://mirrors.tuna.tsinghua.edu.cn/proxmox/debian bullseye pve-no-subscription&amp;quot; &amp;gt; /etc/apt/sources.list.d/pve-install-repo.list&lt;/code&gt;&lt;/p&gt;
+&lt;h2 id=&#34;添加pve-存储库密钥&#34;&gt;添加pve 存储库密钥&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;wget https://enterprise.proxmox.com/debian/proxmox-release-bullseye.gpg -O /etc/apt/trusted.gpg.d/proxmox-release-bullseye.gpg&lt;/code&gt;&lt;/p&gt;
+&lt;h2 id=&#34;更新系统&#34;&gt;更新系统&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;apt update &amp;amp;&amp;amp; apt upgrade&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;安装proxmox-1&#34;&gt;安装proxmox&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;apt install proxmox-ve postfix open-iscsi&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;删除os-prober&#34;&gt;删除os-prober&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;apt remove os-prober linux-image-amd64&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;去除订阅提示&#34;&gt;去除订阅提示&lt;/h1&gt;
+&lt;blockquote&gt;
+&lt;p&gt;更改 /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js 文件&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Ext.Msg.show({
+title: gettext(&amp;#39;No valid subscription&amp;#39;),
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;更改为&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;void({
+title: gettext(&amp;#39;No valid subscription&amp;#39;),
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;配置网络&#34;&gt;配置网络&lt;/h1&gt;
+&lt;p&gt;1.选择网络&lt;br&gt;
+2.创建 -&amp;gt; Linux Bridge&lt;br&gt;
+名称：vmbr0&lt;br&gt;
+自动启动：✅&lt;br&gt;
+VLAN感知：✅&lt;br&gt;
+桥接端口：选择上述从交换机trunk口接的网卡名称&lt;br&gt;
+3.再次创建 -&amp;gt; Linux VLAN&lt;br&gt;
+名称：vmbr0.2000&lt;br&gt;
+IPv4/CIDR：x.x.x.x/24&lt;br&gt;
+网关(IPv4)：VLAN tag 2000的网关地址&lt;br&gt;
+自动启动：✅&lt;br&gt;
+4.点击应用配置使网卡配置生效&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;注意，这里的2000是VLAN的tag号,此种方式，可以实现不同的vm在不同的vlan里，方便进行网络层面的管控&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;添加存储&#34;&gt;添加存储&lt;/h1&gt;
+&lt;p&gt;1.选择 数据中心&lt;br&gt;
+2.选择 存储&lt;br&gt;
+3.选择 添加 目录&lt;br&gt;
+这里使用本机的存储，也可使用其他类型，根据实际情况选择即可&lt;/p&gt;
+&lt;h1 id=&#34;添加集群&#34;&gt;添加集群&lt;/h1&gt;
+&lt;p&gt;创建名为pve-cluster名字的pve集群&lt;br&gt;
+&lt;code&gt;pvecm create pve-cluster&lt;/code&gt;&lt;br&gt;
+在需要加入集群的节点上执行&lt;br&gt;
+&lt;code&gt;pvecm add x.x.x.x&lt;/code&gt;&lt;br&gt;
+只能允许没有虚拟机的节点才能加入集群，需要注意&lt;/p&gt;
+&lt;h1 id=&#34;查看状态&#34;&gt;查看状态&lt;/h1&gt;
+&lt;p&gt;查看集群状态：&lt;code&gt;pvecm status&lt;/code&gt;&lt;br&gt;
+查看集群节点：&lt;code&gt;pvecm nodes&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;至此，安装完成&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>About</title>
+      <link>https://tinklespring.com/about/</link>
+      <pubDate>Mon, 22 May 2023 18:33:06 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/about/</guid>
+      <description>&lt;p&gt;Super man!&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Rsync&#43;inotify数据实时同步</title>
+      <link>https://tinklespring.com/posts/rsync&#43;inotify%E6%95%B0%E6%8D%AE%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5/</link>
+      <pubDate>Mon, 22 May 2023 16:51:53 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/rsync&#43;inotify%E6%95%B0%E6%8D%AE%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;不啰嗦,不介绍rsync用法,直接实现使用&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h3 id=&#34;rsyncdconf配置&#34;&gt;rsyncd.conf配置&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;# vim /etc/rsyncd.conf
+port=873
+log file=/var/log/rsync.log
+pid file=/var/run/rsyncd.pid
+[test]
+path=/home/test_server
+use chroot=true
+max connections=4
+read only=no
+list=false
+uid=root
+gid=root
+auth users=test
+secrets file=/etc/rsync.pass
+hosts allow=192.168.0.31
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;auth users 与系统用户没有任何关系,只在这里指定使用.
+secrets file 是auth users这个用户的信息,内容格式 : &lt;code&gt;test:123456&lt;/code&gt;,为了安全,将此文件更改为600的权限.&lt;/p&gt;
+&lt;h4 id=&#34;启动&#34;&gt;启动&lt;/h4&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;# rsync --daemon
+# ss -lntp |grep rsync
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以查看到rsync服务的873的端口&lt;/p&gt;
+&lt;h3 id=&#34;安装inotify-tools&#34;&gt;安装inotify-tools&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;# wget http://github.com/downloads/rvoicilas/inotify-tools/inotify-tools-3.14.tar.gz
+# yum install –y gcc
+# mkdir /usr/local/inotify
+# tar -xzf inotify-tools-3.14.tar.gz
+# cd inotify-tools-3.14
+# ./configure --prefix=/usr/local/inotify/
+# make &amp;amp;&amp;amp; make install
+# echo &amp;#39;export PATH=/usr/local/inotify/bin/:$PATH&amp;#39; &amp;gt;&amp;gt; /etc/profile
+# . /etc/profile
+# echo &amp;#39;/usr/local/inotify/lib&amp;#39; &amp;gt;&amp;gt; /etc/ld.so.conf --加载库文件
+# ldconfig
+# ln -s /usr/local/inotify/include /usr/include/inotify
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;常用参数&#34;&gt;常用参数&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;-m —始终保持监听状态，默认触发事件即退出
+-r —递归查询目录
+-q —打印出监控事件
+-e —定义监控的事件，可用参数：
+access —访问文件
+modify —修改文件
+attrib —属性变更
+open —打开文件
+delete —删除文件
+create —新建文件
+move —文件移动
+—fromfile —从文件读取需要监视的文件或者排除的文件，一个文件一行，排除的文件以@开头
+—timefmt —时间格式
+—format —输出格式
+—exclude —正则匹配需要排除的文件，大小写敏感
+—excludei —正则匹配需要排除的文件，忽略大小写
+%y%m%d %H%M —年月日时钟
+%T%w%f%e —时间路径文件名状态
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;查看系统是否支持&#34;&gt;查看系统是否支持&lt;/h4&gt;
+&lt;p&gt;使用&lt;code&gt;ll /proc/sys/fs/inotify&lt;/code&gt;命令，是否有以下三条信息输出，如果没有表示不支持。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;-rw-r--r-- 1 root root 0 Dec 11 15:23 max_queued_events
+-rw-r--r-- 1 root root 0 Dec 11 15:23 max_user_instances
+-rw-r--r-- 1 root root 0 Dec 11 15:23 max_user_watches
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;max_queued_events&lt;/code&gt;表示调用inotify_init时分配给inotify instance中可排队的event的数目的最大值，超出这个值的事件被丢弃，但会触发IN_Q_OVERFLOW事件。
+&lt;code&gt;/proc/sys/fs/inotify/max_user_instances&lt;/code&gt;表示每一个real user ID可创建的inotify instatnces的数量上限。
+&lt;code&gt;/proc/sys/fs/inotify/max_user_watches&lt;/code&gt;表示每个inotify instatnces可监控的最大目录数量。如果监控的文件数目巨大，需要根据情况，适当增加此值的大小。&lt;/p&gt;
+&lt;h3 id=&#34;编辑同步脚本&#34;&gt;编辑同步脚本&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;#!/bin/bash
+/usr/local/inotify/bin/inotifywait -mrq -e modify,create,move,delete,attrib /home/test31/test31 | while read events
+do
+rsync -a --bwlimit=200 /home/test31/test31 test@192.168.0.30::test --password-file=/home/password.txt
+echo &amp;#34;`date +&amp;#39;%F %T&amp;#39;` 出现事件：$events&amp;#34; &amp;gt;&amp;gt; /tmp/rsync.log 2&amp;gt;&amp;amp;1
+done
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;--password-file&lt;/code&gt;这个参数用来写auth users的密码,权限也改为600
+&lt;code&gt;--bwlimit=200&lt;/code&gt;这个参数限制传输速率为200kb,若不限制,会导致巨大的CPU消耗.&lt;/p&gt;
+&lt;p&gt;当然,也可以在目标机器上也写一个这样的脚本,用来实现双向同步&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

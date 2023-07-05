@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>3.函数&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.003a667cf21024ef30f2985fb57c9bd6f6873cf899ee14e9302e68e9f04b681df9440cec4ebdaa101dca533a262c242f.css" integrity="sha384-ADpmfPIQJO8w8phftXyb1vaHPPiZ7hTpMC5o6fBLaB35RAzsTr2qEB3KUzomLCQv"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="3.函数" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">3.函数</h1><p class="article date">Thursday, June 29, 2023</p></section><article class="article markdown-body"><h1 id="printf-与-sprintf-格式化输出">Printf 与 Sprintf 格式化输出</h1>
+<p>Printf 代表“带格式的打印”，接受一个字符串并将一个或多个值插入其中，以特定的方式进行格式化，然后打印结果字符串。<br>
+Sprintf函数（也是fmt包的一部分）的工作方式与Printf 类似，不过返回格式化的字符串而不是打印。</p>
+<pre tabindex="0"><code>fmt.Printf(&#34;About one-third: %0.2f\n&#34;, 1.0/3.0)
+</code></pre><pre tabindex="0"><code>resultString := fmt.Sprintf(&#34;About one-third: %0.2f\n&#34;, 1.0/3.0)
+fmt.Printf(resultString)
+</code></pre><p>Printf的两个特性：</p>
+<ul>
+<li>格式化动词（字符串中的%0.2f是动词）</li>
+<li>值的宽度（动词中间的0.2）</li>
+</ul>
+<h1 id="格式化动词">格式化动词</h1>
+<p>Printf第一个参数是一个字符串，用于格式化输出，大部分格式与字符串中显示的格式完全相同，但是任何 <code>%</code> 都将被视为格式化动词的开始，字符串的一部分将被特定格式的值所替换，其余参数用作这些动词的值。</p>
+<p><code>%</code> 后面的字母表示要使用哪个动词，常见动词：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">动词</th>
+<th style="text-align:center">输出</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">%f</td>
+<td style="text-align:center">浮点数</td>
+</tr>
+<tr>
+<td style="text-align:center">%d</td>
+<td style="text-align:center">十进制整数</td>
+</tr>
+<tr>
+<td style="text-align:center">%s</td>
+<td style="text-align:center">字符串</td>
+</tr>
+<tr>
+<td style="text-align:center">%t</td>
+<td style="text-align:center">布尔值（true或false）</td>
+</tr>
+<tr>
+<td style="text-align:center">%v</td>
+<td style="text-align:center">任何值（根据所提供的值的类型选择适当的格式）</td>
+</tr>
+<tr>
+<td style="text-align:center">%#v</td>
+<td style="text-align:center">任何值，按其在go程序代码中显示的格式进行格式化</td>
+</tr>
+<tr>
+<td style="text-align:center">%T</td>
+<td style="text-align:center">所提供值的类型（int、string）</td>
+</tr>
+<tr>
+<td style="text-align:center">%%</td>
+<td style="text-align:center">一个完全的百分号</td>
+</tr>
+</tbody>
+</table>
+<p>示例：</p>
+<pre tabindex="0"><code>fmt.Printf(&#34;A float: %f\n&#34;, 3.1415)
+fmt.Printf(&#34;An integer: %d\n&#34;, 15)
+fmt.Printf(&#34;A string: %s\n&#34;, &#34;hello&#34;)
+fmt.Printf(&#34;A boolean: %t\n&#34;, false)
+fmt.Printf(&#34;Values: %v %v %v\n&#34;, 1.2, &#34;\t&#34;, true)
+fmt.Printf(&#34;Values: %#v %#v %#v\n&#34;, 1.2, &#34;\t&#34;, true)
+fmt.Printf(&#34;Types: %T %T %T\n&#34;, 1.2, &#34;\t&#34;, true)
+fmt.Printf(&#34;Percent sign: %%\n&#34;)
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>A float: 3.141500
+An integer: 15
+A string: hello
+A boolean: false
+Values: 1.2       true
+Values: 1.2  &#34;\t&#34; true
+Types: float64 string bool
+Percent sign: %
+</code></pre><p>确保使用 \n 转义序列在每个格式化字符串的末尾添加一个换行符，因为与Println不同，Printf不会自动添加新行。</p>
+<pre tabindex="0"><code>fmt.Printf(&#34;%v %v %v&#34;, &#34;&#34;, &#34;\t&#34;, &#34;\n&#34;)
+fmt.Printf(&#34;%#v %#v %#v&#34;, &#34;&#34;, &#34;\t&#34;, &#34;\n&#34;)
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>
+&#34;&#34; &#34;\t&#34; &#34;\n&#34;
+</code></pre><p>%#v 可以显示一些值，不实用%#v，这些值可能会在输出中隐藏，上述 空字符串、制表符、换行符，在 %v 打印时是不可见的。</p>
+<h1 id="格式化宽度">格式化宽度</h1>
+<p>可以在格式化动词的百分号后面指定最小宽度，若该动词参数比最小宽度短，则使用空格填充。</p>
+<pre tabindex="0"><code>fmt.Printf(&#34;%12s | %s\n&#34;, &#34;Product&#34;, &#34;Cost in Cents&#34;)
+fmt.Printf(&#34;%12s | %s\n&#34;, &#34;Stamps&#34;, 50)
+fmt.Printf(&#34;%12s | %s\n&#34;, &#34;Paper Clips&#34;, 5)
+fmt.Printf(&#34;%12s | %s\n&#34;, &#34;Tape&#34;, 99)
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>     Product | Cost in Cents
+      Stamps | 50
+ Paper Clips |  5
+        Tape | 99
+</code></pre><h1 id="格式化小数宽度">格式化小数宽度</h1>
+<p>整个数的最小宽度包括数字位和小数点，若包括，较短的数将在开始处填充空格，直到达到这个宽度，若省略，则不会添加任何空格。<br>
+小数点后的宽度是要显示的小数位数，若是更精确的数字，将被四舍五入。</p>
+<pre tabindex="0"><code>fmt.Printf(&#34;%%7.3f: %7.3f\n&#34;, 12.3456)
+fmt.Printf(&#34;%%7.2f: %7.2f\n&#34;, 12.3456)
+fmt.Printf(&#34;%%7.1f: %7.1f\n&#34;, 12.3456)
+fmt.Printf(&#34;%%.1f: %.1f\n&#34;, 12.3456)
+fmt.Printf(&#34;%%.2f: %.2f\n&#34;, 12.3456)
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>%7.3f:   12.346
+%7.2f:    12.35
+%7.1f:     12.3
+%.1f:  12.3
+%.2f:  12.35
+</code></pre><p><code>%.2f</code> 将允许取任意精度的浮点数，并将它们四舍五入到小数点后两位。（不会做任何不必要的填充）。</p>
+<h1 id="声明函数">声明函数</h1>
+<p>声明以func关键字开头，后面跟希望函数具有的名称、一对圆括号()，然后是包含函数代码的块。<br>
+一旦声明了一个函数，就可以在包的其他地方调用，只需输入函数名，后面跟一对圆括号。当执行此操作时，函数快中的代码就会运行。</p>
+<p>示例：</p>
+<pre tabindex="0"><code>package main
+import &#34;fmt&#34;
+func sayHi() {
+       fmt.Println(&#34;Hi!&#34;)
+}
+func main() {
+       sayHi()
+}
+</code></pre></article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/1-1.golang25%E4%B8%AA%E4%BF%9D%E7%95%99%E5%85%B3%E9%94%AE%E5%AD%97/"><span class="iconfont icon-article"></span>1-1.golang25个保留关键字</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>

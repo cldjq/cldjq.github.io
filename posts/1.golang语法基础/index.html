@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>1.golang语法基础&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.003a667cf21024ef30f2985fb57c9bd6f6873cf899ee14e9302e68e9f04b681df9440cec4ebdaa101dca533a262c242f.css" integrity="sha384-ADpmfPIQJO8w8phftXyb1vaHPPiZ7hTpMC5o6fBLaB35RAzsTr2qEB3KUzomLCQv"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="1.golang语法基础" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">1.golang语法基础</h1><p class="article date">Thursday, May 25, 2023</p></section><article class="article markdown-body"><blockquote>
+<p>go 语言打怪升级之路～</p>
+</blockquote>
+<h1 id="出发">出发～</h1>
+<p>让我们先来看一段代码</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+func main() {
+	fmt.Println(&#34;Hello,World!&#34;)
+}
+</code></pre><p><code>package main</code> 这行表示文件中的所有其余代码都属于 &ldquo;main&rdquo; 包。<br>
+<code>import &quot;fmt&quot;</code> 表示将使用 &ldquo;fmt&rdquo; 包中的文本格式代码。
+<code>func main()</code>  &ldquo;main&rdquo; 函数比较特殊，当程序运行时它首先运行。<br>
+<code>fmt.Println</code>  通过从 &ldquo;fmt&rdquo; 包调用 &ldquo;Println&rdquo; 函数来实现。<br>
+<code>Hello,World!</code> 这一行会显示在终端或者web浏览器上。</p>
+<p>每个go文件最后一部分都是实际代码，通常被分割成一个或多个function（函数）。function是由一行或多行代码组成的组，可以从程序中的其他位置调用（运行）。当一个程序运行时，会寻找一个名为main的函数并首先运行它，这就是为什么将这个函数命名为main的原因。</p>
+<h2 id="font-color0099ff-size3-face黑体go文件布局font"><font color=#0099ff size=3 face="黑体">go文件布局</font></h2>
+<p>可以发现几乎每个go文件中都是这三个部分。</p>
+<ol>
+<li>package 子句 <code>package main</code></li>
+<li>任何import语句 <code>import &quot;fmt&quot;</code></li>
+<li>实际代码</li>
+</ol>
+<pre tabindex="0"><code>func main() {
+        fmt.Println(&#34;Hello,World!&#34;) 
+}
+</code></pre><p>go 编译器带有标准格式化工具 <code>go fmt</code></p>
+<h1 id="调用函数">调用函数</h1>
+<p><code>fmt.Println(&quot;First argument&quot;, &quot;Second argument&quot;)</code><br>
+<code>fmt</code> 为包名；<br>
+<code>Println</code> 为函数名；</p>
+<h1 id="函数返回值">函数返回值</h1>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;math&#34;
+	&#34;strings&#34;
+)
+
+func main() {
+	math.Floor(2.75)
+	strings.Title(&#34;how are you&#34;)
+}
+</code></pre><p>这个程序不产生任何输出。<br>
+要查看函数调用的结果，需要获取返回值并将其传递给 <code>fmt.Println</code></p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+	&#34;math&#34;
+	&#34;strings&#34;
+)
+
+func main() {
+	fmt.Println(math.Floor(2.75))
+	fmt.Println(strings.Title(&#34;how are you&#34;))
+}
+</code></pre><h1 id="字符串">字符串</h1>
+<p>字符串是一系列字节，表示文本字符，在代码中可以使用字符串字面量来定义字符串：双引号之间的文本，go将其视为字符串。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">转义序列</th>
+<th style="text-align:center">值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><code>\n</code></td>
+<td style="text-align:center">换行符</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>\t</code></td>
+<td style="text-align:center">制表符</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>\&quot;</code></td>
+<td style="text-align:center">双引号</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>\\</code></td>
+<td style="text-align:center">反斜杠</td>
+</tr>
+</tbody>
+</table>
+<p><font color=#0099ff size=2 face="黑体">示例</font></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">输入</th>
+<th style="text-align:center">输出</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><code>&quot;Hello,\nGo!&quot;</code></td>
+<td style="text-align:center">hello,<br>Go!</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>&quot;Hello,\tGo!&quot;</code></td>
+<td style="text-align:center">Hello, Go!</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>&quot;Quotes: \&quot;\&quot;&quot;</code></td>
+<td style="text-align:center">Quotes: &quot;&quot;</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>&quot;Backslash: \\&quot;</code></td>
+<td style="text-align:center">Backslash: \</td>
+</tr>
+</tbody>
+</table>
+<h1 id="符文">符文</h1>
+<ul>
+<li>字符串通常表示一系列文本字符，go的符文（<code>rune</code>）则用于表示单个字符。</li>
+<li>字符串字面量由双引号 <code>&quot;&quot;</code> 包围，但 <code>rune</code> 字面量由单引号 <code>''</code> 包围。</li>
+<li>go可以使用地球上任何语言的任何字符，因为go 使用Unicode标准来存储rune，rune被保存为数字代码，而不是字符本身，如果把rune传递给 <code>fmt.Println</code> ，会在输出中看到数字代码，而不是原始字符。</li>
+<li>与字符串字面量一样，转义序列也可以用在rune字面量中，用来表示程序代码中难以包含的字符。</li>
+</ul>
+<h1 id="布尔值">布尔值</h1>
+<p>布尔值只能是两个值的其中一个：<code>true</code> 或 <code>false</code> .</p>
+<p>他们对条件语句特别有用，条件语句只在条件为 <code>true</code> 或 <code>false</code> 时才会运行代码。</p>
+<h1 id="数字">数字</h1>
+<p>还可以直接在代码中定义数字，比字符串字面量更简单：只需要输入数字即可。</p>
+<p>go 将整数和浮点数视为不同的类型，可以使用小数点来区分整数和浮点数。</p>
+<h1 id="数学运算与比较">数学运算与比较</h1>
+<p><code>+</code> 表示加法<br>
+<code>-</code> 表示减法<br>
+<code>*</code> 表示乘法<br>
+<code>/</code> 表示除法</p>
+<p><code>&lt;</code> 与 <code>&gt;</code> 比较两个值<br>
+<code>&gt;=</code> 与 <code>&lt;=</code> 比较两个值大于等于或小于等于<br>
+<code>==</code>  比较两个是否相等<br>
+<code>!=</code>  比较两个值是否不相等</p>
+<p>比较的结果是一个<code>布尔值</code>，<code>true</code> 和 <code>false</code></p>
+<h1 id="类型">类型</h1>
+<p>go中的值都被划分为不同的类型，这些类型指定了这些值的用途。整数可以用在数学运算中，但是字符串不可以；字符串可以大写，但是数字不能。</p>
+<p>go是静态类型的，在程序运行之前就知道值的类型。<br>
+函数期望它们的参数具有特定的类型，返回值也具有类型（可能与参数类型相同，也可能不同）。<br>
+<font color=#0099ff size=3 face="黑体">go是静态类型，在错误的位置使用了错误的值类型，go会告诉你。</font></p>
+<p>可以将任何值传递给reflect包的TypeOf函数：</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+	&#34;reflect&#34;
+)
+
+func main() {
+	fmt.Println(reflect.TypeOf(42))
+	fmt.Println(reflect.TypeOf(3.1415))
+	fmt.Println(reflect.TypeOf(true))
+	fmt.Println(reflect.TypeOf(&#34;Hello, World!&#34;))
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>int
+float64
+bool
+string
+</code></pre><p>类型用途：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">类型</th>
+<th style="text-align:center">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><code>int</code></td>
+<td style="text-align:center">整型。保存数字</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>float64</code></td>
+<td style="text-align:center">浮点数。保存带小数部分的数字（类型名中的64是因为要用64位的数据来保存数字。这意味着四舍五入之前，float64值可以相当精确，但不能无限精确）</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>bool</code></td>
+<td style="text-align:center">布尔值。只能是true或false</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>string</code></td>
+<td style="text-align:center">字符串，通常表示文本字符的一系列数据</td>
+</tr>
+</tbody>
+</table>
+<h1 id="声明变量">声明变量</h1>
+<p>在go中，变量是包含值的一块存储。可以使用变量声明为变量命名，使用关键字<code>var</code>，后跟所需的名称以及变量将保存的值的类型 <code>var 变量名 类型</code></p>
+<pre tabindex="0"><code>var quantity int
+var length, width float64
+var customerName string
+</code></pre><p>声明变量后，可以用 <code>=</code> 为其分配该类型的任何值。</p>
+<p>可以在同一语句中为多个变量赋值，将变量名放在 <code>=</code> 左边，将相同数量的值放右边，用逗号分隔，如：<br>
+<code>length, width = 1.2, 2.4</code></p>
+<p>给变量赋值后，可以在任何使用要使用原始值的上下文中使用：</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+)
+
+func main() {
+	//声明变量
+	var quantity int
+	var length, width float64
+	var customerName string
+
+	//给变量赋值
+	quantity = 4
+	length, width = 1.2, 2.4
+	customerName = &#34;Domain cole&#34;
+
+	//使用变量
+	fmt.Println(customerName)
+	fmt.Println(&#34;has ordered&#34;, quantity, &#34;sheets&#34;)
+	fmt.Println(&#34;each with an area of&#34;)
+	fmt.Println(length*width, &#34;squence meters&#34;)
+}
+</code></pre><p>输出:</p>
+<pre tabindex="0"><code>Domain cole
+has ordered 4 sheets
+each with an area of
+2.88 squence meters
+</code></pre><p>若提前知道变量值是什么，可以在声明变量时一起赋值：</p>
+<pre tabindex="0"><code>//声明变量并赋值
+var quantity int = 4
+var length, width float64 = 1.2, 2.4
+var customerName string = &#34;Domain cole&#34;
+</code></pre><p>可以为现有变量分配新值，但必须是相同类型的值。go的静态类型确保不会将错误的类型赋值给变量。</p>
+<p>在声明变量的同时赋值，可以在变量声明中省略变量类型，分配给变量的值的类型将用作该变量的类型。</p>
+<pre tabindex="0"><code>var quantity = 4
+var length, width = 1.2, 2.4
+var customerName = &#34;Domain cole&#34;
+fmt.Println(reflect.TypeOf(quantity))
+fmt.Println(reflect.TypeOf(length))
+fmt.Println(reflect.TypeOf(width))
+fmt.Println(reflect.TypeOf(customerName))
+</code></pre><h1 id="零值">零值</h1>
+<p>若声明一个变量而没有给其赋值，则该变量将包含其类型的零值。对于数值类型，零值就是0。<br>
+<code>int</code> 变量零值 <code>0</code><br>
+<code>float64</code> 变量零值 <code>0</code><br>
+<code>string</code>  变量零值 <code>空字符串</code><br>
+<code>bool</code> 变量零值 <code>false</code></p>
+<h1 id="短变量声明">短变量声明</h1>
+<p>若声明变量时就知道初始值，可以使用短变量声明。</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+)
+
+func main() {
+	quantity := 4
+	length, width := 1.2, 2.4
+	customerName := &#34;Domain cole&#34;
+
+	fmt.Println(customerName)
+	fmt.Println(&#34;has ordered&#34;, quantity, &#34;sheets&#34;)
+	fmt.Println(&#34;each with an area of&#34;)
+	fmt.Println(length*width, &#34;squence meters&#34;)
+}
+</code></pre><p>不需要声明变量的类型，赋给变量的值的类型成为该变量的类型。</p>
+<h1 id="命名规则">命名规则</h1>
+<p>适用于变量、函数和类型的名称：</p>
+<ul>
+<li>名称必须以字母开头，可以有任意数量的额外的字母和数字。</li>
+<li>若变量、函数或类型的名称以大写字母开头，则认为是可导出的，可以从当前包之外的包访问它。</li>
+<li>若变量、函数或类型的名称以小写字母开头，则认为该名称是未导出的，只能在当前包中使用。</li>
+</ul>
+<p>以上是go语言强制执行的唯一规则。</p>
+<p>社区约定：</p>
+<ul>
+<li>若一个名称由多个单词组成，那么第一个单词之后的每个单词的首字母大写，且连接在一起，中间没有空格。（第一个单词首字母，只有想从包中导出时才应大写。）</li>
+<li>当名称的含义在上下文中很明显时，社区惯例是缩写，用i代替index，max代替maximum等。</li>
+</ul>
+<h1 id="转换">转换</h1>
+<p>go中的数学运算和比较运算要求包含的值应具有相同的类型，若不同，则会运行报错。
+<font color=#0099ff size=2 face="黑体">示例</font></p>
+<pre tabindex="0"><code>var length float64 = 1.2
+var width int = 2
+fmt.Println(&#34;Area is&#34;, length*width)
+fmt.Println(&#34;length &gt; width?&#34;, length &gt; width)
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>invalid operation: length * width (mismatched types float64 and int)
+invalid operation: length &gt; width (mismatched types float64 and int)
+</code></pre><p>为变量分配新值也一样，若所赋值的类型与变量的声明类型不匹配也会报错：<br>
+将int值赋给float64变量&hellip;</p>
+<pre tabindex="0"><code>var length float64 = 1.2
+var width int = 2
+length = width
+fmt.Println(length)
+</code></pre><p>报错：</p>
+<pre tabindex="0"><code>cannot use width (type int) as type float64 in assignment
+</code></pre><p>怎么解决呢？当然是使用转换，转换允许将值从一种类型转换为另一种类型，只需提供要将值转换成的类型，后面紧接着是在圆括号中要转换的值。</p>
+<pre tabindex="0"><code>var myInt int = 2
+float64(myInt)
+</code></pre><p>结果是所需类型的新值。</p>
+<p>对整型变量中的值调用TypeOf，在转换为float64后对相同的值再次调用TypeOf：</p>
+<pre tabindex="0"><code>var myInt int = 2
+fmt.Println(reflect.TypeOf(myInt))
+fmt.Println(reflect.TypeOf(float64(myInt)))
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>int
+float64
+</code></pre><p>在进行转换时，它们可能会更改结果值，float64变量可以存储小数值，但int不可以，将float64转换为int时，小数部分会被删掉。</p>
+</article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/2.%E6%9D%A1%E4%BB%B6%E4%B8%8E%E5%BE%AA%E7%8E%AF/"><span class="iconfont icon-article"></span>2.条件与循环</a></p><p><a class="link" href="/posts/ssh%E5%AF%86%E9%92%A5%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9/"><span class="iconfont icon-article"></span>ssh密钥类型选择</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>
