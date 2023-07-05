@@ -139,9 +139,409 @@ func main() {
     </item>
     
     <item>
+      <title>2.条件与循环</title>
+      <link>https://tinklespring.com/posts/2.%E6%9D%A1%E4%BB%B6%E4%B8%8E%E5%BE%AA%E7%8E%AF/</link>
+      <pubDate>Wed, 31 May 2023 11:33:55 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/2.%E6%9D%A1%E4%BB%B6%E4%B8%8E%E5%BE%AA%E7%8E%AF/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;接下来，go的条件与循环～&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;调用方法&#34;&gt;调用方法&lt;/h1&gt;
+&lt;p&gt;定义方法：与给定类型的值相关联的函数。&lt;/p&gt;
+&lt;p&gt;示例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	var now time.Time = time.Now()
+	var year int = now.Year()
+	fmt.Println(year)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;time 包有一个表示日期（年、月、日）和时间（小时、分钟、秒等）的Time类型。每一个&lt;code&gt;time.Time&lt;/code&gt;值都有一个返回年份的Year方法。&lt;br&gt;
+time.Now 函数返回当前日期和时间的新Time值，将其存储在now变量中，然后对now引用的值调用Year方法。&lt;br&gt;
+&lt;code&gt;方法是特定类型的值关联的函数&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;strings 包有一个Replacer类型，可以在字符串中搜索子字符串，并且在每次该子字符串出现的地方用另一个字符串替换它：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;strings&amp;#34;
+)
+
+func main() {
+	broken := &amp;#34;G# r#cks!&amp;#34;
+	replacer := strings.NewReplacer(&amp;#34;#&amp;#34;, &amp;#34;o&amp;#34;)
+	fixed := replacer.Replace(broken)
+	fmt.Println(fixed)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;strings.NewReplacer 函数接受要替换的字符串（&amp;quot;#&amp;quot;）和要替换为的字符串(&amp;ldquo;o&amp;rdquo;) 的参数，并返回给 strings.Replacer。当我们将一个字符串传递给 Replacer 值的 Replace 方法时，将返回一个完成了替换的字符串。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;点表示右边的东西属于左边&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;函数属于一个包，方法属于一个单独的值，这个值出现在点的左边。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;now.Year()
+replacer.Replace(broken)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上边 &lt;code&gt;now&lt;/code&gt; 为 值，&lt;code&gt;Year&lt;/code&gt; 为 方法名&lt;br&gt;
+&lt;code&gt;replacer&lt;/code&gt; 为 值， &lt;code&gt;Replace&lt;/code&gt; 为方法名&lt;/p&gt;
+&lt;h1 id=&#34;评分&#34;&gt;评分&lt;/h1&gt;
+&lt;p&gt;写一个程序：输入百分比分数，60% 分数及格，不足则不及格，输入的百分比大于或等于60，程序需要给出响应。&lt;/p&gt;
+&lt;h4 id=&#34;获取分数&#34;&gt;获取分数&lt;/h4&gt;
+&lt;p&gt;输入百分比分数，按回车键，把输入的数字存在一个变量中。
+当有一个值时，通常会分配一个变量，但不打算使用时，可以使用空白标识符。为空白标识符分配一个值实际上会丢弃它。在赋值语句中输入一个下划线 &lt;code&gt;_&lt;/code&gt; ，通常在这里输入的是变量名。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;bufio&amp;#34;
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;os&amp;#34;
+)
+
+func main() {
+	fmt.Print(&amp;#34;Enter a grade: &amp;#34;)
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString(&amp;#39;\n&amp;#39;)
+	fmt.Println(input)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;处理错误&#34;&gt;处理错误&lt;/h1&gt;
+&lt;p&gt;若从 ReadString 方法中得到一个错误返回，空白标识符只会导致错误忽略，程序依然继续运行，可能会使用无效的数据。&lt;br&gt;
+log 包有一个 Fatal 函数，可以同时为我们完成两步：将一条消息记录到终端并停止程序运行。（在上下文中，Fatal 是报告一个错误，并杀死你的程序。）&lt;br&gt;
+去掉空白标识符用一个 err 变量替换，可以记录错误，然后将使用 Fatal 函数来记录错误并停止程序运行。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;bufio&amp;#34;
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;log&amp;#34;
+	&amp;#34;os&amp;#34;
+)
+
+func main() {
+	fmt.Print(&amp;#34;Enter a grade: &amp;#34;)
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString(&amp;#39;\n&amp;#39;)
+	log.Fatal(err)
+	fmt.Println(input)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;条件&#34;&gt;条件&lt;/h1&gt;
+&lt;p&gt;若从键盘读取输入时遇到问题，将其设置为报告错误并停止运行，但是一切正常也停止运行。&lt;br&gt;
+ReadString 这样的函数和方法返回一个错误值nil，基本上意味着什么都没有，如果 err 为 nil ，表示没有错误，我们的程序被设置为只简单报告nil错误，正确做法是，当err变量的值不是nil时才退出程序。&lt;/p&gt;
+&lt;p&gt;可以使用条件语句，只有在满足某个条件时，才导致代码块（一个或多个由花括号&lt;code&gt;{}&lt;/code&gt;包围的语句）被执行的语句。&lt;/p&gt;
+&lt;p&gt;计算表达式，若结果为 true，则执行条件块体中的代码，若为false ，则跳过条件块。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if true {
+      fmt.Println(&amp;#34;xxxx&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if 1 &amp;lt; 2 {
+     fmt.Println(&amp;#34;xxxx&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;go支持条件语句中的多个分支：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if grade == 100 {
+           fmt.Println(&amp;#34;Perfect!&amp;#34;)
+} else if grade &amp;gt;= 60 {
+           fmt.Println(&amp;#34;Pass!&amp;#34;)
+} else {
+           fmt.Println(&amp;#34;Fail!&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;条件语句依赖布尔表达式（计算结果为true或false）来决定是否执行包含的代码。&lt;/p&gt;
+&lt;p&gt;当在条件为假时执行，可以使用 &lt;code&gt;!&lt;/code&gt; 布尔求反运算符。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if !true {
+    fmt.Println(&amp;#34;xxx&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;希望两个条件都为真时运行，使用&lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; （“与”）运算符，两者之一为真时运行，使用&lt;code&gt;||&lt;/code&gt;（“或”）运算符。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if true &amp;amp;&amp;amp; true {
+    fmt.Println(&amp;#34;xxxxx&amp;#34;)
+}
+
+if false || true {
+    fmt.Println(&amp;#34;xxxxx&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;go语言不要求 if 语句的条件用圆括号括起来。&lt;/p&gt;
+&lt;h1 id=&#34;有条件地记录致命错误&#34;&gt;有条件地记录致命错误&lt;/h1&gt;
+&lt;p&gt;若 err 变量中的值为 nil ，表示从键盘读取成功。更新代码记录错误，在err不是 nil 时退出。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;bufio&amp;#34;
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;log&amp;#34;
+	&amp;#34;os&amp;#34;
+)
+
+func main() {
+	fmt.Print(&amp;#34;Enter a grade: &amp;#34;)
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString(&amp;#39;\n&amp;#39;)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(input)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;重新运行程序，可以看到可以正常运行，若读取用户输入有错误，也可以看到这些错误。&lt;/p&gt;
+&lt;h1 id=&#34;避免遮盖名字&#34;&gt;避免遮盖名字&lt;/h1&gt;
+&lt;p&gt;避免使用缩写，但是命名 error变量不对，会遮盖一个名为 error 的类型名称。&lt;br&gt;
+声明变量时，应确保与任何现有的函数、包、类型或其他变量的名称不同。 若在封闭范围内存在同名的东西，变量将对其进行遮盖，也就是说优先级高，这不是一件好事。&lt;br&gt;
+但是若想访问变量遮盖的类型、函数或包，将得到变量中的值，此时，会导致编译错误。&lt;/p&gt;
+&lt;h1 id=&#34;将字符串转换为数字&#34;&gt;将字符串转换为数字&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;strings&lt;/code&gt; 包中有个 &lt;code&gt;TrimSpace&lt;/code&gt;函数，删除字符串开头和结尾的所有空白字符（换行符、制表符和常规空格）。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;s := &amp;#34;\t xxx \n&amp;#34;
+fmt.Println(strings.TrimSpace(s))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;字符串转换为数字，使用 &lt;code&gt;strconv&lt;/code&gt;包中的 &lt;code&gt;ParseFloat&lt;/code&gt;函数转换为 float64值。&lt;br&gt;
+&lt;code&gt;grade, err := strconv.ParseFloat(input, 64)&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;块和变量的作用域&#34;&gt;块和变量的作用域&lt;/h1&gt;
+&lt;p&gt;声明的每个变量都有一个作用域，可以在作用域内的任何地方被访问，但是在作用域之外访问会报错。&lt;br&gt;
+变量的作用域由其声明所在的块和嵌套在该块中任何块组成。&lt;/p&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/2-%e6%9d%a1%e4%bb%b6%e4%b8%8e%e5%be%aa%e7%8e%af/%e5%9d%97%e5%92%8c%e5%8f%98%e9%87%8f%e4%bd%9c%e7%94%a8%e5%9f%9f.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;packageVar 变量的作用域是整个 main 包，可以在包中定义的任何函数内的任何位置访问 packageVar。&lt;/li&gt;
+&lt;li&gt;functionVar 变量作用域是其声明所在的整个函数，包括嵌套在该函数中的if块。&lt;/li&gt;
+&lt;li&gt;conditionalVar 变量作用域仅限于if块，当试图在if块外访问conditionalVar，将报错。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;修改后的程序&#34;&gt;修改后的程序&lt;/h1&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/2-%e6%9d%a1%e4%bb%b6%e4%b8%8e%e5%be%aa%e7%8e%af/%e5%ae%8c%e6%95%b4%e7%a8%8b%e5%ba%8f.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h1 id=&#34;短变量声明中只有一个变量必须是新的&#34;&gt;短变量声明中只有一个变量必须是新的&lt;/h1&gt;
+&lt;p&gt;不能对一个变量声明两次。&lt;br&gt;
+但是当一个变量名在同一个作用域中被声明两次时，会编译报错。&lt;/p&gt;
+&lt;p&gt;但是，短变量声明中至少有一个变量名是新的，新变量名被视为声明，现有的被视为赋值。&lt;/p&gt;
+&lt;h1 id=&#34;练习&#34;&gt;练习&lt;/h1&gt;
+&lt;p&gt;需求：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;生成一个1到100之间的随机数，将其存储为目标数，供玩家猜测。&lt;/li&gt;
+&lt;li&gt;提示玩家猜测目标数是什么，存储他们的回答。&lt;/li&gt;
+&lt;li&gt;若玩家猜测的数小于目标数，就说“你猜低了”，若大于目标数，就说“你猜高了” 。&lt;/li&gt;
+&lt;li&gt;允许最多猜10次，在每次猜之前，让他们知道还剩多少次。&lt;/li&gt;
+&lt;li&gt;若猜的与目标数相同，就说“你猜对了”，然后不再问新的猜测。&lt;/li&gt;
+&lt;li&gt;若玩家用完了所有轮次也没猜对，就说“sorry，你没猜对，它是：[目标数]”&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;包名与导入路径&#34;&gt;包名与导入路径&lt;/h1&gt;
+&lt;p&gt;math/rand  包有一个 Intn 函数，可以生成一个随机数。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import ()
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;math/rand&amp;#34;
+
+func main() {
+    target := rand.Intn(100) + 1
+    fmt.Println(target)
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;math/rand&lt;/code&gt; 指的是包的导入路径，不是名称，导入路径是一个独特的字符串，用于标识包以及在导入语句中使用的包，一旦导入包，就可以通过包名来引用。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;导入路径&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;包名&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;fmt&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;fmt&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;log&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;log&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;strings&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;strings&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;archive&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;archive&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;archive/tar&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;tar&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;archive/zip&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;zip&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;math&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;math&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;math/cmplx&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;cmplx&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;math/rand&amp;rdquo;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;rand&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;有些包，导入路径与包名都相同，有些包属于类似的类别，被分组在类似的导入路径前缀。&lt;br&gt;
+go语言不要求包名与其导入路径有任何关系，按惯例，导入路径的最后（或唯一）一段也用作包名，比如“archive” 包名为 archive，若导入路径为 “archive/zip” 则包名为 zip 。&lt;/p&gt;
+&lt;h1 id=&#34;生成随机数&#34;&gt;生成随机数&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;math/rand&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	seconds := time.Now().Unix()
+	rand.Seed(seconds)
+	target := rand.Intn(100) + 1
+	fmt.Println(&amp;#34;I&amp;#39;ve chosen a random number between 1 and 100.&amp;#34;)
+	fmt.Println(&amp;#34;Can you guess it?&amp;#34;)
+	fmt.Println(target)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;从键盘获取整数&#34;&gt;从键盘获取整数&lt;/h1&gt;
+&lt;p&gt;不需要将输入转换为float64，需要将其转换为int（因为只使用整数）。将把从键盘读取的字符串传递给 strconv 包的 Atoi （字符串转整数）函数，不是它的 ParseFloat 函数，Atoi会给一个整数作为其返回值。&lt;/p&gt;
+&lt;h1 id=&#34;将猜测与目标进行比较&#34;&gt;将猜测与目标进行比较&lt;/h1&gt;
+&lt;p&gt;下一步将用户的猜测与随机生成的数字进行比较；&lt;br&gt;
+若值低于目标值，打印信息，说猜低了，否则若猜测值大于目标值，打印信息说猜高了。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;bufio&amp;#34;
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;log&amp;#34;
+	&amp;#34;math/rand&amp;#34;
+	&amp;#34;os&amp;#34;
+	&amp;#34;strconv&amp;#34;
+	&amp;#34;strings&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	seconds := time.Now().Unix()
+	rand.Seed(seconds)
+	target := rand.Intn(100) + 1
+	fmt.Println(&amp;#34;I&amp;#39;ve chosen a random number between 1 and 100.&amp;#34;)
+	fmt.Println(&amp;#34;Can you guess it?&amp;#34;)
+	fmt.Println(target)
+
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Print(&amp;#34;Make a guess: &amp;#34;)
+	input, err := reader.ReadString(&amp;#39;\n&amp;#39;)
+	if err != nil {
+		log.Fatal(err)
+	}
+	input = strings.TrimSpace(input)
+	guess, err := strconv.Atoi(input)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if guess &amp;lt; target {
+		fmt.Println(&amp;#34;your guess was low&amp;#34;)
+	} else if guess &amp;gt; target {
+		fmt.Println(&amp;#34;your guess was high&amp;#34;)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;循环&#34;&gt;循环&lt;/h1&gt;
+&lt;p&gt;循环以 for 关键字开头：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;一个初始化（或init）语句，用于初始化一个变量&lt;/li&gt;
+&lt;li&gt;一个条件表达式，用于决定何时中断循环&lt;/li&gt;
+&lt;li&gt;一个标志（post）语句，在循环的每次迭代后运行&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/2-%e6%9d%a1%e4%bb%b6%e4%b8%8e%e5%be%aa%e7%8e%af/%e5%be%aa%e7%8e%af.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;++&lt;/code&gt; 与 &lt;code&gt;--&lt;/code&gt; 经常用于循环的标志（post）语句中，&lt;code&gt;++&lt;/code&gt; 在每次求值时都会加1， &lt;code&gt;--&lt;/code&gt; 则会减1。&lt;/p&gt;
+&lt;p&gt;还包括赋值运算:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;+=&lt;/code&gt; 加上另一个值，然后将结果赋回给该变量&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-=&lt;/code&gt; 减去另一个值，然后将结果赋回给该变量
+&lt;code&gt;+=&lt;/code&gt; 与 &lt;code&gt;-=&lt;/code&gt; 可以在循环中用于1以外的增量计数。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for x := 1; x &amp;lt;= 5; x += 2 {
+       fmt.Println(x)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;初始化和标志post语句是可选的&#34;&gt;初始化和标志（post）语句是可选的&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;x := 1
+for x &amp;lt;= 3 {
+       fmt.Println(x)
+       x++
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用continue与break跳过循环&#34;&gt;使用“continue”与“break”跳过循环&lt;/h1&gt;
+&lt;p&gt;go 提供了两个控制循环流的两个关键字：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;continue ：立即跳转到循环的下一个迭代，不需要在循环块中运行任何其他代码&lt;/li&gt;
+&lt;li&gt;break：    立即跳出循环，不再执行循环块中的代码，也不再运行循环，执行将移动到循环之后的语句中。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for x := 1, x &amp;lt;= 3; x++ {
+       fmt.Println(&amp;#34;before continue&amp;#34;)
+       continue
+       fmt.Println(&amp;#34;after continue&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;字符串“after continue”将永远不会打印输出。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for x := 1; x &amp;lt;= 3; x++ {
+       fmt.Println(&amp;#34;before break&amp;#34;)
+       break
+       fmt.Println(&amp;#34;after break&amp;#34;)
+}
+fmt.Println(&amp;#34;after loop&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在循环第一次迭代中，“before break”被打印出，但随后break立即跳出循环，不打印 “after break”，也不再运行循环。&lt;/p&gt;
+&lt;h1 id=&#34;完整代码&#34;&gt;完整代码&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;bufio&amp;#34;
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;log&amp;#34;
+	&amp;#34;math/rand&amp;#34;
+	&amp;#34;os&amp;#34;
+	&amp;#34;strconv&amp;#34;
+	&amp;#34;strings&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	seconds := time.Now().Unix() //获取当前日期和时间的整数形式
+	rand.Seed(seconds)           //播种随机数生成器
+	target := rand.Intn(100) + 1 //生成一个介于1-100之间的整数
+	fmt.Println(&amp;#34;I&amp;#39;ve chosen a random number between 1 and 100.&amp;#34;)
+	fmt.Println(&amp;#34;Can you guess it?&amp;#34;)
+
+	reader := bufio.NewReader(os.Stdin) //创建一个buffio.Reader 允许读取键盘输入
+	success := false                    //设置为默认打印失败信息
+	for guesses := 0; guesses &amp;lt; 10; guesses++ {
+		fmt.Println(&amp;#34;you have&amp;#34;, 10-guesses, &amp;#34;guesses left.&amp;#34;)
+		fmt.Print(&amp;#34;Make a guess: &amp;#34;)
+		input, err := reader.ReadString(&amp;#39;\n&amp;#39;) //读取用户输入，直到按enter键
+		if err != nil {
+			log.Fatal(err)
+		} //若出现错误则打印信息并退出
+		input = strings.TrimSpace(input)  //删除换行符
+		guess, err := strconv.Atoi(input) //将输入字符转换为整数
+		if err != nil {
+			log.Fatal(err)
+		} //若出现错误则打印信息并退出
+
+		if guess &amp;lt; target {
+			fmt.Println(&amp;#34;your guess was low&amp;#34;)
+		} else if guess &amp;gt; target {
+			fmt.Println(&amp;#34;your guess was high&amp;#34;)
+		} else {
+			success = true //阻止显示失败信息
+			fmt.Println(&amp;#34;good job! you guessed it!&amp;#34;)
+			break //退出循环
+		}
+	}
+
+	if !success { //如果 “success” 是false，告诉玩家结果
+		fmt.Println(&amp;#34;sorry,you didn&amp;#39;t guess number.It was:&amp;#34;, target)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在循环之后，添加了一个if块来打印失败消息，if块只有在条件的计算结果为true时运行，我们希望success为false时执行打印，所以添加布尔求反运算符&lt;code&gt;!&lt;/code&gt;。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
       <title>1-1.golang25个保留关键字</title>
       <link>https://tinklespring.com/posts/1-1.golang25%E4%B8%AA%E4%BF%9D%E7%95%99%E5%85%B3%E9%94%AE%E5%AD%97/</link>
-      <pubDate>Wed, 31 May 2023 11:33:55 +0800</pubDate>
+      <pubDate>Wed, 31 May 2023 11:18:24 +0800</pubDate>
       
       <guid>https://tinklespring.com/posts/1-1.golang25%E4%B8%AA%E4%BF%9D%E7%95%99%E5%85%B3%E9%94%AE%E5%AD%97/</guid>
       <description>&lt;blockquote&gt;
@@ -772,406 +1172,6 @@ ch2 selected
 # 等效于
 for{}
 &lt;/code&gt;&lt;/pre&gt;</description>
-    </item>
-    
-    <item>
-      <title>2.条件与循环</title>
-      <link>https://tinklespring.com/posts/2.%E6%9D%A1%E4%BB%B6%E4%B8%8E%E5%BE%AA%E7%8E%AF/</link>
-      <pubDate>Wed, 31 May 2023 11:18:24 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/2.%E6%9D%A1%E4%BB%B6%E4%B8%8E%E5%BE%AA%E7%8E%AF/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;接下来，go的条件与循环～&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;调用方法&#34;&gt;调用方法&lt;/h1&gt;
-&lt;p&gt;定义方法：与给定类型的值相关联的函数。&lt;/p&gt;
-&lt;p&gt;示例：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;time&amp;#34;
-)
-
-func main() {
-	var now time.Time = time.Now()
-	var year int = now.Year()
-	fmt.Println(year)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;time 包有一个表示日期（年、月、日）和时间（小时、分钟、秒等）的Time类型。每一个&lt;code&gt;time.Time&lt;/code&gt;值都有一个返回年份的Year方法。&lt;br&gt;
-time.Now 函数返回当前日期和时间的新Time值，将其存储在now变量中，然后对now引用的值调用Year方法。&lt;br&gt;
-&lt;code&gt;方法是特定类型的值关联的函数&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;strings 包有一个Replacer类型，可以在字符串中搜索子字符串，并且在每次该子字符串出现的地方用另一个字符串替换它：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;strings&amp;#34;
-)
-
-func main() {
-	broken := &amp;#34;G# r#cks!&amp;#34;
-	replacer := strings.NewReplacer(&amp;#34;#&amp;#34;, &amp;#34;o&amp;#34;)
-	fixed := replacer.Replace(broken)
-	fmt.Println(fixed)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;strings.NewReplacer 函数接受要替换的字符串（&amp;quot;#&amp;quot;）和要替换为的字符串(&amp;ldquo;o&amp;rdquo;) 的参数，并返回给 strings.Replacer。当我们将一个字符串传递给 Replacer 值的 Replace 方法时，将返回一个完成了替换的字符串。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;点表示右边的东西属于左边&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;函数属于一个包，方法属于一个单独的值，这个值出现在点的左边。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;now.Year()
-replacer.Replace(broken)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上边 &lt;code&gt;now&lt;/code&gt; 为 值，&lt;code&gt;Year&lt;/code&gt; 为 方法名&lt;br&gt;
-&lt;code&gt;replacer&lt;/code&gt; 为 值， &lt;code&gt;Replace&lt;/code&gt; 为方法名&lt;/p&gt;
-&lt;h1 id=&#34;评分&#34;&gt;评分&lt;/h1&gt;
-&lt;p&gt;写一个程序：输入百分比分数，60% 分数及格，不足则不及格，输入的百分比大于或等于60，程序需要给出响应。&lt;/p&gt;
-&lt;h4 id=&#34;获取分数&#34;&gt;获取分数&lt;/h4&gt;
-&lt;p&gt;输入百分比分数，按回车键，把输入的数字存在一个变量中。
-当有一个值时，通常会分配一个变量，但不打算使用时，可以使用空白标识符。为空白标识符分配一个值实际上会丢弃它。在赋值语句中输入一个下划线 &lt;code&gt;_&lt;/code&gt; ，通常在这里输入的是变量名。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;os&amp;#34;
-)
-
-func main() {
-	fmt.Print(&amp;#34;Enter a grade: &amp;#34;)
-	reader := bufio.NewReader(os.Stdin)
-	input, _ := reader.ReadString(&amp;#39;\n&amp;#39;)
-	fmt.Println(input)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;处理错误&#34;&gt;处理错误&lt;/h1&gt;
-&lt;p&gt;若从 ReadString 方法中得到一个错误返回，空白标识符只会导致错误忽略，程序依然继续运行，可能会使用无效的数据。&lt;br&gt;
-log 包有一个 Fatal 函数，可以同时为我们完成两步：将一条消息记录到终端并停止程序运行。（在上下文中，Fatal 是报告一个错误，并杀死你的程序。）&lt;br&gt;
-去掉空白标识符用一个 err 变量替换，可以记录错误，然后将使用 Fatal 函数来记录错误并停止程序运行。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;os&amp;#34;
-)
-
-func main() {
-	fmt.Print(&amp;#34;Enter a grade: &amp;#34;)
-	reader := bufio.NewReader(os.Stdin)
-	input, err := reader.ReadString(&amp;#39;\n&amp;#39;)
-	log.Fatal(err)
-	fmt.Println(input)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;条件&#34;&gt;条件&lt;/h1&gt;
-&lt;p&gt;若从键盘读取输入时遇到问题，将其设置为报告错误并停止运行，但是一切正常也停止运行。&lt;br&gt;
-ReadString 这样的函数和方法返回一个错误值nil，基本上意味着什么都没有，如果 err 为 nil ，表示没有错误，我们的程序被设置为只简单报告nil错误，正确做法是，当err变量的值不是nil时才退出程序。&lt;/p&gt;
-&lt;p&gt;可以使用条件语句，只有在满足某个条件时，才导致代码块（一个或多个由花括号&lt;code&gt;{}&lt;/code&gt;包围的语句）被执行的语句。&lt;/p&gt;
-&lt;p&gt;计算表达式，若结果为 true，则执行条件块体中的代码，若为false ，则跳过条件块。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if true {
-      fmt.Println(&amp;#34;xxxx&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if 1 &amp;lt; 2 {
-     fmt.Println(&amp;#34;xxxx&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;go支持条件语句中的多个分支：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if grade == 100 {
-           fmt.Println(&amp;#34;Perfect!&amp;#34;)
-} else if grade &amp;gt;= 60 {
-           fmt.Println(&amp;#34;Pass!&amp;#34;)
-} else {
-           fmt.Println(&amp;#34;Fail!&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;条件语句依赖布尔表达式（计算结果为true或false）来决定是否执行包含的代码。&lt;/p&gt;
-&lt;p&gt;当在条件为假时执行，可以使用 &lt;code&gt;!&lt;/code&gt; 布尔求反运算符。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if !true {
-    fmt.Println(&amp;#34;xxx&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;希望两个条件都为真时运行，使用&lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; （“与”）运算符，两者之一为真时运行，使用&lt;code&gt;||&lt;/code&gt;（“或”）运算符。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if true &amp;amp;&amp;amp; true {
-    fmt.Println(&amp;#34;xxxxx&amp;#34;)
-}
-
-if false || true {
-    fmt.Println(&amp;#34;xxxxx&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;go语言不要求 if 语句的条件用圆括号括起来。&lt;/p&gt;
-&lt;h1 id=&#34;有条件地记录致命错误&#34;&gt;有条件地记录致命错误&lt;/h1&gt;
-&lt;p&gt;若 err 变量中的值为 nil ，表示从键盘读取成功。更新代码记录错误，在err不是 nil 时退出。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;os&amp;#34;
-)
-
-func main() {
-	fmt.Print(&amp;#34;Enter a grade: &amp;#34;)
-	reader := bufio.NewReader(os.Stdin)
-	input, err := reader.ReadString(&amp;#39;\n&amp;#39;)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(input)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;重新运行程序，可以看到可以正常运行，若读取用户输入有错误，也可以看到这些错误。&lt;/p&gt;
-&lt;h1 id=&#34;避免遮盖名字&#34;&gt;避免遮盖名字&lt;/h1&gt;
-&lt;p&gt;避免使用缩写，但是命名 error变量不对，会遮盖一个名为 error 的类型名称。&lt;br&gt;
-声明变量时，应确保与任何现有的函数、包、类型或其他变量的名称不同。 若在封闭范围内存在同名的东西，变量将对其进行遮盖，也就是说优先级高，这不是一件好事。&lt;br&gt;
-但是若想访问变量遮盖的类型、函数或包，将得到变量中的值，此时，会导致编译错误。&lt;/p&gt;
-&lt;h1 id=&#34;将字符串转换为数字&#34;&gt;将字符串转换为数字&lt;/h1&gt;
-&lt;p&gt;&lt;code&gt;strings&lt;/code&gt; 包中有个 &lt;code&gt;TrimSpace&lt;/code&gt;函数，删除字符串开头和结尾的所有空白字符（换行符、制表符和常规空格）。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;s := &amp;#34;\t xxx \n&amp;#34;
-fmt.Println(strings.TrimSpace(s))
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;字符串转换为数字，使用 &lt;code&gt;strconv&lt;/code&gt;包中的 &lt;code&gt;ParseFloat&lt;/code&gt;函数转换为 float64值。&lt;br&gt;
-&lt;code&gt;grade, err := strconv.ParseFloat(input, 64)&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;块和变量的作用域&#34;&gt;块和变量的作用域&lt;/h1&gt;
-&lt;p&gt;声明的每个变量都有一个作用域，可以在作用域内的任何地方被访问，但是在作用域之外访问会报错。&lt;br&gt;
-变量的作用域由其声明所在的块和嵌套在该块中任何块组成。&lt;/p&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/2-%e6%9d%a1%e4%bb%b6%e4%b8%8e%e5%be%aa%e7%8e%af/%e5%9d%97%e5%92%8c%e5%8f%98%e9%87%8f%e4%bd%9c%e7%94%a8%e5%9f%9f.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;packageVar 变量的作用域是整个 main 包，可以在包中定义的任何函数内的任何位置访问 packageVar。&lt;/li&gt;
-&lt;li&gt;functionVar 变量作用域是其声明所在的整个函数，包括嵌套在该函数中的if块。&lt;/li&gt;
-&lt;li&gt;conditionalVar 变量作用域仅限于if块，当试图在if块外访问conditionalVar，将报错。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&#34;修改后的程序&#34;&gt;修改后的程序&lt;/h1&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/2-%e6%9d%a1%e4%bb%b6%e4%b8%8e%e5%be%aa%e7%8e%af/%e5%ae%8c%e6%95%b4%e7%a8%8b%e5%ba%8f.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;h1 id=&#34;短变量声明中只有一个变量必须是新的&#34;&gt;短变量声明中只有一个变量必须是新的&lt;/h1&gt;
-&lt;p&gt;不能对一个变量声明两次。&lt;br&gt;
-但是当一个变量名在同一个作用域中被声明两次时，会编译报错。&lt;/p&gt;
-&lt;p&gt;但是，短变量声明中至少有一个变量名是新的，新变量名被视为声明，现有的被视为赋值。&lt;/p&gt;
-&lt;h1 id=&#34;练习&#34;&gt;练习&lt;/h1&gt;
-&lt;p&gt;需求：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;生成一个1到100之间的随机数，将其存储为目标数，供玩家猜测。&lt;/li&gt;
-&lt;li&gt;提示玩家猜测目标数是什么，存储他们的回答。&lt;/li&gt;
-&lt;li&gt;若玩家猜测的数小于目标数，就说“你猜低了”，若大于目标数，就说“你猜高了” 。&lt;/li&gt;
-&lt;li&gt;允许最多猜10次，在每次猜之前，让他们知道还剩多少次。&lt;/li&gt;
-&lt;li&gt;若猜的与目标数相同，就说“你猜对了”，然后不再问新的猜测。&lt;/li&gt;
-&lt;li&gt;若玩家用完了所有轮次也没猜对，就说“sorry，你没猜对，它是：[目标数]”&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&#34;包名与导入路径&#34;&gt;包名与导入路径&lt;/h1&gt;
-&lt;p&gt;math/rand  包有一个 Intn 函数，可以生成一个随机数。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import ()
-    &amp;#34;fmt&amp;#34;
-    &amp;#34;math/rand&amp;#34;
-
-func main() {
-    target := rand.Intn(100) + 1
-    fmt.Println(target)
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;math/rand&lt;/code&gt; 指的是包的导入路径，不是名称，导入路径是一个独特的字符串，用于标识包以及在导入语句中使用的包，一旦导入包，就可以通过包名来引用。&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;导入路径&lt;/th&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;包名&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;fmt&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;fmt&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;log&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;log&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;strings&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;strings&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;archive&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;archive&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;archive/tar&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;tar&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;archive/zip&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;zip&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;math&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;math&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;math/cmplx&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;cmplx&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;math/rand&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;rand&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;有些包，导入路径与包名都相同，有些包属于类似的类别，被分组在类似的导入路径前缀。&lt;br&gt;
-go语言不要求包名与其导入路径有任何关系，按惯例，导入路径的最后（或唯一）一段也用作包名，比如“archive” 包名为 archive，若导入路径为 “archive/zip” 则包名为 zip 。&lt;/p&gt;
-&lt;h1 id=&#34;生成随机数&#34;&gt;生成随机数&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;math/rand&amp;#34;
-	&amp;#34;time&amp;#34;
-)
-
-func main() {
-	seconds := time.Now().Unix()
-	rand.Seed(seconds)
-	target := rand.Intn(100) + 1
-	fmt.Println(&amp;#34;I&amp;#39;ve chosen a random number between 1 and 100.&amp;#34;)
-	fmt.Println(&amp;#34;Can you guess it?&amp;#34;)
-	fmt.Println(target)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;从键盘获取整数&#34;&gt;从键盘获取整数&lt;/h1&gt;
-&lt;p&gt;不需要将输入转换为float64，需要将其转换为int（因为只使用整数）。将把从键盘读取的字符串传递给 strconv 包的 Atoi （字符串转整数）函数，不是它的 ParseFloat 函数，Atoi会给一个整数作为其返回值。&lt;/p&gt;
-&lt;h1 id=&#34;将猜测与目标进行比较&#34;&gt;将猜测与目标进行比较&lt;/h1&gt;
-&lt;p&gt;下一步将用户的猜测与随机生成的数字进行比较；&lt;br&gt;
-若值低于目标值，打印信息，说猜低了，否则若猜测值大于目标值，打印信息说猜高了。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;math/rand&amp;#34;
-	&amp;#34;os&amp;#34;
-	&amp;#34;strconv&amp;#34;
-	&amp;#34;strings&amp;#34;
-	&amp;#34;time&amp;#34;
-)
-
-func main() {
-	seconds := time.Now().Unix()
-	rand.Seed(seconds)
-	target := rand.Intn(100) + 1
-	fmt.Println(&amp;#34;I&amp;#39;ve chosen a random number between 1 and 100.&amp;#34;)
-	fmt.Println(&amp;#34;Can you guess it?&amp;#34;)
-	fmt.Println(target)
-
-	reader := bufio.NewReader(os.Stdin)
-
-	fmt.Print(&amp;#34;Make a guess: &amp;#34;)
-	input, err := reader.ReadString(&amp;#39;\n&amp;#39;)
-	if err != nil {
-		log.Fatal(err)
-	}
-	input = strings.TrimSpace(input)
-	guess, err := strconv.Atoi(input)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if guess &amp;lt; target {
-		fmt.Println(&amp;#34;your guess was low&amp;#34;)
-	} else if guess &amp;gt; target {
-		fmt.Println(&amp;#34;your guess was high&amp;#34;)
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;循环&#34;&gt;循环&lt;/h1&gt;
-&lt;p&gt;循环以 for 关键字开头：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;一个初始化（或init）语句，用于初始化一个变量&lt;/li&gt;
-&lt;li&gt;一个条件表达式，用于决定何时中断循环&lt;/li&gt;
-&lt;li&gt;一个标志（post）语句，在循环的每次迭代后运行&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/2-%e6%9d%a1%e4%bb%b6%e4%b8%8e%e5%be%aa%e7%8e%af/%e5%be%aa%e7%8e%af.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;++&lt;/code&gt; 与 &lt;code&gt;--&lt;/code&gt; 经常用于循环的标志（post）语句中，&lt;code&gt;++&lt;/code&gt; 在每次求值时都会加1， &lt;code&gt;--&lt;/code&gt; 则会减1。&lt;/p&gt;
-&lt;p&gt;还包括赋值运算:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;+=&lt;/code&gt; 加上另一个值，然后将结果赋回给该变量&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;-=&lt;/code&gt; 减去另一个值，然后将结果赋回给该变量
-&lt;code&gt;+=&lt;/code&gt; 与 &lt;code&gt;-=&lt;/code&gt; 可以在循环中用于1以外的增量计数。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for x := 1; x &amp;lt;= 5; x += 2 {
-       fmt.Println(x)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;初始化和标志post语句是可选的&#34;&gt;初始化和标志（post）语句是可选的&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;x := 1
-for x &amp;lt;= 3 {
-       fmt.Println(x)
-       x++
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用continue与break跳过循环&#34;&gt;使用“continue”与“break”跳过循环&lt;/h1&gt;
-&lt;p&gt;go 提供了两个控制循环流的两个关键字：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;continue ：立即跳转到循环的下一个迭代，不需要在循环块中运行任何其他代码&lt;/li&gt;
-&lt;li&gt;break：    立即跳出循环，不再执行循环块中的代码，也不再运行循环，执行将移动到循环之后的语句中。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for x := 1, x &amp;lt;= 3; x++ {
-       fmt.Println(&amp;#34;before continue&amp;#34;)
-       continue
-       fmt.Println(&amp;#34;after continue&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;字符串“after continue”将永远不会打印输出。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for x := 1; x &amp;lt;= 3; x++ {
-       fmt.Println(&amp;#34;before break&amp;#34;)
-       break
-       fmt.Println(&amp;#34;after break&amp;#34;)
-}
-fmt.Println(&amp;#34;after loop&amp;#34;)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在循环第一次迭代中，“before break”被打印出，但随后break立即跳出循环，不打印 “after break”，也不再运行循环。&lt;/p&gt;
-&lt;h1 id=&#34;完整代码&#34;&gt;完整代码&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;math/rand&amp;#34;
-	&amp;#34;os&amp;#34;
-	&amp;#34;strconv&amp;#34;
-	&amp;#34;strings&amp;#34;
-	&amp;#34;time&amp;#34;
-)
-
-func main() {
-	seconds := time.Now().Unix() //获取当前日期和时间的整数形式
-	rand.Seed(seconds)           //播种随机数生成器
-	target := rand.Intn(100) + 1 //生成一个介于1-100之间的整数
-	fmt.Println(&amp;#34;I&amp;#39;ve chosen a random number between 1 and 100.&amp;#34;)
-	fmt.Println(&amp;#34;Can you guess it?&amp;#34;)
-
-	reader := bufio.NewReader(os.Stdin) //创建一个buffio.Reader 允许读取键盘输入
-	success := false                    //设置为默认打印失败信息
-	for guesses := 0; guesses &amp;lt; 10; guesses++ {
-		fmt.Println(&amp;#34;you have&amp;#34;, 10-guesses, &amp;#34;guesses left.&amp;#34;)
-		fmt.Print(&amp;#34;Make a guess: &amp;#34;)
-		input, err := reader.ReadString(&amp;#39;\n&amp;#39;) //读取用户输入，直到按enter键
-		if err != nil {
-			log.Fatal(err)
-		} //若出现错误则打印信息并退出
-		input = strings.TrimSpace(input)  //删除换行符
-		guess, err := strconv.Atoi(input) //将输入字符转换为整数
-		if err != nil {
-			log.Fatal(err)
-		} //若出现错误则打印信息并退出
-
-		if guess &amp;lt; target {
-			fmt.Println(&amp;#34;your guess was low&amp;#34;)
-		} else if guess &amp;gt; target {
-			fmt.Println(&amp;#34;your guess was high&amp;#34;)
-		} else {
-			success = true //阻止显示失败信息
-			fmt.Println(&amp;#34;good job! you guessed it!&amp;#34;)
-			break //退出循环
-		}
-	}
-
-	if !success { //如果 “success” 是false，告诉玩家结果
-		fmt.Println(&amp;#34;sorry,you didn&amp;#39;t guess number.It was:&amp;#34;, target)
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在循环之后，添加了一个if块来打印失败消息，if块只有在条件的计算结果为true时运行，我们希望success为false时执行打印，所以添加布尔求反运算符&lt;code&gt;!&lt;/code&gt;。&lt;/p&gt;
-</description>
     </item>
     
     <item>
