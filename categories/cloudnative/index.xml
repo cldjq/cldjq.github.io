@@ -135,7 +135,266 @@ func sayHi() {
 func main() {
        sayHi()
 }
-&lt;/code&gt;&lt;/pre&gt;</description>
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当调用当前包中定义的函数时，不应该指定包名，（输入 main.sayHi() 将导致编译错误）。&lt;/p&gt;
+&lt;p&gt;函数名的规则与变量名的规则相同：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;名称必须以 &lt;code&gt;字母开头&lt;/code&gt; ，后跟任何数量的数字和字母；&lt;/li&gt;
+&lt;li&gt;名称以 &lt;code&gt;大写字母&lt;/code&gt; 开头的函数是可导出的，且可以在当前包之外使用；&lt;/li&gt;
+&lt;li&gt;名称以 &lt;code&gt;小写字母&lt;/code&gt; 开头的函数是不可导出的，只能在当前包中使用；&lt;/li&gt;
+&lt;li&gt;名称包含多个单词应符合驼峰式大小写；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;声明函数参数&#34;&gt;声明函数参数&lt;/h1&gt;
+&lt;p&gt;若希望对函数的调用包含参数，则需声明一个或多个参数，&lt;code&gt;参数是函数的局部变量，其值是在调用函数时设置的。&lt;/code&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+	repeatLine(&amp;#34;hello&amp;#34;, 3)
+}
+func repeatLine(line string, times int) {
+	for i := 0; i &amp;lt; times; i++ {
+		fmt.Println(line)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在函数声明中的圆括号中声明一个或多个参数，用逗号分隔，与变量一样，需要为声明的每个参数提供一个名称，后面跟一个类型（float64、bool等）。&lt;/p&gt;
+&lt;p&gt;若函数定义了参数，那么在调用时需要传递一组匹配的参数。当函数运行时，每个参数都将被设置为对应参数中的值的副本，然后这些参数值在函数块的代码中被使用。&lt;/p&gt;
+&lt;h1 id=&#34;使用函数&#34;&gt;使用函数&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func paintNeeded(width float64, height float64) {
+	area := width * height
+	fmt.Printf(&amp;#34;%.2f liters needed\n&amp;#34;, area/10.0)
+}
+func main() {
+	paintNeeded(4.2, 3.0)
+	paintNeeded(5.2, 3.5)
+	paintNeeded(5.0, 3.3)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;函数和变量的作用域&#34;&gt;函数和变量的作用域&lt;/h1&gt;
+&lt;p&gt;上述在paintNeeded函数块中声明了一个area变量，与条件块和循环块一样，函数块中声明的变量只在该函数块的作用域内。&lt;/p&gt;
+&lt;p&gt;与条件块和循环块一样，在函数外部声明的变量将在该函数块的作用域内，这意味着可以在包级别上声明一个变量，并且可以在包中的任何函数内访问。&lt;/p&gt;
+&lt;h1 id=&#34;函数返回值&#34;&gt;函数返回值&lt;/h1&gt;
+&lt;p&gt;函数总是返回特定类型的值（只返回该类型），若要声明函数返回值，在函数声明中的参数后面添加该返回值类型，在函数块中使用 &lt;code&gt;return&lt;/code&gt; 关键字，后面跟要返回的值。函数的调用者可以将返回值分配给一个变量，直接将它传递给另一个函数，或用它做任何其他需要做的事。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func double(number float64) float64 {
+	return number * 2
+}
+func main() {
+	dozen := double(6.0)
+	fmt.Println(dozen)
+	fmt.Println(double(4.2))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当 return 语句运行时，函数立即退出，不运行它后面的任何代码，可以将其与if语句一起使用，在没有必要运行剩余代码的情况下（由于一些错误或其他情况）退出函数。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func status(grade float64) string {
+	if grade &amp;lt; 60.0 {
+            return &amp;#34;failing&amp;#34;
+	}
+        return &amp;#34;passing&amp;#34;
+}
+func main() {
+        fmt.Println(status(60.1))
+        fmt.Println(status(59))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若包含一个不属于 if 块的 return 语句，有可能使代码在任何情况都不会运行，go要求声明了返回类型的任何函数都必须以 return 语句结束，以任何其他语句结束都将导致编译错误。&lt;/p&gt;
+&lt;p&gt;若返回值类型与声明的返回类型不匹配，也将编译错误。&lt;/p&gt;
+&lt;h1 id=&#34;使用返回值&#34;&gt;使用返回值&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func paintNeeded(width float64, height float64) float64 {
+	area := width * height
+	return area / 10.0
+}
+func main() {
+	var amount, total float64
+	amount = paintNeeded(4.2, 3.0)
+	fmt.Printf(&amp;#34;%0.2f liters needed\n&amp;#34;, amount)
+	total += amount
+	amount = paintNeeded(5.2, 3.5)
+	fmt.Printf(&amp;#34;%0.2f liters needed\n&amp;#34;, amount)
+	total += amount
+	fmt.Printf(&amp;#34;Total: %0.2f liters\n&amp;#34;, total)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;返回值允许main函数决定所计算的数量做什么，而不是依赖paintNeeded函数打印它。&lt;/p&gt;
+&lt;p&gt;对下述代码进行更改，会怎么样？&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func paintNeeded(width float64, height float64) float64 {
+        area := width * height
+        return area / 10.0
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;如果这样&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;会失败，因为&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;func paintNeeded(width float64, height float64) float64 {&lt;br&gt;        area := width * height&lt;br&gt;}&lt;br&gt;删除return 语句&lt;pre&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;如果函数声明了返回类型，go要求包含一个return语句&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;func paintNeeded(width float64, height float64) float64 {&lt;br&gt;        area := width * height&lt;br&gt;        return area / 10.0&lt;br&gt;        fmt.Println(area / 10.0)&lt;br&gt;}&lt;br&gt;在return语句后加一行&lt;pre&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;如果函数声明了返回类型，go要求最后一个语句是return语句&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;func paintNeeded(width float64, height float64) {&lt;br&gt;        area := width * height&lt;br&gt;        return area / 10.0&lt;br&gt;}&lt;br&gt;删除返回类型声明&lt;pre&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;go不允许返回未声明的值&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;func paintNeeded(width float64, height float64) float64 {&lt;br&gt;        area := width * height&lt;br&gt;        return int(area / 10.0)&lt;br&gt;}&lt;br&gt;更改要返回值的类型&lt;pre&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;go要求返回值的类型与声明的类型匹配&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h1 id=&#34;错误值&#34;&gt;错误值&lt;/h1&gt;
+&lt;p&gt;一个错误值是一个可以返回字符串的名为 Error 的方法返回的任何值。创建错误值的最简单方法是将字符串传递给 errors 包的 New 函数，该函数将返回一个新的错误值。若对该错误值调用 Error 方法，将会得到传递给 errors.New 的字符串。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+      &amp;#34;errors&amp;#34;
+      &amp;#34;fmt&amp;#34;
+)
+
+func main() {
+      err := errors.New(&amp;#34;height can&amp;#39;t be negative&amp;#34;)
+      fmt.Println(err.Error())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若将错误值传递给fmt或log包中的函数，则可能不需要调用它的Error方法。fmt和log中的函数已经被编写成能够检查是否传递给它们的值有Error方法，若有，则打印Error的返回值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;err := errors.New(&amp;#34;height can&amp;#39;t be negative&amp;#34;)
+fmt.Println(err)
+log.Fatal(err)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若需要格式化数字或其他值以便在错误信息中使用，可以使用 fmt.Error 函数，就像 fmt.Printf 或 fmt.Sprintf 一样，将值插入格式字符串中，但是不会打印或返回一个字符串，而是返回一个错误值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;err := fmt.Error(&amp;#34;a height of %0.2f is invalid&amp;#34;, -2.33333)
+fmt.Println(err.Error())
+fmt.Println(err)
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;声明多个返回值&#34;&gt;声明多个返回值&lt;/h1&gt;
+&lt;p&gt;要声明函数的多个返回值，需将返回值类型放在函数声明的第二组圆括号内（在函数参数的圆括号之后），用都好分隔。（当只有一个返回值时，返回值周围的圆括号是可选的，但是若有多个返回值，则必须使用圆括号。）当调用该函数时，需要考虑额外的返回值，通常通过将它们分配给额外的变量来实现。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func manyReturns() (int, bool, string) {
+	return 1, true, &amp;#34;hello&amp;#34;
+}
+func main() {
+	myInt, myBool, myString := manyReturns()
+	fmt.Println(myInt, myBool, myString)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若要使返回值目的更清楚，可以将每个返回值提供名称，类似于参数名称，命名返回值的主要用途是作为程序员阅读代码的文档。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;math&amp;#34;
+)
+
+func floatParts(number float64) (integerPart int, fractionalPart float64) {
+	wholeNumber := math.Floor(number)
+	return int(wholeNumber), number - wholeNumber
+}
+func main() {
+	cans, remainder := floatParts(1.26)
+	fmt.Println(cans, remainder)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;在paintneeded函数中使用多个返回值&#34;&gt;在paintNeeded函数中使用多个返回值&lt;/h1&gt;
+&lt;p&gt;如上所见，可以返回任何类型的多个返回值，但是对于多个返回值，常见的做法是返回一个主返回值，后跟一个额外值，表示函数是否遇到错误，若无问题，通常将额外值设置为nil，若发生错误，则设置为错误值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func paintNeeded(width float64, height float64) (float64, error) {
+	if width &amp;lt; 0 {
+		return 0, fmt.Errorf(&amp;#34;a width of %0.2f is invalid&amp;#34;, width)
+	}
+	if height &amp;lt; 0 {
+		return 0, fmt.Errorf(&amp;#34;a height of %0.2f is invalid&amp;#34;, height)
+	}
+	area := width * height
+	return area / 10.0, nil
+}
+func main() {
+	amount, err := paintNeeded(4.2, -3.0)
+	fmt.Println(err)
+	fmt.Printf(&amp;#34;%0.2f liters needed\n&amp;#34;, amount)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在 main 函数中，添加第二个变量记录 paintNeeded 中的错误值，若将一个无效的参数传递给paintNeeded，将得到一个错误返回值，并打印该错误。&lt;/p&gt;
+&lt;h1 id=&#34;始终处理错误&#34;&gt;始终处理错误&lt;/h1&gt;
+&lt;p&gt;当将一个无效的参数传递给paintNeeded时，得到一个错误返回值，并将其打印出，但也打印了一个无效信息。&lt;/p&gt;
+&lt;p&gt;当函数返回一个错误值时，通常也必须返回一个主返回值，但伴随错误值的任何其他返回值都应被认为不可靠，被忽略。当调用返回错误值的函数时，在继续运行前测试该值是否为 nil 是重要的，若不是 nil ，则意味着有一个错误必须进行处理。&lt;/p&gt;
+&lt;p&gt;如何处理错误取决于具体情况，对与 paintNeeded 函数，也许最好是简单跳过当前计算，并继续执行程序其余部分：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	amount, err := paintNeeded(4.2, -3.0)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Printf(&amp;#34;%0.2f liters needed\n&amp;#34;, amount)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以调用 Log.Fatal 来显示错误信息并退出程序。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	amount, err := paintNeeded(4.2, -3.0)
+	if err != nil {
+		Log.Fatal(err)
+	}
+        fmt.Printf(&amp;#34;%0.2f liters needed\n&amp;#34;, amount)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如下是一个计算一个数字平方根的程序，若一个负数传递给 squareRoot 函数，将返回一个错误：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;math&amp;#34;
+)
+
+func squareRoot(number float64) (float64, error) {
+	if number &amp;lt; 0 {
+		return 0, fmt.Errorf(&amp;#34;can&amp;#39;t get square root of number&amp;#34;)
+	}
+	return math.Sqrt(number), nil
+}
+func main() {
+	root, err := squareRoot(-9.3)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Printf(&amp;#34;%0.3f&amp;#34;, root)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;若如此&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;会失败，因为&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;return math.Sqrt(number)&lt;del&gt;, nil&lt;/del&gt;&lt;br&gt;删除要返回的参数之一&lt;pre&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;要返回的参数的数量必须始终与函数声明中的返回值的数量匹配&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;root&lt;del&gt;, err&lt;/del&gt; := squareRoot(-9.3)&lt;br&gt;删除返回值所赋值给的变量之一&lt;pre&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;若使用函数的任何一个返回值，go要求使用所有的返回值&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;root, err := squareRoot(-9.3)&lt;br&gt;&lt;del&gt;if err != nil {&lt;/del&gt;&lt;br&gt;&lt;del&gt;       fmt.Println(err)&lt;/del&gt;&lt;br&gt;&lt;del&gt;} else {&lt;/del&gt;&lt;br&gt;       fmt.Printf(&amp;quot;%0.3f&amp;quot;, root)&lt;br&gt;&lt;del&gt;}&lt;/del&gt;&lt;br&gt;删除使用其中一个返回值的代码&lt;pre&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;go要求使用声明的每个变量，当涉及错误返回值时，实际上是一个非常有用的特性，因为有助于避免意外地忽略错误&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h1 id=&#34;函数形参接收实参的副本&#34;&gt;函数形参接收实参的副本&lt;/h1&gt;
+&lt;p&gt;当调用一个声明了行参的函数时，需要为调用提供实参，每个实参中的值被复制到相应的行参变量。（执行此操作的变成语言有时称为“值传递”）。这在大多数情况是可以的，但如果想把一个变量的值传递给一个函数并让它以某种方式改变这个值，就会遇到麻烦。&lt;/p&gt;
+&lt;p&gt;函数只能更改行参中的该值的副本，而不能更改原始值，因此，在函数内部所做的任何更改在函数外部都将不可见。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Go是一种“值传递”语言；函数行参从函数调用中接收实参的副本。&lt;/code&gt;&lt;/p&gt;
+</description>
     </item>
     
     <item>
