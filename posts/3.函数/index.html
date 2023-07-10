@@ -390,9 +390,87 @@ func main() {
 </tbody>
 </table>
 <h1 id="函数形参接收实参的副本">函数形参接收实参的副本</h1>
-<p>当调用一个声明了行参的函数时，需要为调用提供实参，每个实参中的值被复制到相应的行参变量。（执行此操作的变成语言有时称为“值传递”）。这在大多数情况是可以的，但如果想把一个变量的值传递给一个函数并让它以某种方式改变这个值，就会遇到麻烦。</p>
+<p>当调用一个声明了行参的函数时，需要为调用提供实参，每个实参中的值被复制到相应的行参变量。（执行此操作的编程语言有时称为“值传递”）。这在大多数情况是可以的，但如果想把一个变量的值传递给一个函数并让它以某种方式改变这个值，就会遇到麻烦。</p>
 <p>函数只能更改行参中的该值的副本，而不能更改原始值，因此，在函数内部所做的任何更改在函数外部都将不可见。</p>
 <p><code>Go是一种“值传递”语言；函数行参从函数调用中接收实参的副本。</code></p>
+<h1 id="指针">指针</h1>
+<p>需要一种方法来允许函数改变变量所保存的原始值，而不是副本。</p>
+<p>可以使用 <code>&amp;</code> 符号来获取变量的地址，是go的“地址”运算符。<br>
+例如：</p>
+<pre tabindex="0"><code>amount := 6
+fmt.Println(amount)
+fmt.Println(&amp;amount)
+</code></pre><p>可以获得任何类型变量的地址，每个变量的地址不同。</p>
+<p>计算机为程序留出的内存是一个拥挤的地方，其充满了变量值：布尔值、整数、字符串等，如果有变量的地址，可以用其找到变量所包含的值。</p>
+<p><code>表示变量地址的值称为指针</code>，它指向可以找到变量的位置。</p>
+<h1 id="指针类型">指针类型</h1>
+<p>指针的类型可以写为一个 <code>*</code> 符号，后面跟着指针指向的变量的类型。</p>
+<p>例如，指向一个 int 变量的指针的类型写为 *int ，可以大声读作：“指向int的指针”。</p>
+<p>可以使用 <code>reflect.Type()</code> 函数来显示之前程序中指针的类型：</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+	&#34;reflect&#34;
+)
+
+func main() {
+	var myInt int
+	fmt.Println(reflect.TypeOf(&amp;myInt))
+	var myFloat float64
+	fmt.Println(reflect.TypeOf(&amp;myFloat))
+	var myBool bool
+	fmt.Println(reflect.TypeOf(&amp;myBool))
+}
+</code></pre><p>可以声明保存指针的变量，指针变量只能保存指向一种类型值的指针，因此变量可能只保存 *int 指针，只保存 *float64 指针。。。。</p>
+<pre tabindex="0"><code>var myInt int
+var myIntPointer *int  //声明一个指向int的指针变量
+myIntPointer = &amp;myInt  //给变量分配一个指针
+fmt.Println(myIntPointer)
+
+var myFloat float64
+var myFloatPointer *float64  //声明一个指向float64的指针变量
+myFloatPointer = &amp;myFloat    //给变量分配一个指针
+fmt.Println(myFloatPointer)
+</code></pre><p>与其他类型一样，若要立即为指针变量复制，可以使用短变量声明：</p>
+<pre tabindex="0"><code>var myBool bool
+myBoolPointer := &amp;myBool
+fmt.Println(myBoolPointer)
+</code></pre><h1 id="获取和更改指针的值">获取和更改指针的值</h1>
+<p>通过在代码中的指针之前输入 <code>*</code> 来获得指针饮用的变量的值。 *myIntPointer 可以读作：“myIntPointer 处的值”</p>
+<pre tabindex="0"><code>myInt := 4
+myIntPointer := &amp;myInt
+fmt.Println(myIntPointer)
+fmt.Println(*myIntPointer)
+
+myFloat := 98.6
+myFloatPointer := &amp;myFloat
+fmt.Println(myIntPointer)
+fmt.Println(*myIntPointer)
+
+myBool := true
+myBoolPointer := &amp;myBool
+fmt.Println(myBoolPointer)
+fmt.Println(*myBoolPointer)
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>0x1040a124
+4
+0x1040a140
+98.6
+0x1040a150
+true
+</code></pre><p><code>*</code> 运算符还可以更新指针处的值：</p>
+<pre tabindex="0"><code>myInt := 4
+fmt.Println(myInt)
+myIntPointer := &amp;myInt
+*myIntPointer = 8    //给指针处的变量（myInt）赋一个新值
+fmt.Println(*myIntPointer)   //打印指针处变量的值
+fmt.Println(myInt)     //打印变量的值
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>4    //myInt初始值
+8    //*myIntPointer的更新结果
+8    //myInt的更新值（与*myIntPointer）相同
+</code></pre><h1 id="函数指针">函数指针</h1>
 </article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
 <div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/2.%E6%9D%A1%E4%BB%B6%E4%B8%8E%E5%BE%AA%E7%8E%AF/"><span class="iconfont icon-article"></span>2.条件与循环</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
