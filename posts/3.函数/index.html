@@ -471,6 +471,48 @@ fmt.Println(myInt)     //打印变量的值
 8    //*myIntPointer的更新结果
 8    //myInt的更新值（与*myIntPointer）相同
 </code></pre><h1 id="函数指针">函数指针</h1>
+<p>可以从函数返回指针，只需声明函数的返回类型是指针类型。</p>
+<pre tabindex="0"><code>func createPointer() *float64 {    //声明函数返回一个float64指针
+        var myFloat = 98.5
+        return &amp;myFloat    //返回指定类型的指针
+}
+
+func main() {
+        var myFloatPointer *float64 = createPointer()   //将返回的指针赋给一个变量
+        fmt.Println(*myFloatPointer)    //打印指针处的值
+}
+</code></pre><p>在go中，返回一个指向函数局部变量的指针是可以的，即使该变量不在作用域内，只要仍然拥有指针，go将确保仍然可以访问该值。</p>
+<p>还可以将指针作为参数传递给函数，只需说明一个或多个参数的类型是指针。</p>
+<pre tabindex="0"><code>func printPointer(myBoolPointer *bool) {    //为该参数使用一个指针类型
+        fmt.Println(*myBoolPointer)         //打印传入指针处的值
+}
+func main() {
+        var myBool bool = true
+        printPointer(&amp;myBool)    //向函数传递一个指针
+}
+</code></pre><p>确保只使用指针作为参数，若函数声明它将使用指针，若试图将值传递给期望指针的函数，，将会编译错误。</p>
+<h1 id="使用指针修复double函数">使用指针修复<code>double</code>函数</h1>
+<p>有一个double函数，接受一个 int 值并将其乘以2，希望能传入一个值并使该值加倍。但 go 是一种值传递语言，意味着函数参数从调用方接收任何参数的副本，函数将值的副本加倍，原始值不变。</p>
+<pre tabindex="0"><code>func main() {
+        amount := 6
+        double(amount)   //向函数传递实参
+        fmt.Println(amount)   //打印原始值
+}
+
+func double(number int) {    //行参设置为实参的一个副本
+        number *= 2     //改变副本值，不改变原始值
+}
+</code></pre><p>若向函数传递一个指针，然后更改该指针处的值，那么这些更改在函数外部仍然有效。</p>
+<p>修改：</p>
+<pre tabindex="0"><code>func main() {
+        amount := 6
+        double(&amp;amount)     //传递一个指针而不是一个变量值
+        fmt.Println(amount)
+}
+func double(number *int) {   //接受一个指针而不是一个int值
+        *number *= 2    //更新指针处的值
+}
+</code></pre><p>在double函数中，需要更新number参数的类型来获取 *int 而不是 int ，然后修改函数代码来更新number指针处的值，而不是直接更新变量，在main函数中，只需更新对double的调用来传递一个指针，而不是一个直接的值。 当运行更新后的代码时，指向amount变量的指针将被传递给double函数，double函数将获取该指针处的值并使其加倍，从而更改amount变量中的值。</p>
 </article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
 <div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/2.%E6%9D%A1%E4%BB%B6%E4%B8%8E%E5%BE%AA%E7%8E%AF/"><span class="iconfont icon-article"></span>2.条件与循环</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
