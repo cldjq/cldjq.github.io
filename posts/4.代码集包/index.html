@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>4.代码集：包&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.003a667cf21024ef30f2985fb57c9bd6f6873cf899ee14e9302e68e9f04b681df9440cec4ebdaa101dca533a262c242f.css" integrity="sha384-ADpmfPIQJO8w8phftXyb1vaHPPiZ7hTpMC5o6fBLaB35RAzsTr2qEB3KUzomLCQv"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="4.代码集：包" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">4.代码集：包</h1><p class="article date">Tuesday, July 11, 2023</p></section><article class="article markdown-body"><blockquote>
+<p>到目前位置，一直将代码放在一个文件里，随着程序变得越来越大、越来越复杂，这会是一个大问题～</p>
+</blockquote>
+<h1 id="使用包在程序之间共享代码">使用包在程序之间共享代码</h1>
+<p>将共享函数移到新的包中！</p>
+<p>golang允许定义自己的包，包是一组代码，fmt包格式化输出，math包处理数字，strings包处理字符串，已经在多个程序中使用了来自每一个包的函数。</p>
+<p>能够在程序之间使用相同的代码是包存在的主要原因之一。</p>
+<h1 id="go工作区目录保存包代码">go工作区目录保存包代码</h1>
+<p>工作区目录包含三个子目录：</p>
+<ul>
+<li>bin ：保存已编译的二进制可执行程序；</li>
+<li>pkg ：保存已编译的二进制包文件；</li>
+<li>src ：保存go的源代码；</li>
+</ul>
+<p>在src中，每个包的代码都位于它自己单独的子目录中，按照惯例，子目录名应与包名相同。</p>
+<p>每个包目录应该包含一个或多个源代码文件，文件名不重要，但要以 <code>.go</code> 结尾。</p>
+<p><img  src="/img/Golang/4-%e4%bb%a3%e7%a0%81%e9%9b%86-%e5%8c%85/go%e5%b7%a5%e4%bd%9c%e5%8c%ba%e7%9b%ae%e5%bd%95.png"
+        alt/></p>
+<h1 id="创建一个新包">创建一个新包</h1>
+<p>做一个简单的包：</p>
+<pre tabindex="0"><code>go
+└── src
+    └── greeting
+        └── greeting.go
+</code></pre><p>与所有go源代码文件一样，这个文件以package行开始，与其他代码不同，这段代码不是main包的一部分，是一个名为greeting的包的一部分。还有两个函数定义，希望这些函数可以在greeting包之外访问，所以需要首字母大写：</p>
+<pre tabindex="0"><code>package greeting
+
+import &#34;fmt&#34;
+
+func Hello() {
+	fmt.Println(&#34;Hello!&#34;)
+}
+func Hi() {
+	fmt.Println(&#34;Hi!&#34;)
+}
+</code></pre><h1 id="将包导入程序">将包导入程序</h1>
+<p>在程序中使用新包：</p>
+<pre tabindex="0"><code>go
+└── src
+    ├── greeting
+    │   └── greeting.go
+    └── hi
+        └── main.go
+</code></pre><p>与每个go源代码文件一样，这段代码从package开始，但希望这是一个可执行的命令，需要使用main的包名。</p>
+<p>通常，包名应与所在目录名保持一致，但是main包例外。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;greeting&#34;
+
+func main() {
+	greeting.Hello()
+	greeting.Hi()
+}
+</code></pre><p>导入greeting包，该目录名与 import 语句中的名称相匹配。</p>
+<h1 id="包使用相同的文件布局">包使用相同的文件布局</h1>
+<p>与main包一样，都要有三部分结构： package 子句、import 语句、实际代码。</p>
+<h1 id="包命名规范">包命名规范</h1>
+<p>每次调用包中的函数时都要输入包名，包名遵循以下规则：</p>
+<ul>
+<li>包名应全部为小写；</li>
+<li>若含义明显，应缩写；</li>
+<li>尽可能是一个词，若是两个词，不应该用下划线分隔，第二个词也不应该大写；</li>
+<li>导入的包名避免与本地变量名冲突；</li>
+</ul>
+<h1 id="包限定符">包限定符</h1>
+<p>当访问从不同包导出的函数、变量或其他东西时，需要通过在函数或变量钱输入包名来限定其名称；当访问定义在当前包中的函数或变量时，不应该限定包名。</p>
+<h1 id="常量">常量</h1>
+<p>许多包导出常量：从不更改的命名值。</p>
+<p>声明常量看起来像变量声明，具有名称、可选的类型和常量值，不同点：</p>
+<ul>
+<li>使用<code>const</code>关键字而不是var关键字；</li>
+<li>必须在声明常量时赋值，不能像变量那样后赋值；</li>
+<li>变量有短变量声明语法，常量没有；</li>
+</ul>
+<p>与变量声明一样，可以省略类型，将从分配的值推断：<code>const SquareSides = 4</code> ;</p>
+<p>变量的值可以变化，但常量值必须保持不变。</p>
+<p>与变量和函数一样，名称以大写字母开头的常量是可导出的。</p>
+<h1 id="嵌套的包目录和导入路径">嵌套的包目录和导入路径</h1>
+<p>可以将类似的包组嵌套在go工作区的一个目录中，然后该目录将成为它包含的所有包的导入路径的一部分。<br>
+<img  src="/img/Golang/4-%e4%bb%a3%e7%a0%81%e9%9b%86-%e5%8c%85/%e5%b5%8c%e5%a5%97%e5%8c%85%e7%9b%ae%e5%bd%95%e4%b8%8e%e5%af%bc%e5%85%a5%e8%b7%af%e5%be%84.png"
+        alt/></p>
+<h1 id="使用go-install安装程序可执行文件">使用&quot;go install&quot;安装程序可执行文件</h1>
+<p>与go build 不同，go install 以包含代码的目录来命名可执行文件。将存储在工作区中名为 bin 的目录中。</p>
+<h1 id="设置gopath">设置GOPATH</h1>
+<p>GOPATH 是一个环境变量，go工具会参考它来查找工作区位置。大多数开发者将所有代码都保存在一个工作区中，但也可以使用 GOPATH 将工作区转移到其他目录。</p>
+<p>若代码存储在默认目录之外的地方，需要设置GOPATH: <code>export GOPATH=&quot;/xxxx/xxx&quot;</code>.</p>
+<h1 id="发布包">发布包</h1>
+<p>可以在git等仓库中保存代码，这样其他开发人员就可以在自己的项目中使用它。</p>
+<pre tabindex="0"><code>import (
+       &#34;fmt&#34;
+       &#34;github.com/abc/defg&#34;
+       &#34;log&#34;
+)
+
+func main() {
+       fmt.Print(&#34;xxxxxx&#34;)
+       grade, err := defg.GetFloat()
+       if err != nil {
+              log.Fatal(err)
+       }
+}
+</code></pre><h1 id="使用go-get下载和安装包">使用&quot;go get&quot;下载和安装包</h1>
+<p>使用包所在的URL作为导入路径，可以使用<code>go get</code>自动下载和安装包：<code>go get github.com/abc/defg</code>.</p>
+<p>go将连接到github，下载存储库并将其保存在go工作区的src目录中。</p>
+<h1 id="使用go-doc阅读包文档">使用&quot;go doc&quot;阅读包文档</h1>
+</article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/3.%E5%87%BD%E6%95%B0/"><span class="iconfont icon-article"></span>3.函数</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>
