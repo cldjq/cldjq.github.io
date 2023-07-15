@@ -5,10 +5,23 @@
     <description>Recent content in 打怪升级 on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Tue, 11 Jul 2023 15:57:40 +0800</lastBuildDate>
+    <lastBuildDate>Sat, 15 Jul 2023 10:11:00 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>5.数组</title>
+      <link>https://tinklespring.com/posts/5.%E6%95%B0%E7%BB%84/</link>
+      <pubDate>Sat, 15 Jul 2023 10:11:00 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/5.%E6%95%B0%E7%BB%84/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;go 有两种内置的存储列表的方式，本篇介绍其中一种：数组。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;数组保存值的集合&#34;&gt;数组保存值的集合&lt;/h1&gt;
+</description>
+    </item>
     
     <item>
       <title>4.代码集：包</title>
@@ -121,6 +134,38 @@ func main() {
 &lt;p&gt;使用包所在的URL作为导入路径，可以使用&lt;code&gt;go get&lt;/code&gt;自动下载和安装包：&lt;code&gt;go get github.com/abc/defg&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;go将连接到github，下载存储库并将其保存在go工作区的src目录中。&lt;/p&gt;
 &lt;h1 id=&#34;使用go-doc阅读包文档&#34;&gt;使用&amp;quot;go doc&amp;quot;阅读包文档&lt;/h1&gt;
+&lt;p&gt;可以使用 &lt;code&gt;go doc&lt;/code&gt; 命令来显示关于任何包或函数的文档。&lt;br&gt;
+例如: &lt;code&gt;go doc strconv&lt;/code&gt;   &lt;code&gt;go doc strconv ParsetFloat&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;使用doc注释记录包&#34;&gt;使用doc注释记录包&lt;/h1&gt;
+&lt;p&gt;若希望用户看到有关包或函数的文档，需要自己添加。&lt;/p&gt;
+&lt;p&gt;只需在代码中添加文档注释，直接出现在package子句或函数声明之前的普通go注释将被视为文档注释，将显示在go doc 的输出中。&lt;/p&gt;
+&lt;p&gt;添加文档注释时，需要遵循一些惯例：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;注释应该是完整的句子；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;包注释应以 &lt;code&gt;Package&lt;/code&gt; 开头，后跟包名；
+&lt;code&gt;Package mypackage enable widget management&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;函数注释应以其描述的函数的名称开头；
+&lt;code&gt;MyFunction converts widget to gizmos&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;可以通过缩进在注释中包含代码示例；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;除了代码示例的缩进，不要为了强调或格式化添加额外的标点符号。文档注释将显示为纯文本，并以这种方式进行格式化；&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;在web浏览器中查看文档&#34;&gt;在web浏览器中查看文档&lt;/h1&gt;
+&lt;p&gt;可以在搜索引擎中搜索。&lt;/p&gt;
+&lt;h1 id=&#34;使用godoc提供html文档&#34;&gt;使用&amp;quot;godoc&amp;quot;提供HTML文档&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;godoc&lt;/code&gt; 工具根据主要的go安装和工作区中的代码生成HTML文档。&lt;/p&gt;
+&lt;p&gt;可以在web服务器模式运行 godoc ：&lt;code&gt;godoc -http=:8880&lt;/code&gt; ，然后可以在浏览器中访问：&lt;code&gt;http://localhost:8880/pkg&lt;/code&gt;。&lt;/p&gt;
+&lt;h1 id=&#34;godoc服务器包含你的包&#34;&gt;&amp;ldquo;godoc&amp;quot;服务器包含你的包&lt;/h1&gt;
+&lt;p&gt;除了来自go标准库的包之外，godoc 还为go工作区中的任何包构建HTML文档，这些包有可能是第三方的包，也可能是自己写的包。&lt;/p&gt;
 </description>
     </item>
     
@@ -2207,16 +2252,6 @@ IPv4/CIDR：x.x.x.x/24&lt;br&gt;
 &lt;p&gt;查看集群状态：&lt;code&gt;pvecm status&lt;/code&gt;&lt;br&gt;
 查看集群节点：&lt;code&gt;pvecm nodes&lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;至此，安装完成&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>About</title>
-      <link>https://tinklespring.com/about/</link>
-      <pubDate>Mon, 22 May 2023 18:33:06 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/about/</guid>
-      <description>&lt;p&gt;Super man!&lt;/p&gt;
 </description>
     </item>
     

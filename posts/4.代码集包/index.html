@@ -120,9 +120,41 @@ func main() {
 <p>使用包所在的URL作为导入路径，可以使用<code>go get</code>自动下载和安装包：<code>go get github.com/abc/defg</code>.</p>
 <p>go将连接到github，下载存储库并将其保存在go工作区的src目录中。</p>
 <h1 id="使用go-doc阅读包文档">使用&quot;go doc&quot;阅读包文档</h1>
+<p>可以使用 <code>go doc</code> 命令来显示关于任何包或函数的文档。<br>
+例如: <code>go doc strconv</code>   <code>go doc strconv ParsetFloat</code></p>
+<h1 id="使用doc注释记录包">使用doc注释记录包</h1>
+<p>若希望用户看到有关包或函数的文档，需要自己添加。</p>
+<p>只需在代码中添加文档注释，直接出现在package子句或函数声明之前的普通go注释将被视为文档注释，将显示在go doc 的输出中。</p>
+<p>添加文档注释时，需要遵循一些惯例：</p>
+<ul>
+<li>
+<p>注释应该是完整的句子；</p>
+</li>
+<li>
+<p>包注释应以 <code>Package</code> 开头，后跟包名；
+<code>Package mypackage enable widget management</code></p>
+</li>
+<li>
+<p>函数注释应以其描述的函数的名称开头；
+<code>MyFunction converts widget to gizmos</code></p>
+</li>
+<li>
+<p>可以通过缩进在注释中包含代码示例；</p>
+</li>
+<li>
+<p>除了代码示例的缩进，不要为了强调或格式化添加额外的标点符号。文档注释将显示为纯文本，并以这种方式进行格式化；</p>
+</li>
+</ul>
+<h1 id="在web浏览器中查看文档">在web浏览器中查看文档</h1>
+<p>可以在搜索引擎中搜索。</p>
+<h1 id="使用godoc提供html文档">使用&quot;godoc&quot;提供HTML文档</h1>
+<p><code>godoc</code> 工具根据主要的go安装和工作区中的代码生成HTML文档。</p>
+<p>可以在web服务器模式运行 godoc ：<code>godoc -http=:8880</code> ，然后可以在浏览器中访问：<code>http://localhost:8880/pkg</code>。</p>
+<h1 id="godoc服务器包含你的包">&ldquo;godoc&quot;服务器包含你的包</h1>
+<p>除了来自go标准库的包之外，godoc 还为go工作区中的任何包构建HTML文档，这些包有可能是第三方的包，也可能是自己写的包。</p>
 </article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
-<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/3.%E5%87%BD%E6%95%B0/"><span class="iconfont icon-article"></span>3.函数</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/5.%E6%95%B0%E7%BB%84/"><span class="iconfont icon-article"></span>5.数组</a></p><p><a class="link" href="/posts/3.%E5%87%BD%E6%95%B0/"><span class="iconfont icon-article"></span>3.函数</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
     window.disqus_config = function () {
     
