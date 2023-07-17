@@ -20,6 +20,117 @@
 &lt;p&gt;go 有两种内置的存储列表的方式，本篇介绍其中一种：数组。&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h1 id=&#34;数组保存值的集合&#34;&gt;数组保存值的集合&lt;/h1&gt;
+&lt;p&gt;数组是所有共享同一类型的值的集合。&lt;/p&gt;
+&lt;p&gt;数组中包含的值称为它的&lt;code&gt;元素&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;可以有一个字符串数组、一个布尔数组或其他类型的数组（甚至数组的数组）。&lt;/p&gt;
+&lt;p&gt;可以将整个数组存储在单个变量中，然后访问数组中所需要的任何元素。&lt;/p&gt;
+&lt;p&gt;数组保存特定数量的元素，不能增长或收缩，要声明保存数组的变量，需要在方括号&lt;code&gt;[]&lt;/code&gt;中指定它所保存的元素数量，后跟数组所保存的元素类型。&lt;/p&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/5-%e6%95%b0%e7%bb%84/%e5%a3%b0%e6%98%8e%e6%95%b0%e7%bb%84.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;要设置数组元素的值或稍后检索值，需要一种方法来指定哪个元素，数组中的元素从0开始编号，一个元素的编号称为其&lt;code&gt;索引&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;例如，创建一个由7个字符串组成的数组：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var notes [7]string
+notes[0] = &amp;#34;do&amp;#34;    //给第一个元素赋值
+notes[1] = &amp;#34;re&amp;#34;
+notes[2] = &amp;#34;mi&amp;#34;
+fmt.Println(notes[0])   //打印第一个元素
+fmt.Println(notes[1])   //打印第二个元素
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;创建一个整型数组：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var primes [5]int
+primes[0] = 2
+primes[1] = 3
+fmt.Println(primes[0])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;time.Time值的数组：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var dates [3]time.Time
+dates[0] = time.Unix(1257894000, 0)
+dates[1] = time.Unix(1447920000, 0)
+dates[2] = time.Unix(1508632200, 0)
+fmt.Println(dates[1])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出: &lt;code&gt;2015-11-19 08:00:00 +0000 UTC&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;数组中的零值&#34;&gt;数组中的零值&lt;/h1&gt;
+&lt;p&gt;与变量一样，当创建一个数组时，其所包含的所有值都被初始化为该数组所保存类型的零值。默认情况下，一个 int 值数组用0填充。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var primes [5]int
+primes[0] = 2
+fmt.Println(primes[0])   //打印显示赋值的元素
+fmt.Println(primes[2])   //打印未显式赋值的元素
+fmt.Println(primes[4])   //打印未显式赋值的元素
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2
+0
+0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;字符串的零值是一个空字符串，默认情况下，一个字符串值数组用空字符串填充。&lt;/p&gt;
+&lt;p&gt;零值可以使操作数组元素变得安全，即使没有显式为其赋值。 &lt;br&gt;
+例如：一个整数计数器数组，可以在不首先显式赋值的情况下给它们中任何一个赋值，因为其都是从0开始。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var counters [3]int
+counters[0]++    //将第一个元素从0增加到1
+counters[0]++    //将第一个元素从1增加到2
+counters[2]++    //将第三个元素从0增加到1
+fmt.Println(counters[0], counters[1], counters[2])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2
+0
+1
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;创建数组时，其所包含的所有值都初始化为数组所保存类型的零值。&lt;/p&gt;
+&lt;h1 id=&#34;数组字面量&#34;&gt;数组字面量&lt;/h1&gt;
+&lt;p&gt;若事先知道数组应该保存哪些值，可以使用数组字面量来初始化数组。数组字面量的开头与数组类型类似，其元素的数量将放在方括号中，后跟元素的类型，再后面跟大括号，里面是每个元素应该具有的初始值列表，元素值用逗号分隔。&lt;/p&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/5-%e6%95%b0%e7%bb%84/%e6%95%b0%e7%bb%84%e5%ad%97%e9%9d%a2%e9%87%8f.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;与之前不同，不是逐个为数组元素赋值，而是使用数组字面量初始化整个数组。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;数组字面量&lt;/code&gt;允许使用短变量声明：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
+primes := [5]int{2, 3, 5, 7, 11}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以将数组字面量分散到多行上，但必须在代码中的每个换行字符前使用逗号，若数组字面量的最后一项后面跟着换行符，需要在其后面跟一个逗号。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;text := [3]string{
+       &amp;#34;this is a series of long strings&amp;#34;,
+       &amp;#34;which would be awkward to place&amp;#34;,
+       &amp;#34;together on a single line&amp;#34;,    //末尾的逗号是必须的。
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;fmt包中的函数如何处理数组&#34;&gt;&amp;ldquo;fmt&amp;quot;包中的函数如何处理数组&lt;/h1&gt;
+&lt;p&gt;当只想调试代码时，不必逐个将数组元素传递给fmt包中的Println和其他函数，只需传递整个数组。fmt包有做格式化和打印数组的逻辑。（fmt包还可以处理切片、映射和其他数据结构）&lt;/p&gt;
+&lt;p&gt;Printf和Sprintf函数使用的&amp;rdquo;%#v&amp;quot;动词，将按照go代码中显示的方式格式化值，当用&amp;quot;%#v&amp;quot;格式化时，数组在结果中显示为go数组字面量。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var notes [3]string = [3]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;}
+var primes [5]int = [5]int{2, 3, 5, 7, 11}
+fmt.Printf(&amp;#34;%#v\n&amp;#34;, notes)
+fmt.Printf(&amp;#34;%#v\n&amp;#34;, primes)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[3]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;}
+[5]int{2, 3, 5, 7, 11}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;在循环里访问数组元素&#34;&gt;在循环里访问数组元素&lt;/h1&gt;
+&lt;p&gt;不必显示地编写代码中要访问的数组元素的整数索引。 可以使用整型变量中的值作为数组索引。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
+index := 1
+fmt.Println(index, notes[index])  //打印索引1处的数组元素
+index = 3
+fmt.Println(index, notes[index])  //打印索引3处的数组元素
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这意味着可以使用for循环来处理数组元素之类的操作，循环遍历数组中的索引，并使用循环变量访问当前索引处的元素。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
+for i := 0; i &amp;lt;= 2; i++ {
+       fmt.Println(i, notes[i])
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用len函数检查数组长度&#34;&gt;使用&amp;quot;len&amp;quot;函数检查数组长度&lt;/h1&gt;
+&lt;p&gt;写只访问有效数组索引的循环容易出错，有两种方式。&lt;/p&gt;
+&lt;p&gt;第一种是在访问数组前检查数组中元素的的实际数量，可以使用内置的&lt;code&gt;len&lt;/code&gt;函数来实现，该函数返回数组的长度（其包含的元素个数）。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
+fmt.Println(len(notes))   //打印“notes”数组的长度
+primes := [5]int{2, 3, 5, 7, 11}
+fmt.Println(len(primes))  //打印“primes”数组的长度
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;设置循环以处理整个数组时，可以使用&lt;code&gt;len&lt;/code&gt;确定哪些索引可以安全访问。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
+for i := 0; i &amp;lt; len(notes); i++ {
+       fmt.Println(i, notes[i])
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若len(notes)返回7，可访问的索引最多是6，因为数组索引从0开始。&lt;/p&gt;
+&lt;h1 id=&#34;使用forrange安全遍历数组&#34;&gt;使用&amp;quot;for&amp;hellip;range&amp;quot;安全遍历数组&lt;/h1&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/5-%e6%95%b0%e7%bb%84/forrange.png&#34;
+        alt/&gt;&lt;br&gt;
+在range格式中，提供一个变量，该变量保存每个元素的整数索引，另一个变量保存元素本身的值，以及要循环的数组，循环将为数组中的每个元素运行一次，将元素的索引赋值给第一个变量，将元素的值赋值给第二个变量，然后在循环块中添加代码处理这些值。&lt;/p&gt;
+&lt;p&gt;这种for循环形式没有混乱的初始化、条件和标志（post）表达式，由于元素值是自动分配给变量的，因此不会有意外访问无效数组索引的风险。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
+for index, note := range notes {
+       fmt.Println(index, notes)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;对于每个元素，index变量设置为元素的索引，note变量设置为元素的值。&lt;/p&gt;
+&lt;h1 id=&#34;在forrange循环中使用空白标识符&#34;&gt;在&amp;quot;for&amp;hellip;range&amp;quot;循环中使用空白标识符&lt;/h1&gt;
 </description>
     </item>
     
