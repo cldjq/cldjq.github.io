@@ -126,10 +126,142 @@ for i := 0; i &lt; len(notes); i++ {
 <p>这种for循环形式没有混乱的初始化、条件和标志（post）表达式，由于元素值是自动分配给变量的，因此不会有意外访问无效数组索引的风险。</p>
 <pre tabindex="0"><code>notes := [7]string{&#34;do&#34;, &#34;re&#34;, &#34;mi&#34;, &#34;fa&#34;, &#34;so&#34;, &#34;la&#34;, &#34;ti&#34;}
 for index, note := range notes {
-       fmt.Println(index, notes)
+       fmt.Println(index, note)
 }
 </code></pre><p>对于每个元素，index变量设置为元素的索引，note变量设置为元素的值。</p>
 <h1 id="在forrange循环中使用空白标识符">在&quot;for&hellip;range&quot;循环中使用空白标识符</h1>
+<p>go 要求使用声明的每个变量，若停止使用<code>for...range</code>循环中的变量，将编译错误。</p>
+<p>当调用一个具有多个返回值的函数时，忽略其中一个返回值，将该值赋值给空白标识符<code>_</code>，这会让go丢弃该值，而不会编译错误。</p>
+<p>若不需要每个数组元素的索引，可以：</p>
+<pre tabindex="0"><code>notes := [7]string{&#34;do&#34;, &#34;re&#34;, &#34;mi&#34;, &#34;fa&#34;, &#34;so&#34;, &#34;la&#34;, &#34;ti&#34;}
+for _, note := range notes {
+       fmt.Println(note)
+}
+</code></pre><p>若不需要值变量，也可以使用空白标识符：</p>
+<pre tabindex="0"><code>notes := [7]string{&#34;do&#34;, &#34;re&#34;, &#34;mi&#34;, &#34;fa&#34;, &#34;so&#34;, &#34;la&#34;, &#34;ti&#34;}
+for index, _ := range notes {
+       fmt.Println(index)
+}
+</code></pre><h1 id="获得数组中数字的平均值">获得数组中数字的平均值</h1>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+func main() {
+	numbers := [3]float64{71.8, 56.2, 89.5}
+	var sum float64 = 0
+	for _, number := range numbers {
+		sum += number
+	}
+	sampleCount := float64(len(numbers))            //获取类型为int的数组长度，并将其转换为float64
+	fmt.Printf(&#34;Average: %0.2f\n&#34;, sum/sampleCount) //将数组值的总和除以数组长度得到平均值
+}
+</code></pre><h1 id="读取文本文件">读取文本文件</h1>
+<p>编辑一个data.txt文件，将三个数据写进去：</p>
+<pre tabindex="0"><code>71.8
+56.2
+89.5
+</code></pre><p>首先编写一个读取文件的程序：</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;bufio&#34;
+	&#34;fmt&#34;
+	&#34;log&#34;
+	&#34;os&#34;
+)
+
+func main() {
+	file, err := os.Open(&#34;data.txt&#34;) //打开文件进行读取
+	if err != nil {
+		log.Fatal(err)
+	} //若打开文件时出现错误，报告错误并退出
+	scanner := bufio.NewScanner(file) //为文件创建一个新的扫描器
+	for scanner.Scan() {              //从文件中读取一行
+		fmt.Println(scanner.Text()) //打印该行
+	} //循环至文件结尾，scanner.Scan返回false
+	err = file.Close() //关闭文件以释放资源
+	if err != nil {
+		log.Fatal(err)
+	} //若关闭文件时出现错误，报告错误并退出
+	if scanner.Err() != nil {
+		log.Fatal(scanner.Err())
+	} //若扫描文件时出现错误，报告错误并退出
+}
+</code></pre><p>上述程序如何工作：<br>
+首先向 os.Open 函数传递一个带有要打开文件的名字的字符串，从 os.Open 会返回两个值：指向代表被打开文件的 os.File 值的指针，以及一个错误值。若错误值为 nil ，则表示文件成功打开，其他任何值都表示存在错误（比如文件丢失或不可读）。若错误，则会记录错误信息并退出程序。</p>
+<p>然后将 os.File 值传递给 bufio.NewScanner 函数，将返回一个从文件中读取的 bufio.Scanner 值。</p>
+<p>bufio.Scanner 上的 Scan 方法是用来作为 for 循环的一部分。将从文件中读取一行文本，若读取数据成功则返回 true ，否则返回 false 。若将 Scan 用作 for 循环的条件，那么只要有更多的数据需要读取，循环就会继续运行，一旦到达文件的结尾（或出现错误），Scan 将返回 false ，循环退出。</p>
+<p>在 bufio.Scanner 上调用 Scan 方法后，调用 Text 方法将返回一个包含已经读取数据的字符串，对这个程序，调用 Println 打印每一行。</p>
+<p>一旦循环退出，就完成了对文本的处理，保持文件打开会消耗操作系统的资源，因此当程序完成对文件操作时要对文件进行关闭。对 os.File 调用 Close 方法将完成对文件的关闭。与 Open 函数一样，Close 方法也返回一个 error 值，除非出现错误，否则该值为 nil ，（与 Open 不同，Close 只返回一个值，除了错误外没有其他值可以返回）。</p>
+<p>在扫描文件时，bufio.Scanner 也可能遇到错误，调用扫描器上的 Err 方法将返回该错误，在退出之前记录该错误。</p>
+<h1 id="将文本数据读入数组">将文本数据读入数组</h1>
+<p>需要将data.txt读取的字符串转换为数字并存储在数组中: <br>
+<img  src="/img/Golang/5-%e6%95%b0%e7%bb%84/%e5%b0%86%e6%96%87%e4%bb%b6%e8%af%bb%e5%85%a5%e6%95%b0%e7%bb%84.png"
+        alt/></p>
+<pre tabindex="0"><code>// Package datafile allows reading data sample from files.
+package datafile
+
+import (
+	&#34;bufio&#34;
+	&#34;os&#34;
+	&#34;strconv&#34;
+)
+
+// GetFloats reads a float64 from each line of a file.
+func GetFloats(fileName string) ([3]float64, error) {
+	var numbers [3]float64
+	file, err := os.Open(fileName)
+	if err != nil {
+		return numbers, err
+	}
+	i := 0
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		numbers[i], err = strconv.ParseFloat(scanner.Text(), 64)
+		if err != nil {
+			return numbers, err
+		}
+		i++
+	}
+	err = file.Close()
+	if err != nil {
+		return numbers, err
+	}
+	if scanner.Err() != nil {
+		return numbers, scanner.Err()
+	}
+	return numbers, nil
+}
+</code></pre><p>希望能读取除了data.txt意外的文件，因此接受打开的文件名作为参数，将函数设置为返回两个值，一个float64值数组和一个错误值。只有当错误值为nil时，才应将第一个返回值视为可用。</p>
+<p>接下来，声明一个由三个float64值组成的数组，将保存从文件中读取的数字。</p>
+<p>与之前代码一样，打开文件进行读取，不同之处在于，打开传递给函数的任何文件名，而不是硬编码的 &ldquo;data.txt&rdquo; 字符串，若遇到错误，需要返回一个数组以及错误值，所以只返回numbers数组（尽管还没有为其赋值）。</p>
+<p>需要知道将每一行赋值给哪个数组元素，因此创建一个变量来跟踪当前索引。</p>
+<p>设置bufio.Scanner和循环遍历文件行的代码与之前的代码相同，但是循环的代码不同，需要对从文件中读取的字符串调用 strconv.ParseFloat 来将其转换为 float64 ，并将结果赋值给数组。若ParseFloat导致了错误，需要返回该错误，若解析成功，需要对 i 增值，以便下一个数被赋值给下一个数组元素。</p>
+<p>关闭文件并报告任何错误，若没有错误，将到达 GetFloats 函数末尾，并返回float64值数组以及nil错误。</p>
+<h1 id="更新程序读取文本文件">更新程序读取文本文件</h1>
+<pre tabindex="0"><code>package main
+
+import (
+       &#34;fmt&#34;
+       &#34;xxx/xxx/datafile&#34;
+       &#34;log&#34;
+)
+
+func main() {
+       numbers, err := datafile.GetFloats(&#34;data.txt&#34;)
+       if err != nil {
+              log.Fatal(err)
+       }
+       var sum float64 = 0
+       for _, number := range numbers {
+              sum += number
+       }
+       sampleCount := float64(len(numbers))
+       fmt.Printf(&#34;Average: %0.2f\n&#34;, sum/sampleCount)
+}
+</code></pre><p>上述程序只有在data.txt中有三行或更少行时才运行，若超过三行则会报错。  因为声明了 numbers 数组来保存3个元素。</p>
+<p>Go数组的大小是固定的，不能增长或收缩。下一篇将解决这个问题！</p>
 </article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
 <div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/4.%E4%BB%A3%E7%A0%81%E9%9B%86%E5%8C%85/"><span class="iconfont icon-article"></span>4.代码集：包</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
