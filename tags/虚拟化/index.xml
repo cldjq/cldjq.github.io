@@ -11,6 +11,214 @@
     
     
     <item>
+      <title>6.切片</title>
+      <link>https://tinklespring.com/posts/6.%E5%88%87%E7%89%87/</link>
+      <pubDate>Tue, 18 Jul 2023 11:42:00 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/6.%E5%88%87%E7%89%87/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;切片是一个可以通过增长来保存额外数据的集合类型。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;切片&#34;&gt;切片&lt;/h1&gt;
+&lt;p&gt;切片实际上是一个go的数据结构，与数组相同的是，切片由多个相同类型的元素构成，不同的是，切片允许在结尾追加更多的元素。&lt;/p&gt;
+&lt;p&gt;声明一个保存切片的变量，使用一对空方括号，后面跟着这个切片所保存的元素类型 : &lt;code&gt;var mySlice []string&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;除了不指定大小，与声明一个数组变量的语法完全相同。&lt;/p&gt;
+&lt;p&gt;与数组变量不同，声明切片变量并不会自动创建一个切片，可以调用内建的&lt;code&gt;make&lt;/code&gt;函数，传递给&lt;code&gt;make&lt;/code&gt;想要创建的切片类型（这个类型与想要赋值的变量的类型相同）和需要创建的切片的长度。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var notes []string   //声明一个切片变量
+notes = make([]string, 7)  //创建7个字符串的切片
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当切片被创建后，切片中的元素的赋值和取值操作语法与数组相同。&lt;/p&gt;
+&lt;p&gt;无需将变量声明和创建切片分成两步，使用一个短变量声明的make会自动推导出变量类型。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;primes := make([]int, 5)
+primes[0] = 2
+primes[1] = 3
+fmt.Println(primes[0])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;内建的函数&lt;code&gt;len&lt;/code&gt;对切片和数组有相同效果，将一个切片变量传入len，会返回一个整型的长度值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := make([]string, 7)
+primes := make([]int, 5)
+fmt.Println(len(notes))
+fmt.Println(len(primes))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;for&lt;/code&gt;与&lt;code&gt;for...range&lt;/code&gt;数组与切片操作也相同。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;letters := []string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;}
+for i := 0; i &amp;lt; len(letters); i++ {
+       fmt.Println(letters[i])
+}
+for _, letter := range letters {
+       fmt.Println(letter)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;切片字面量&#34;&gt;切片字面量&lt;/h1&gt;
+&lt;p&gt;与数组相同，若最初知道切片有哪些值，可以使用切片字面量来通过这些值初始化切片。&lt;/p&gt;
+&lt;p&gt;切片字面量方括号是空的，后跟切片存储的元素的类型，再跟一个花括号的列表，列表中是每个元素的初始值。&lt;br&gt;
+&lt;code&gt;[]int{9, 18, 27}&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;例如：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := []string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
+fmt.Println(notes[3], notes[6], notes[0])
+primes := []int{
+       2,
+       3,
+       5,
+}
+fmt.Println(primes[0], primes[1], primes[2])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fa ti do
+2 3 5
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;切片运算符&#34;&gt;切片运算符&lt;/h1&gt;
+&lt;p&gt;每个切片都构建在一个底层的数组之上，实际上是底层的数组存储了切片的数据；切片仅仅是数组中的一部分（或者所有）元素的视图。&lt;/p&gt;
+&lt;p&gt;当使用 &lt;code&gt;make&lt;/code&gt; 函数或者切片字面量创建一个切片的时候，底层的数组会自动创建出来（只有通过切片，才能访问它），但也可以创建一个数组，然后再基于数组通过切片运算符创建一个切片。  &lt;code&gt;mySlice := myArray[1:3]&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;切片运算符有两个索引：其中一个标识切片开始的位置，另一个标识切片在此位置之前结束。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;underlyingArray := [5]string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;}
+slicel := underlyingArray[0:3]
+fmt.Println(slicel)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出： &lt;code&gt;[a b c]&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;注意：切片需要在第二个位置之前结束。  比如 underlyingArray[i:j] ，生成的切片从 underlyingArray[i] 到 underlyingArray[j-1]。&lt;/p&gt;
+&lt;p&gt;若想要一个包含了底层数组最后一个元素的切片，需要在运算符中指定越过数组结尾的第二个索引。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;underlyingArray := [5]string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;}
+slice3 := underlyingArray[2:5]
+fmt.Println(slice3)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出： &lt;code&gt;[c d e]&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;切片运算符默认需要两个索引，若忽略第一个索引，第一个元素会被使用。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;underlyingArray := [5]string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;}
+slice4 := underlyingArray[:3]
+fmt.Println(slice4)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;code&gt;[a b c]&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;若忽略了结束的索引，从底层数组的开始索引到数组结尾之间的所有元素都会被包含到结果切片中。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;underlyingArray := [5]string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;}
+slice5 := underlyingArray[1:]
+fmt.Println(slice5)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;code&gt;[b c d e]&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;底层数组&#34;&gt;底层数组&lt;/h1&gt;
+&lt;p&gt;切片并不会自己保存任何数据，仅仅是底层数组元素的视图。当使用切片的时候，仅仅可以操作通过切片可见的部分。&lt;/p&gt;
+&lt;p&gt;甚至可以有多个切片都指向相同的底层数组，每一个切片会是一个指向数组元素的子集的视图，切片甚至可以重叠。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;array3 := [5]string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;}
+slice3 := array3[0:3]
+slice4 := array4[2:5]
+fmt.Println(slice3, slice4)
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;修改底层数组修改切片&#34;&gt;修改底层数组，修改切片&lt;/h1&gt;
+&lt;p&gt;注意：由于切片只是底层数组内容的视图，若修改底层数组，这些变化也会反映到切片。&lt;/p&gt;
+&lt;p&gt;给切片的一个元素赋一个新值，也会修改底层数组相应的元素。&lt;/p&gt;
+&lt;p&gt;若有多个切片指向了同一个底层数组，数组的元素修改会反映给所有的切片。&lt;/p&gt;
+&lt;p&gt;由于这些问题，通常我们会使用 &lt;code&gt;make&lt;/code&gt; 和 &lt;code&gt;切片字面量&lt;/code&gt; 来创建切片，而不是创建一个数组，再用一个切片在上面操作。  使用了 make 和 切片字面量 就不用关心底层数组了。&lt;/p&gt;
+&lt;h1 id=&#34;使用append函数在切片上添加数据&#34;&gt;使用&amp;quot;append&amp;quot;函数在切片上添加数据&lt;/h1&gt;
+&lt;p&gt;go 提供一个内建的函数 &lt;code&gt;append&lt;/code&gt; 来将一个或多个值追加到切片的末尾，它返回一个与原始切片元素完全相同的并且在尾部追加了新元素的新的更大的切片。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;slice := []string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;}
+fmt.Println(slice, len(slice))
+slice = append(slice, &amp;#34;c&amp;#34;)      //在切片末尾追加一个元素
+fmt.Println(slice, len(slice))  //将append返回值赋回相同的切片变量
+slice = append(slice, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;)
+fmt.Println(slice, len(slice))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[a b] 2
+[a b c] 3
+[a b c d e] 5
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;无需记住需要追加到尾部的新值的索引，仅仅调用append函数并且传入切片和需要追加到末尾的值，就会得到一个新的更长的切片。&lt;/p&gt;
+&lt;p&gt;注意需要确保将append返回的值重新赋给传递给append的那个变量，这是为了避免append返回的切片中的一些不一致行为。&lt;/p&gt;
+&lt;p&gt;切片的底层数组不能增长大小，若数组没有足够的空间来保存新的元素，所有的元素会被拷贝到一个新的更大的数组中，且切片会被更新为引用这个新的数组，但由于这些场景都发生在append函数内部，无法知道返回的切片与传入append函数的切片是否具有相同的底层数组，若保留了两个切片，会导致一些非预期的错误。&lt;/p&gt;
+&lt;p&gt;调用append函数，惯例是将函数的返回值赋给传入的那个切片变量，若只保存一个切片，就无需考虑多个切片是否共享同一个底层数组。&lt;/p&gt;
+&lt;h1 id=&#34;切片和零值&#34;&gt;切片和零值&lt;/h1&gt;
+&lt;p&gt;与数组一样，若访问了一个切片中没有赋值的元素，会得到那个元素类型的零值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;floatSlice := make([]float64, 10)
+boolSlice := make([]bool, 10)    //创建元素没有赋值的切片
+fmt.Println(floatSlice[9], boolSlice[5])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出: &lt;code&gt;0 false&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;与数组不同，切片变量有零值：nil，一个没有赋值的切片变量值为 nil。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var intSlice []int
+var stringSlice []string
+fmt.Printf(&amp;#34;intSlice: %#v, stringSlice: %#v\n&amp;#34;, intSlice, stringSlice)   //&amp;#34;%#v&amp;#34;把值格式化为它在go代码中呈现的样子
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在其他语言中，需要在使用切片变量前先测试是否包含切片，但在go中，函数有意被写成对待nil的切片就像它是一个空切片一样。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(len(intSlice))  //把nil切片传递给len函数，返回0，就像传入一个空的切片
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;append函数也会把nil切片看作是一个空的切
+片，若append传入了空的切片，会在切片里增加一个元素并返回只有一个元素的切片。 若传入nil切片，也会得到只有一个元素的切片。实际上并没有一个切片来追加元素，append函数会在幕后创建一个切片。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;intSlice = append(intSlice, 27)   //向append传入一个nil切片
+fmt.Printf(&amp;#34;intSlice: %#v\n&amp;#34;, intSlice)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;stringSlice: []string(27)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;意味着通常无需担心切片是nil还是空的。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var slice []string   //变量值是nil
+if len(slice) == 0 {   //len函数返回0
+       slice = append(slice, &amp;#34;first item&amp;#34;)   //append函数会返回一个元素的切片
+}
+fmt.Printf(&amp;#34;%#v\n&amp;#34;, slce)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[]string{&amp;#34;first item&amp;#34;}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用切片和append读取额外的文件行&#34;&gt;使用切片和&amp;quot;append&amp;quot;读取额外的文件行&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func GetFloats(fileName string) ([]float64, error) {    //返回一个切片
+       var numbers []float64     //该变量默认为nil，append处理nil的行为与处理空切片一样
+       file, err := os.Open(fileName)
+       if err != nil {
+              return numbers, err
+       }
+       scanner := bufio.NewScanner(file)
+       for scanner.Scan() {
+              number, err := strconv.ParseFloat(scanner.Text(), 64)   //将string转换为float64且赋值给一个临时变量
+	      if err != nil {
+                     return numbers, err
+	      }
+              numbers = append(numbers, number)   //追加新的数字给切片
+       }
+       err = file.Close()
+       if err != nil {
+              return numbers, err
+       }
+       if scanner.Err() != nil {
+              return numbers, scanner.Err()
+       }
+       return numbers, nil
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不必修改主程序中任何代码，因为使用&lt;code&gt;:=&lt;/code&gt;短变量声明，来将GetFloats函数的返回值赋给一个变量，numbers变量自动从[3]float64 (数组类型) 切换到 []float64 (切片类型)，并且 for&amp;hellip;range 循环和len函数对于数组和切片的行为是一致的。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;log&amp;#34;
+	&amp;#34;xxx/xxx/datafile&amp;#34;
+)
+
+func main() {
+	numbers, err := datafile.GetFloats(&amp;#34;data.txt&amp;#34;)  //自动获得一个[]float64来代替[3]float64
+	if err != nil {
+		log.Fatal(err)
+	}
+	var sum float64 = 0
+	for _, number := range numbers {
+		sum += number
+	}
+	sampleCount := float64(len(numbers))
+	fmt.Printf(&amp;#34;Average: %0.2f\n&amp;#34;, sum/sampleCount)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;出错时返回nil值切片&#34;&gt;出错时返回nil值切片&lt;/h1&gt;
+&lt;p&gt;进一步优化Getfloats函数，当前，即使出现错误也会返回一个numbers切片，这意味着会返回一个包含无效数据的切片。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;numbers, err := strconv.ParseFloat(scanner.Text(), 64)
+if err != nil {
+return numbers, err  //返回了一个不该被使用的无效数据
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;调用GetFloats的代码应该检查返回的错误值，若不是nil则需要忽略返回的切片。那为啥还要多此一举返回一个包含无效数据的切片？接下来修改GetFloats函数，让函数出错时返回一个nil代替之前的包含无效数据的切片。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func GetFloats(fileName string) ([]float64, error) {
+       var numbers []float64
+       file, err := os.Open(fileName)
+       if err != nil {
+              return nil, err   //返回nil而不是切片，切片在此处的值也是nil，但修改使之更显而易见
+       }
+       scanner := bufio.NewScanner(file)
+       for scanner.Scan() {
+              number, err := strconv.ParseFloat(scanner.Text(), 64)
+	      if err != nil {
+                     return nil, err   //返回nil而不是切片
+	      }
+              numbers = append(numbers, number)
+       }
+       err = file.Close()
+       if err != nil {
+              return nil, err  //返回nil而不是切片
+       }
+       if scanner.Err() != nil {
+              return nil, scanner.Err()  //返回nil而不是切片
+       }
+       return numbers, nil
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;命令行参数&#34;&gt;命令行参数&lt;/h1&gt;
+</description>
+    </item>
+    
+    <item>
       <title>5.数组</title>
       <link>https://tinklespring.com/posts/5.%E6%95%B0%E7%BB%84/</link>
       <pubDate>Sat, 15 Jul 2023 10:11:00 +0800</pubDate>
@@ -2407,94 +2615,6 @@ Created symlink /etc/systemd/system/multi-user.target.wants/k3s.service → /etc
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;INSTALL_K3S_SKIP_DOWNLOAD=true K3S_URL=https://&amp;lt;SERVER_IP&amp;gt;:6443 K3S_TOKEN=&amp;lt;YOUR_TOKEN&amp;gt; ./install.sh
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;升级：&lt;br&gt;
 升级也比较简单，只需将新版本images与k3s二进制程序替换，重新执行安装脚本即可&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Proxmox安装</title>
-      <link>https://tinklespring.com/posts/proxmox%E5%AE%89%E8%A3%85/</link>
-      <pubDate>Tue, 23 May 2023 10:24:44 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/proxmox%E5%AE%89%E8%A3%85/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;本文使用非系统镜像模式安装&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;安装debian系统&#34;&gt;安装debian系统&lt;/h1&gt;
-&lt;h1 id=&#34;配置debian网卡&#34;&gt;配置debian网卡&lt;/h1&gt;
-&lt;blockquote&gt;
-&lt;p&gt;服务器需要使用两个网口，一个access，一个trunk，这里使用access 口，trunk 口给Linux Bridge使用。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;auto ens3
-iface ens3 inet static
-address 192.168.100.80
-netmask 255.255.255.0
-gateway 192.168.100.254
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;安装proxmox&#34;&gt;安装proxmox&lt;/h1&gt;
-&lt;blockquote&gt;
-&lt;p&gt;将主机名写入hosts文件&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;echo &amp;#34;10.20.0.10    pve-00&amp;#34; &amp;gt;&amp;gt; /etc/hosts
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;配置debian11-apt源&#34;&gt;配置debian11 apt源&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;cat &amp;gt; /etc/apt/sources.list &amp;lt;&amp;lt; EOF
-deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye main contrib non-free
-deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye main contrib non-free
-deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye-updates main contrib non-free
-deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye-updates main contrib non-free
-deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye-backports main contrib non-free
-deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye-backports main contrib non-free
-deb https://mirrors.tuna.tsinghua.edu.cn/debian-security bullseye-security main contrib non-free
-deb-src https://mirrors.tuna.tsinghua.edu.cn/debian-security bullseye-security main contrib non-free
-EOF
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;添加pve源&#34;&gt;添加pve源&lt;/h2&gt;
-&lt;p&gt;&lt;code&gt;echo &amp;quot;deb [arch=amd64] https://mirrors.tuna.tsinghua.edu.cn/proxmox/debian bullseye pve-no-subscription&amp;quot; &amp;gt; /etc/apt/sources.list.d/pve-install-repo.list&lt;/code&gt;&lt;/p&gt;
-&lt;h2 id=&#34;添加pve-存储库密钥&#34;&gt;添加pve 存储库密钥&lt;/h2&gt;
-&lt;p&gt;&lt;code&gt;wget https://enterprise.proxmox.com/debian/proxmox-release-bullseye.gpg -O /etc/apt/trusted.gpg.d/proxmox-release-bullseye.gpg&lt;/code&gt;&lt;/p&gt;
-&lt;h2 id=&#34;更新系统&#34;&gt;更新系统&lt;/h2&gt;
-&lt;p&gt;&lt;code&gt;apt update &amp;amp;&amp;amp; apt upgrade&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;安装proxmox-1&#34;&gt;安装proxmox&lt;/h1&gt;
-&lt;p&gt;&lt;code&gt;apt install proxmox-ve postfix open-iscsi&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;删除os-prober&#34;&gt;删除os-prober&lt;/h1&gt;
-&lt;p&gt;&lt;code&gt;apt remove os-prober linux-image-amd64&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;去除订阅提示&#34;&gt;去除订阅提示&lt;/h1&gt;
-&lt;blockquote&gt;
-&lt;p&gt;更改 /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js 文件&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Ext.Msg.show({
-title: gettext(&amp;#39;No valid subscription&amp;#39;),
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;更改为&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;void({
-title: gettext(&amp;#39;No valid subscription&amp;#39;),
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;配置网络&#34;&gt;配置网络&lt;/h1&gt;
-&lt;p&gt;1.选择网络&lt;br&gt;
-2.创建 -&amp;gt; Linux Bridge&lt;br&gt;
-名称：vmbr0&lt;br&gt;
-自动启动：✅&lt;br&gt;
-VLAN感知：✅&lt;br&gt;
-桥接端口：选择上述从交换机trunk口接的网卡名称&lt;br&gt;
-3.再次创建 -&amp;gt; Linux VLAN&lt;br&gt;
-名称：vmbr0.2000&lt;br&gt;
-IPv4/CIDR：x.x.x.x/24&lt;br&gt;
-网关(IPv4)：VLAN tag 2000的网关地址&lt;br&gt;
-自动启动：✅&lt;br&gt;
-4.点击应用配置使网卡配置生效&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;注意，这里的2000是VLAN的tag号,此种方式，可以实现不同的vm在不同的vlan里，方便进行网络层面的管控&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;添加存储&#34;&gt;添加存储&lt;/h1&gt;
-&lt;p&gt;1.选择 数据中心&lt;br&gt;
-2.选择 存储&lt;br&gt;
-3.选择 添加 目录&lt;br&gt;
-这里使用本机的存储，也可使用其他类型，根据实际情况选择即可&lt;/p&gt;
-&lt;h1 id=&#34;添加集群&#34;&gt;添加集群&lt;/h1&gt;
-&lt;p&gt;创建名为pve-cluster名字的pve集群&lt;br&gt;
-&lt;code&gt;pvecm create pve-cluster&lt;/code&gt;&lt;br&gt;
-在需要加入集群的节点上执行&lt;br&gt;
-&lt;code&gt;pvecm add x.x.x.x&lt;/code&gt;&lt;br&gt;
-只能允许没有虚拟机的节点才能加入集群，需要注意&lt;/p&gt;
-&lt;h1 id=&#34;查看状态&#34;&gt;查看状态&lt;/h1&gt;
-&lt;p&gt;查看集群状态：&lt;code&gt;pvecm status&lt;/code&gt;&lt;br&gt;
-查看集群节点：&lt;code&gt;pvecm nodes&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;至此，安装完成&lt;/p&gt;
 </description>
     </item>
     
