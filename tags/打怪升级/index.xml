@@ -5,10 +5,30 @@
     <description>Recent content in 打怪升级 on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Tue, 18 Jul 2023 11:42:00 +0800</lastBuildDate>
+    <lastBuildDate>Sat, 22 Jul 2023 11:37:02 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>7.数据标签：映射</title>
+      <link>https://tinklespring.com/posts/7.%E6%95%B0%E6%8D%AE%E6%A0%87%E7%AD%BE%E6%98%A0%E5%B0%84/</link>
+      <pubDate>Sat, 22 Jul 2023 11:37:02 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/7.%E6%95%B0%E6%8D%AE%E6%A0%87%E7%AD%BE%E6%98%A0%E5%B0%84/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;当需要使用一个特定的值，为了找到它，需要从数组或切片中查看每一个元素，有一种集合，其中的每个值都有一个标签，那么就可以快速找到需要的值，&lt;code&gt;映射&lt;/code&gt;就是做这个工作的。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;从文件中读取名字&#34;&gt;从文件中读取名字&lt;/h1&gt;
+&lt;p&gt;有一个文件 votes.txt ：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Amber Graham
+Brian Martin
+Amber Graham
+Brian Martin
+Amber Graham
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;每一行代表一次投票，需要处理文件的每一行并统计每个名称出现的总次数，获得多票的胜出。&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>6.切片</title>
@@ -215,6 +235,194 @@ return numbers, err  //返回了一个不该被使用的无效数据
        return numbers, nil
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;命令行参数&#34;&gt;命令行参数&lt;/h1&gt;
+&lt;p&gt;每当要计算一个新的平均数时，都要修改data.txt，有一种替代方案：用户把值作为命令行参数传递给程序。&lt;/p&gt;
+&lt;p&gt;就像通过传入不同的参数来控制函数的行为一样，在终端传递参数给程序，这叫做&lt;code&gt;命令行接口&lt;/code&gt;。&lt;/p&gt;
+&lt;h1 id=&#34;从osargs切片获取命令行参数&#34;&gt;从&amp;quot;os.Args&amp;quot;切片获取命令行参数&lt;/h1&gt;
+&lt;p&gt;os 包有一个包级别的变量 os.Args , 是一个字符串的切片，代表了当前执行程序的命令行参数。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+       &amp;#34;fmt&amp;#34;
+       &amp;#34;os&amp;#34;
+)
+
+func main() {
+       fmt.Println(os.Args)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;比如将上述代码编译后，运行:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;./xxx a b c d e
+
+输出：
+[./xxx a b c d e]
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;切片运算符可用于其他切片&#34;&gt;切片运算符可用于其他切片&lt;/h1&gt;
+&lt;p&gt;上述 ./xxx 是程序的名字，我们并不想要，解决：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+       &amp;#34;fmt&amp;#34;
+       &amp;#34;os&amp;#34;
+)
+
+func main() {
+       fmt.Println(os.Args[1:])    //获取一个包含os.Args的从第二个元素到最后一个元素的新的切片
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这样就避免了上述问题。&lt;/p&gt;
+&lt;h1 id=&#34;使用命令行参数&#34;&gt;使用命令行参数&lt;/h1&gt;
+&lt;p&gt;在 os.Args 上使用切片运算符来忽略程序名称，并把返回切片赋给一个 arguments 变量，设置一个 sum 变量来保存所有输入数字的和，然后使用 for&amp;hellip;range 循环来处理 arguments 的元素（使用 _ 空白标识符来忽略元素索引）。使用strconv.ParseFloat 来将参数从字符串转换为 float64 ，若出现错误，输出并退出，若无错误，将数字累加到 sum。 当循环处理完所有参数时，用 len(arguments) 来确定样本个数，然后用 sum 除以样本个数得到平均值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;log&amp;#34;
+	&amp;#34;os&amp;#34;
+	&amp;#34;strconv&amp;#34;
+)
+
+func main() {
+	arguments := os.Args[1:]             //通过os.Args获取一个不包含首元素的字符串切片
+	var sum float64 = 0                  //定义一个保存数字的累加值
+	for _, argument := range arguments { //处理命令行的每一个参数
+		number, err := strconv.ParseFloat(argument, 64) //将字符串转换为float64
+		if err != nil {
+			log.Fatal(err)
+		} //若转换函数出现问题则输出log并退出
+		sum += number //累加数字
+	}
+	sampleCount := float64(len(arguments))          //参数的长度可以用作样本的个数
+	fmt.Printf(&amp;#34;Average: %0.2f\n&amp;#34;, sum/sampleCount) //计算平均值并进行打印
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;可变长参数函数&#34;&gt;可变长参数函数&lt;/h1&gt;
+&lt;p&gt;一些函数调用可以获取任何个数的参数，例如 fmt.Println 或 append 。但不要直接在任何函数中使用，定义的所有函数的参数个数与函数调用的参数个数要严格匹配，否则会导致编译错误。&lt;/p&gt;
+&lt;p&gt;那么 Println 与 append 是如何做到的呢？因为它定义了一个&lt;code&gt;可变长参数函数&lt;/code&gt;，一个可变长参数函数可以以多种参数个数来调用，为了让函数的参数可变长，在函数声明中的最后的（或仅有的）参数类型前使用省略号&lt;code&gt;...&lt;/code&gt; 。&lt;/p&gt;
+&lt;p&gt;语法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func myFunc(param1 int, param2 ...string) {
+       //function code here
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;可变长参数函数的最后一个参数接收一个切片类型的变长参数&lt;/code&gt;，这个切片可以被函数当作普通切片来处理。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func severalInts(numbers ...int) {
+       fmt.Println(numbers)
+}
+
+func main() {
+       severalInts(1)
+       severalInts(1, 2, 3)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;有一个带有字符串参数的函数，若不提供变长参数，不会返回错误，会收到一个空切片。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func severalStrings(strings ...string) {
+       fmt.Println(strings)
+}
+
+func main() {
+       severalStrings(&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;)
+       severalStrings()   //若没有参数，会收到一个空的切片
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;函数也可以接收一个或多个非可变长参数，即使一个函数调用可以忽略可变长参数，其中的非可变长参数是不可忽略的，若忽略会导致编译失败。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;只有函数定义中的最后一个参数是可变长参数&lt;/code&gt; ，不能放到其他必需参数前。&lt;/p&gt;
+&lt;h1 id=&#34;使用可变长参数函数&#34;&gt;使用可变长参数函数&lt;/h1&gt;
+&lt;p&gt;maximum 函数会接收任意个数的float64参数并会返回其中的最大值，这个函数的所有参数被保存在一个切片类型的参数 numbers 中，初始设置当前最大值为 -Inf ，一个代表了负无穷的特殊值，通过调用math.Inf获得。（可以使用当前最大值0，但这个最大值可能是负数），然后使用 for&amp;hellip;range 来处理 numbers 上的每个值，将其与最大值比较。若大于最大值，将其设置为最大值，处理完所有参数后剩下的最大值就是要返回的。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;math&amp;#34;
+)
+
+func maximum(numbers ...float64) float64 {  //接收任何个数的float64参数
+	max := math.Inf(-1)   //以一个很小的值开始
+	for _, number := range numbers {
+		if number &amp;gt; max {
+			max = number   //找到参数中的最大值
+		}
+	}   //处理变长参数的每一个值
+	return max
+}
+
+func main() {
+	fmt.Println(maximum(71.8, 56.2, 89.5))
+	fmt.Println(maximum(90.7, 89.7, 98.5, 92.3))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&amp;ldquo;inRange&amp;quot;函数，接收一个最小值，一个最大值和任何个数的float64参数，丢弃在给定最小值和给定最大值范围之外的参数，返回一个在范围之内的参数值的切片。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func inRange(min float64, max float64, numbers ...float64) []float64 {
+	var result []float64   //这个切片会保存范围内的值
+	for _, number := range numbers {
+		if number &amp;gt;= min &amp;amp;&amp;amp; number &amp;lt;= max {
+			result = append(result, number)
+		}
+	}
+	return result
+}
+
+func main() {
+	fmt.Println(inRange(1, 100, -12.5, 3.2, 0, 50, 103.5))   //寻找&amp;gt;=1且&amp;lt;=100的参数
+	fmt.Println(inRange(-10, 10, 4.1, 12, -12, -5.2))   //寻找&amp;gt;=-10且&amp;lt;=10的参数
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用可变长参数函数计算平均值&#34;&gt;使用可变长参数函数计算平均值&lt;/h1&gt;
+&lt;p&gt;来创造一个可以接收任意多个float64类型参数，并返回它们的平均值的可变长参数函数。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func average(numbers ...float64) float64 {  //获取任意个数的float64参数
+	var sum float64 = 0   //定义一个变量来保存参数的总和
+	for _, number := range numbers {
+		sum += number
+	}
+	return sum / float64(len(numbers))
+}
+
+func main() {
+	fmt.Println(average(100, 50))
+	fmt.Println(average(90.7, 89.7, 98.5, 92.3))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;向可变长参数函数传递一个切片&#34;&gt;向可变长参数函数传递一个切片&lt;/h1&gt;
+&lt;p&gt;将numbers切片传递给average函数。&lt;/p&gt;
+&lt;p&gt;当调用一个可变长参数函数时，在传入的切片变量后增加省略号&lt;code&gt;...&lt;/code&gt;。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func severalInts(numbers ...int) {
+       fmt. Println(numbers)
+}
+func mix(num int, flag bool, strings ...string) {
+       fmt.Println(num, flag, strings)
+}
+func main() {
+       intSlice := []int{1, 2, 3}
+       severalInts(intSlice...)   //使用int切片代替可变参数
+       stringsSlice := []string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;}
+       mix(1, true, stringsSlice...)   //使用string切片代替可变参数
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+       &amp;#34;fmt&amp;#34;
+       &amp;#34;log&amp;#34;
+       &amp;#34;os&amp;#34;
+       &amp;#34;strconv&amp;#34;
+)
+
+func average(numbers ...float64) float64 {
+	var sum float64 = 0
+	for _, number := range numbers {
+		sum += number
+	}
+	return sum / float64(len(numbers))
+}
+
+func main() {
+        arguments := os.Args[1:]
+        var numbers []float64  //该切片保存了将要被计算平均值的数字
+	for _, argument := range arguments {
+               number, err := strconv.ParseFloat(argument, 64)
+	       if err != nil {
+                      log.Fatal(err)
+	       }
+               numbers = append(numbers, number)
+	}
+        fmt.Printf(&amp;#34;Average: %0.2f\n&amp;#34;, average(numbers...))  //向可变参数函数传入切片
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;会把命令行参数转换为float64的切片，然后传递给可变参数的average函数。&lt;/p&gt;
 </description>
     </item>
     
@@ -2576,45 +2784,6 @@ ceph osd crush rule create-replicated rule-hdd default  host hdd
 &lt;li&gt;选择添加，将需要的vm加入即可，请求状态为 started&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;此时，即可使 vm 成为高可用，当宿主机宕机后，vm会漂移至其他节点。&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>K3s初体验</title>
-      <link>https://tinklespring.com/posts/k3s%E5%88%9D%E4%BD%93%E9%AA%8C/</link>
-      <pubDate>Tue, 23 May 2023 14:13:37 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/k3s%E5%88%9D%E4%BD%93%E9%AA%8C/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;本文使用离线安装方式&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;1.下载k3s 二进制程序与images &lt;code&gt;https://github.com/k3s-io/k3s/releases&lt;/code&gt;&lt;br&gt;
-2.下载安装脚本 &lt;code&gt;https://get.k3s.io&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;将tar 文件放到下边这个目录内。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;mkdir -p /var/lib/rancher/k3s/agent/images/
-cp ./k3s-airgap-images-$ARCH.tar /var/lib/rancher/k3s/agent/images/
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;执行脚本
-&lt;code&gt;INSTALL_K3S_SKIP_DOWNLOAD=true ./install.sh&lt;/code&gt;&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[INFO]  Skipping k3s download and verify
-[INFO]  Skipping installation of SELinux RPM
-[INFO]  Creating /usr/local/bin/kubectl symlink to k3s
-[INFO]  Creating /usr/local/bin/crictl symlink to k3s
-[INFO]  Creating /usr/local/bin/ctr symlink to k3s
-[INFO]  Creating killall script /usr/local/bin/k3s-killall.sh
-[INFO]  Creating uninstall script /usr/local/bin/k3s-uninstall.sh
-[INFO]  env: Creating environment file /etc/systemd/system/k3s.service.env
-[INFO]  systemd: Creating service file /etc/systemd/system/k3s.service
-[INFO]  systemd: Enabling k3s unit
-Created symlink /etc/systemd/system/multi-user.target.wants/k3s.service → /etc/systemd/system/k3s.service.
-[INFO]  systemd: Starting k3s
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;至此单节点安装完成。只部署server 端，即可拥有全部功能。&lt;/p&gt;
-&lt;p&gt;扩展增加agent节点：&lt;br&gt;
-获取token:&lt;br&gt;
-&lt;code&gt;cat /var/lib/rancher/k3s/server/token&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;将&lt;code&gt;SERVER_IP&lt;/code&gt;与token换成对应的，执行如下命令添加agent节点&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;INSTALL_K3S_SKIP_DOWNLOAD=true K3S_URL=https://&amp;lt;SERVER_IP&amp;gt;:6443 K3S_TOKEN=&amp;lt;YOUR_TOKEN&amp;gt; ./install.sh
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;升级：&lt;br&gt;
-升级也比较简单，只需将新版本images与k3s二进制程序替换，重新执行安装脚本即可&lt;/p&gt;
 </description>
     </item>
     
