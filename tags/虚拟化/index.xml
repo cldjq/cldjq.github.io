@@ -27,6 +27,143 @@ Amber Graham
 Brian Martin
 Amber Graham
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;每一行代表一次投票，需要处理文件的每一行并统计每个名称出现的总次数，获得多票的胜出。&lt;/p&gt;
+&lt;p&gt;首先需要读取votes.txt文件的内容，之前有GetFloats函数来读取文件中的每一行，并转换为一个切片，但只能读取float64值，所以需要增加一个GetStrings函数，把每行作为string值添加到返回的切片中。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package datafile
+
+import (
+	&amp;#34;bufio&amp;#34;
+	&amp;#34;os&amp;#34;
+)
+
+func GetStrings(fileName string) ([]string, error) {
+	var lines []string
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		lines = append(lines, line)
+	}
+	err = file.Close()
+	if err != nil {
+		return nil, err
+	}
+	if scanner.Err() != nil {
+		return nil, scanner.Err()
+	}
+	return lines, nil
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;xxx/xxx/datafile&amp;#34;
+	&amp;#34;log&amp;#34;
+)
+
+func main() {
+	lines, err: = datafile.GetStrings(&amp;#34;votes.txt&amp;#34;)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(lines)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用困难的切片方法对名字计数&#34;&gt;使用困难的切片方法对名字计数&lt;/h1&gt;
+&lt;p&gt;上述代码从文件中读取名字，如何计算名字出现了多少次？有两种方式，一种是切片，另一种是数据结构映射。&lt;/p&gt;
+&lt;p&gt;关于使用切片的方式：创建两个切片，每个的长度都是元素的总个数，并是指定的顺序，第一个切片用来保存在文件中找到的名字，每个名字只出现一次，命名为 names；第二个切片命名为counts，保存文件中的名字出现的次数，元素 counts[0] 保存 names[0] 出现的次数，以次类推。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	lines, err := datafile.GetStrings(&amp;#34;votes.txt&amp;#34;)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var names []string   //这个变量保存人名
+	var counts []int     //这个变量保存每个人名出现的次数
+	for _, line := range lines {
+		matched := false
+		for i, name := range names {   //循环处理names切片中的每一个值
+			if name == line {      //若line与当前名称匹配
+				counts[i]++    //增加对应的count值
+				matched = true  //标识找到了匹配的名字
+			}
+		}
+		if matched == false {       //若没有找到匹配名字
+			names = append(names, line)  //添加它作为一个新名字
+			counts = append(counts, 1)   //并增加一个新的计数（这行是第一次出现）
+		}
+	}
+	for i, name := range names {
+		fmt.Printf(&amp;#34;%s: %d\n&amp;#34;, name, counts[i])   //输出names切片中的每一个元素，和对应的counts切片中的元素
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;程序使用一个循环嵌套在另一个循环中的方式来统计名字的次数，外面的循环把文件中的每行以每次一行的方式赋值给line变量。内部循环通过遍历names切片中的每个元素来查找与文件中的当前行匹配的名称。&lt;/p&gt;
+&lt;p&gt;若某人在选票上写一个名字，会导致文件中加载一个字符串，程序会一个一个确认names的元素中是否有等于这个名字。若没有找到匹配项，程序会在names切片末尾追加这个名字，并在counts切片中相应的位置增加1。假如下一行的这个名字已经存在于names切片中，程序会找到位置，在对应位置增加1。&lt;/p&gt;
+&lt;h1 id=&#34;映射&#34;&gt;映射&lt;/h1&gt;
+&lt;p&gt;保存名字使用的是切片，对于文件中的每一行，必须在许多names切片的值中寻找来进行比较，这样会导致性能差。&lt;/p&gt;
+&lt;p&gt;go有一种方法保存数据集合： &lt;code&gt;映射&lt;/code&gt; 。 一个映射是通过&lt;code&gt;键&lt;/code&gt;来访问每一个值的集合，键是一个简单的方式从映射中找出数据。&lt;/p&gt;
+&lt;p&gt;相对于数组和切片只能使用整型数字作为索引，映射可以使用任意类型的键（只要这个类型可以使用 == 来比较），包括数字、字符串和其他。所有的值只能是相同的类型，所有的健也需要是相同的类型，但是键和值的类型不必相同。&lt;/p&gt;
+&lt;p&gt;声明一个保存映射的变量，需要 &lt;code&gt;map&lt;/code&gt; 关键字，后跟一对包含键类型的方括号&lt;code&gt;[]&lt;/code&gt;，然后在方括号后跟提供值的类型。&lt;br&gt;
+&lt;code&gt;var myMap map[string]float64 &lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/7-%e6%98%a0%e5%b0%84/map%e8%af%ad%e6%b3%95.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;与切片一样，声明一个映射变量并不会自动创建一个映射，需要调用make函数（与创建切片相同的函数），可以传递给make想要创建的映射类型（与需要赋值到的类型相同）。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var ranks map[string]int    //声明一个映射变量
+ranks = make(map[string]int) //真正创建一个映射
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;短变量声明方式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ranks := make(map[string]int)   //创建一个映射并声明一个用于保存它的变量
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;映射的赋值与取值语法跟数组和切片类似，但数组和切片仅允许使用整型作为元素索引，映射可以选择几乎所有的类型来作为键。&lt;/p&gt;
+&lt;p&gt;这是一个名为ranks的映射：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ranks[&amp;#34;gold&amp;#34;] = 1
+ranks[&amp;#34;silver&amp;#34;] = 2
+ranks[&amp;#34;bronze&amp;#34;] = 3
+fmt.Println(ranks[&amp;#34;bronze&amp;#34;])
+fmt.Println(ranks[&amp;#34;gole&amp;#34;])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;一个键和值都使用string的映射：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;elements := make(map[string]string)
+elements[&amp;#34;H&amp;#34;] = &amp;#34;Hydrogen&amp;#34;
+elements[&amp;#34;Li&amp;#34;] = &amp;#34;Lithium&amp;#34;
+fmt.Println(elements[&amp;#34;Li&amp;#34;])
+fmt.Println(elements[&amp;#34;H&amp;#34;])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用整型作为键，bool类型作为值：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;isPrime := make(map[int]bool)
+isPrime[4] = false
+isPrime[7] = true
+fmt.Println(isPrime[4])
+fmt.Println(isPrime[7])
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;映射字面量&#34;&gt;映射字面量&lt;/h1&gt;
+&lt;p&gt;若预先知道映射的键和值，可以使用字面量来创建映射，映射字面量是以映射类型（以“映射[键类型]值类型”的形式）开始，后面跟花括号，内含想要映射初始就包含的 键/值 对。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;myMap := map[string]float64{&amp;#34;a&amp;#34;: 1.2, &amp;#34;b&amp;#34;: 5.6}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ranks := map[string]int{&amp;#34;bronze&amp;#34;: 3, &amp;#34;silver&amp;#34;: 2, &amp;#34;gold&amp;#34;: 1}
+fmt.Println(ranks[&amp;#34;gold&amp;#34;])
+fmt.Println(ranks[&amp;#34;bronze&amp;#34;])
+elements := map[string]string{
+        &amp;#34;H&amp;#34;: &amp;#34;Hydrogen&amp;#34;,
+        &amp;#34;Li&amp;#34;: &amp;#34;Lithium&amp;#34;,
+}   //多行映射字面量
+fmt.Println(elements[&amp;#34;H&amp;#34;])
+fmt.Println(elements[&amp;#34;Li&amp;#34;])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;与切片字面量一样，花括号为空创建一个空的映射：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;emptyMap := map[string]float64{}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;映射中的零值&#34;&gt;映射中的零值&lt;/h1&gt;
+&lt;p&gt;对于数组和切片，若访问一个没有赋值过的键，会得到一个零值，根据值类型 不行，零值不一定是0。比如映射的值类型是string，零值就是空字符串。&lt;/p&gt;
+&lt;p&gt;与数组和切片一样，零值可以更安全地修改映射的值，即使在没有给它赋值的情况下。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;counters := make(map[string]int)
+counters[&amp;#34;a&amp;#34;]++
+counters[&amp;#34;a&amp;#34;]++
+counters[&amp;#34;c&amp;#34;]++
+fmt.Println(counters[&amp;#34;a&amp;#34;], counters[&amp;#34;b&amp;#34;], counters[&amp;#34;c&amp;#34;])
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;映射变量的零值是nil&#34;&gt;映射变量的零值是nil&lt;/h1&gt;
+&lt;p&gt;与切片一样，映射变量的零值是nil，若声明了一个映射变量但未赋值，是nil，意味着没有映射存在来增加键或值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var nilMap map[int]string
+fmt.Printf(&amp;#34;%#v\n&amp;#34;, nilMap)
+nilMap[3] = &amp;#34;three&amp;#34;   //映射是nil，无法添加新值，会导致panic
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在增加一个新的键值对前，需要使用make或映射字面量来创建一个映射，并赋值给映射变量。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var myMap map[int]string = make(map[int]string)
+myMap[3] = &amp;#34;three&amp;#34;
+fmt.Printf(&amp;#34;%#v\n&amp;#34;, myMap)
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;如何区分已经赋值的值和零值&#34;&gt;如何区分已经赋值的值和零值&lt;/h1&gt;
 </description>
     </item>
     
