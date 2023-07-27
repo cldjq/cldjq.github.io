@@ -163,6 +163,103 @@ nilMap[3] = &#34;three&#34;   //映射是nil，无法添加新值，会导致pan
 myMap[3] = &#34;three&#34;
 fmt.Printf(&#34;%#v\n&#34;, myMap)
 </code></pre><h1 id="如何区分已经赋值的值和零值">如何区分已经赋值的值和零值</h1>
+<p>虽然零值很有用，但无法判断一个键是被赋值成了零值还是未赋值。</p>
+<p>有一个例子：错误输出了名为 Carl 的人没有通过，实际上并没有记录他的成绩。</p>
+<pre tabindex="0"><code>func status(name string) {
+        grades := map[string]float64{&#34;Alma&#34;: 0, &#34;Rohit&#34;: 86.5}
+        grade := grades[name]
+        if grade &lt; 60 {
+                fmt.Printf(&#34;%s is failing!\n&#34;, name)
+        }
+}
+func main() {
+        status(&#34;Alma&#34;)   //一个映射中已经被赋值为0的键
+        status(&#34;Carl&#34;)   //一个映射中未被赋值的键
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Alma is failing!
+Carl is failing!
+</code></pre><p>为解决此问题，访问映射键的时候可选地获取第2个布尔类型的值，若这个键已经被赋过值，返回true，否则返回false。通常情况下，开发者会将这个布尔值赋给一个名为<code>ok</code>的变量。</p>
+<pre tabindex="0"><code>counters := map[string]int{&#34;a&#34;: 3, &#34;b&#34;, 0}
+var value int
+var ok bool
+value, ok = counters[&#34;a&#34;]   //访问一个已经被赋值过的值
+fmt.Println(value, ok)      //ok会返回true
+value, ok = counters[&#34;b&#34;]   //访问一个已经被赋值过的值
+fmt.Println(value, ok)      //ok会返回true
+value, ok = counters[&#34;c&#34;]   //访问一个未赋值过的值
+fmt.Println(value, ok)      //ok会返回false
+</code></pre><p>若仅仅要测试值是否存在，可以通过将其赋值给 <code>_</code> 空白标识符来忽略值。</p>
+<pre tabindex="0"><code>counters := map[string]int{&#34;a&#34;: 3, &#34;b&#34;: 0}
+var ok bool
+_, ok = counters[&#34;b&#34;]   //测试值是否存在，但忽略值
+fmt.Println(ok)
+_, ok = counters[&#34;c&#34;]   //测试值是否存在，但忽略值
+fmt.Println(ok)
+</code></pre><p>第二个返回值可以用来判断如何处理这个值，是已经赋值了但是正好等于零值，还是从未被赋值过。</p>
+<p>修改后：在输出不及格前测试请求的名字是否已经被赋值过。</p>
+<pre tabindex="0"><code>func  status(name string) {
+       grades := map[string]float64{&#34;Alma&#34;: 0, &#34;Rohit&#34;: 86.4}
+       grade, ok := grades[name]
+       if !ok {
+               fmt.Printf(&#34;No grade recorded for %s.\n&#34;, name)
+       } else if grade &lt; 60 {
+               fmt.Printf(&#34;%s is failing!\n&#34;, name)
+       }
+}
+
+func main() {
+       status(&#34;Alma&#34;)
+       status(&#34;Carl&#34;)
+}
+</code></pre><p>练习：</p>
+<pre tabindex="0"><code>data := []string{&#34;a&#34;, &#34;c&#34;, &#34;e&#34;, &#34;a&#34;, &#34;e&#34;}   //需计算在切片中的每个字母的次数
+counts := make(map[string]int)    //保存计数的映射
+for _, item := range data {
+        counts[item]++     //增加当前字母的次数
+}    //处理每个字符
+letters := []string{&#34;a&#34;, &#34;b&#34;, &#34;c&#34;, &#34;d&#34;, &#34;e&#34;}   //是否这些字符都在映射中存在
+for _, letter := range letters {
+        count, ok := counts[letters]    //获取当前字符的计数以及是否出现的指示
+        if !ok {   //如果字母未找到
+                fmt.Printf(&#34;%s: not found\n&#34;, letter)
+        } else {   //如果字母找到
+                fmt.Printf(&#34;%s: %d\n&#34;, letter, count)
+        }
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>a:2
+b:not found
+c:1
+d:not found
+e:2
+</code></pre><h1 id="使用delete函数删除键值对">使用&quot;delete&quot;函数删除键/值对</h1>
+<p>在分配了值之后，某个时候希望将其从映射中移除，go提供了内建的<code>delete</code>函数，只需传递给delete两个参数：希望删除数据的映射和希望删除的键，然后键和其关联的值都会被删除。</p>
+<p>如下代码，给两个映射的键分配了值，然后将其删除，之后，尝试访问，获取到零值。（对于ranks映射是0，对于isPrime映射是false）。第二个布尔返回值也是false，说明键已经被删除。</p>
+<pre tabindex="0"><code>var ok bool
+ranks := make(map[string]int)
+var rank int
+ranks[&#34;bronze&#34;] = 3   //给“bronze”键分配值
+rank, ok = ranks[&#34;bronze&#34;]  //由于值存在，ok会返回true
+fmt.Printf(&#34;rank: %d, ok: %v\n&#34;, rank, ok)
+delete(ranks, &#34;bronze&#34;)   //删除键“bronze”和相关的值
+rank, ok = ranks[&#34;bronze&#34;]   //由于值已经被删除了ok返回false
+fmt.Printf(&#34;rank: %d, ok: %v\n&#34;, rank, ok)
+
+isPrime := make(map[int]bool)
+var prime bool
+isPrime[5] = true  //给键5分配值
+prime, ok = isPrime[5]  //由于值存在，ok会返回true
+fmt.Printf(&#34;prime: %v, ok: %v\n&#34;, prime, ok)
+delete(isPrime, 5)   //删除键5和相关的值
+prime, ok = isPrime[5]   //由于值被删除，ok会返回false
+fmt.Printf(&#34;prime: %v, ok: %v\n&#34;, prime, ok)
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>rank: 3, ok: true
+rank: 0, ok: false
+prime: true, ok: true
+prime: false, ok: false
+</code></pre><h1 id="使用映射来更新程序">使用映射来更新程序</h1>
 </article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
 <div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/6.%E5%88%87%E7%89%87/"><span class="iconfont icon-article"></span>6.切片</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
