@@ -11,6 +11,20 @@
     
     
     <item>
+      <title>8.结构体：struct</title>
+      <link>https://tinklespring.com/posts/8.%E7%BB%93%E6%9E%84%E4%BD%93struct/</link>
+      <pubDate>Sat, 29 Jul 2023 18:29:46 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/8.%E7%BB%93%E6%9E%84%E4%BD%93struct/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;有时需要保存超过一种类型的数据。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;切片可以保存一组数据，映射能保存一组键和一组值，这两种数据结构都只能保存一种类型。有时需要一组不同类型的数据，例如邮件地址，其中包含了街道名、邮编等，无法使用切片或者映射来保存，但是可以使用 &lt;code&gt;struct&lt;/code&gt; 类型来保存。&lt;/p&gt;
+&lt;h1 id=&#34;切片和映射只保存一种类型的值&#34;&gt;切片和映射只保存一种类型的值&lt;/h1&gt;
+</description>
+    </item>
+    
+    <item>
       <title>7.数据标签：映射</title>
       <link>https://tinklespring.com/posts/7.%E6%95%B0%E6%8D%AE%E6%A0%87%E7%AD%BE%E6%98%A0%E5%B0%84/</link>
       <pubDate>Sat, 22 Jul 2023 11:37:02 +0800</pubDate>
@@ -261,6 +275,110 @@ rank: 0, ok: false
 prime: true, ok: true
 prime: false, ok: false
 &lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用映射来更新程序&#34;&gt;使用映射来更新程序&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+import (
+        &amp;#34;fmt&amp;#34;
+        &amp;#34;xxx/xxx/datafile&amp;#34;
+        &amp;#34;log&amp;#34;
+)
+func main() {
+        lines, err := datafile.GetStrings(&amp;#34;votes.txt&amp;#34;)
+        if err != nil {
+                log.Fatal(err)
+        }
+        counts := make(map[string]int)   //声明一个以人名为键，次数为值的映射
+        for _, line := range lines {
+                counts[lines]++     //为人名增加计数
+        }
+        fmt.Println(counts)   //输出填充的映射
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;对映射进行forrange循环&#34;&gt;对映射进行&amp;quot;for&amp;hellip;range&amp;quot;循环&lt;/h1&gt;
+&lt;p&gt;为了从映射中格式化每个键和值作为一行，需要使用循环遍历映射中的每一条。&lt;/p&gt;
+&lt;p&gt;与数组和切片的 for&amp;hellip;range 循环一样，与将一个整数索引赋值给第一个变量不同，映射将键赋给了第一个变量。&lt;/p&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/7-%e6%98%a0%e5%b0%84/%e6%98%a0%e5%b0%84for...range%e5%be%aa%e7%8e%af.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;for&amp;hellip;range 循环让遍历映射中的键和值更方便，仅用一个变量保存键，再用一个变量保存值，并会自动遍历映射中的每一个条目。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+import &amp;#34;fmt&amp;#34;
+func main() {
+        grades := map[string]float64{&amp;#34;Alma&amp;#34;: 74.2, &amp;#34;Rohit&amp;#34;: 86.5, &amp;#34;Carl&amp;#34;: 59.7}
+        for name, grade := range grades {
+                fmt.Printf(&amp;#34;%s has a grade of %0.1f%%\n&amp;#34;, name, grade)  //打印每一个键和它对应的值
+        }  //循环遍历每一个键/值对
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Carl has a grade of 59.7%
+Alma has a grade of 74.2%
+Rohit has a grade of 86.5%
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若只需要循环所有的键，可以忽略对应的值变量：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(&amp;#34;Class roster:&amp;#34;)
+for name := range grades {
+        fmt.Println(name)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Class roster:
+Alma
+Rohit
+Carl
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若只需要值，可以将键赋 _ 空白标识符：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(&amp;#34;Grades:&amp;#34;)
+for _, grade := range grades {
+        fmt.Println(grade)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Grades:
+59.7
+74.2
+86.5
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这里有个问题，如果将之前的结果存入一个文件，并执行，会发现映射的键和值是按照随机顺序打印，若多次执行，每次的结果顺序是不一样的。&lt;/p&gt;
+&lt;h1 id=&#34;forrange循环以随机顺序处理映射&#34;&gt;&amp;ldquo;for&amp;hellip;range&amp;quot;循环以随机顺序处理映射&lt;/h1&gt;
+&lt;p&gt;for&amp;hellip;range 以随机的顺序遍历映射的键和值，因为映射是一个非有序的键/值对集合。但有时需要按照特定的顺序遍历时，要自己写一些代码了。&lt;/p&gt;
+&lt;p&gt;例子：使名字按照字母表的顺序输出，使用了两个for循环，第一个循环遍历映射里边所有的键，忽略值，并把其增加到一个字符串的切片上，然后把切片传递给sort包中的Strings函数来以字母表顺序排序。第二个for循环并不遍历映射，而是遍历变量排序后的名字的切片，输出名字，并从映射中获取与名字对应的值，仍然处理映射中的每一个键和值，但是从已排序好的切片中获取而不是从映射中获取的键。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+        &amp;#34;fmt&amp;#34;
+        &amp;#34;sort&amp;#34;
+)
+
+func main() {
+        grades := map[string]float64{&amp;#34;Alma&amp;#34;: 74.2, &amp;#34;Rohit&amp;#34;: 86.5, &amp;#34;Carl&amp;#34;: 59.7}
+        var names []string
+        for name := range grades {
+                names = append(names, name)
+        }
+        sort.Strings(names)
+        for _, name := range names {
+                fmt.Printf(&amp;#34;%s has a grade of %0.1f%%\n&amp;#34;, name, grades[name])
+        }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;按照以上代码执行，名字是按照字母表顺序排列，不管执行多少次都是如此。&lt;/p&gt;
+&lt;p&gt;若不在乎映射中的数据如何处理，使用for&amp;hellip;range循环就可以，但若是需要顺序，就需要自己写代码处理排序问题。&lt;/p&gt;
+&lt;h1 id=&#34;使用forrange更新程序&#34;&gt;使用for&amp;hellip;range更新程序&lt;/h1&gt;
+&lt;p&gt;将打印整个映射的行用for&amp;hellip;range替换，把键赋给name变量，把映射的值赋值给count变量，然后用printf输出人命和得票数。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+        &amp;#34;fmt&amp;#34;
+        &amp;#34;xxx/xxx/datafile&amp;#34;
+        &amp;#34;log&amp;#34;
+)
+
+func main() {
+        lines, err := datafile.GetStrings(&amp;#34;votes.txt&amp;#34;)
+        if err != nil {
+                log.Fatal(err)       
+        }
+        counts := make(map[string]int)
+        for _, line := range lines {
+                counts[line]++
+        }
+        for name, count := range counts {
+                fmt.Printf(&amp;#34;Votes for %s: %d\n&amp;#34;, name, count)
+        }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当可用的数据集合是数组和切片时，需要很多额外的代码和处理时间来查找，但使用映射处理起来更简便。&lt;/p&gt;
+&lt;p&gt;当需要查找集合中的值的时候，可以考虑映射！&lt;/p&gt;
 </description>
     </item>
     
@@ -2955,70 +3073,6 @@ float64
 &lt;p&gt;下面来简介下如何生成&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ssh-keygen -t ed25519 -C &amp;#34;yourname&amp;#34;
 &lt;/code&gt;&lt;/pre&gt;</description>
-    </item>
-    
-    <item>
-      <title>Proxmox高可用集群</title>
-      <link>https://tinklespring.com/posts/proxmox%E9%AB%98%E5%8F%AF%E7%94%A8%E9%9B%86%E7%BE%A4/</link>
-      <pubDate>Wed, 24 May 2023 09:25:07 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/proxmox%E9%AB%98%E5%8F%AF%E7%94%A8%E9%9B%86%E7%BE%A4/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;接上文proxmox安装～&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h4 id=&#34;安装集群顺序&#34;&gt;安装集群顺序&lt;/h4&gt;
-&lt;ol&gt;
-&lt;li&gt;安装proxmox&lt;/li&gt;
-&lt;li&gt;创建并加入集群&lt;/li&gt;
-&lt;li&gt;创建&lt;code&gt;pveceph&lt;/code&gt;分布式存储&lt;/li&gt;
-&lt;li&gt;创建高可用&lt;/li&gt;
-&lt;li&gt;创建虚拟机并测试&lt;/li&gt;
-&lt;/ol&gt;
-&lt;h4 id=&#34;创建bond网络&#34;&gt;创建Bond网络&lt;/h4&gt;
-&lt;ol&gt;
-&lt;li&gt;创建bond，&amp;ldquo;slaves&amp;rdquo; 选择需要做bond的网卡名字，以空格区分&lt;/li&gt;
-&lt;li&gt;创建Linux Bridge，桥接端口选择bond网卡名字&lt;/li&gt;
-&lt;li&gt;若需要虚拟机网络隔离，则需要继续创建 Linux Vlan&lt;/li&gt;
-&lt;/ol&gt;
-&lt;h4 id=&#34;安装pveceph&#34;&gt;安装pveceph&lt;/h4&gt;
-&lt;ol&gt;
-&lt;li&gt;所有节点执行 &lt;code&gt;pveceph install&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;任意一个节点执行初始化pveceph存储网络 &lt;code&gt;pveceph init --network 10.255.255.0/24&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;至少需要三个节点执行，创建ceph监视器 &lt;code&gt;pveceph createmon&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;创建ceph osd:&lt;/li&gt;
-&lt;/ol&gt;
-&lt;ul&gt;
-&lt;li&gt;选择物理节点&lt;/li&gt;
-&lt;li&gt;ceph &amp;ndash;&amp;gt; osd&lt;/li&gt;
-&lt;li&gt;点击创建，每次只能加一个&lt;/li&gt;
-&lt;li&gt;多个节点则依次排着添加&lt;/li&gt;
-&lt;/ul&gt;
-&lt;ol start=&#34;5&#34;&gt;
-&lt;li&gt;创建 &lt;code&gt;ceph osd crush rule&lt;/code&gt;&lt;/li&gt;
-&lt;/ol&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ceph osd crush rule create-replicated rule-ssd default  host ssd
-ceph osd crush rule create-replicated rule-hdd default  host hdd
-&lt;/code&gt;&lt;/pre&gt;&lt;ol start=&#34;6&#34;&gt;
-&lt;li&gt;查看：&lt;code&gt;ceph osd crush rule ls&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;创建ceph pools
-&lt;code&gt;of_PGs&lt;/code&gt; 官方建议：少于5个osd，值为128；5-10个，值为512；10-50个，值为4096；&lt;/li&gt;
-&lt;/ol&gt;
-&lt;blockquote&gt;
-&lt;p&gt;这里没找到具体实际的，设置4096貌似报错了～
-&lt;code&gt;crush rule&lt;/code&gt;根据osd类型选择对应的。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;ol start=&#34;8&#34;&gt;
-&lt;li&gt;创建高可用组&lt;/li&gt;
-&lt;/ol&gt;
-&lt;ul&gt;
-&lt;li&gt;选择 &amp;lsquo;数据中心&amp;rsquo;&lt;/li&gt;
-&lt;li&gt;选择 &amp;lsquo;HA&amp;rsquo; &amp;ndash;&amp;gt; &amp;lsquo;群组&amp;rsquo;&lt;/li&gt;
-&lt;li&gt;选择创建，将所需节点添加&lt;/li&gt;
-&lt;li&gt;选择 &amp;lsquo;HA&amp;rsquo; &amp;ndash;&amp;gt; &amp;lsquo;资源&amp;rsquo;&lt;/li&gt;
-&lt;li&gt;选择添加，将需要的vm加入即可，请求状态为 started&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;此时，即可使 vm 成为高可用，当宿主机宕机后，vm会漂移至其他节点。&lt;/p&gt;
-</description>
     </item>
     
   </channel>

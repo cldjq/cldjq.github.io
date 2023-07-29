@@ -260,9 +260,113 @@ rank: 0, ok: false
 prime: true, ok: true
 prime: false, ok: false
 </code></pre><h1 id="使用映射来更新程序">使用映射来更新程序</h1>
+<pre tabindex="0"><code>package main
+import (
+        &#34;fmt&#34;
+        &#34;xxx/xxx/datafile&#34;
+        &#34;log&#34;
+)
+func main() {
+        lines, err := datafile.GetStrings(&#34;votes.txt&#34;)
+        if err != nil {
+                log.Fatal(err)
+        }
+        counts := make(map[string]int)   //声明一个以人名为键，次数为值的映射
+        for _, line := range lines {
+                counts[lines]++     //为人名增加计数
+        }
+        fmt.Println(counts)   //输出填充的映射
+}
+</code></pre><h1 id="对映射进行forrange循环">对映射进行&quot;for&hellip;range&quot;循环</h1>
+<p>为了从映射中格式化每个键和值作为一行，需要使用循环遍历映射中的每一条。</p>
+<p>与数组和切片的 for&hellip;range 循环一样，与将一个整数索引赋值给第一个变量不同，映射将键赋给了第一个变量。</p>
+<p><img  src="/img/Golang/7-%e6%98%a0%e5%b0%84/%e6%98%a0%e5%b0%84for...range%e5%be%aa%e7%8e%af.png"
+        alt/></p>
+<p>for&hellip;range 循环让遍历映射中的键和值更方便，仅用一个变量保存键，再用一个变量保存值，并会自动遍历映射中的每一个条目。</p>
+<pre tabindex="0"><code>package main
+import &#34;fmt&#34;
+func main() {
+        grades := map[string]float64{&#34;Alma&#34;: 74.2, &#34;Rohit&#34;: 86.5, &#34;Carl&#34;: 59.7}
+        for name, grade := range grades {
+                fmt.Printf(&#34;%s has a grade of %0.1f%%\n&#34;, name, grade)  //打印每一个键和它对应的值
+        }  //循环遍历每一个键/值对
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Carl has a grade of 59.7%
+Alma has a grade of 74.2%
+Rohit has a grade of 86.5%
+</code></pre><p>若只需要循环所有的键，可以忽略对应的值变量：</p>
+<pre tabindex="0"><code>fmt.Println(&#34;Class roster:&#34;)
+for name := range grades {
+        fmt.Println(name)
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Class roster:
+Alma
+Rohit
+Carl
+</code></pre><p>若只需要值，可以将键赋 _ 空白标识符：</p>
+<pre tabindex="0"><code>fmt.Println(&#34;Grades:&#34;)
+for _, grade := range grades {
+        fmt.Println(grade)
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Grades:
+59.7
+74.2
+86.5
+</code></pre><p>这里有个问题，如果将之前的结果存入一个文件，并执行，会发现映射的键和值是按照随机顺序打印，若多次执行，每次的结果顺序是不一样的。</p>
+<h1 id="forrange循环以随机顺序处理映射">&ldquo;for&hellip;range&quot;循环以随机顺序处理映射</h1>
+<p>for&hellip;range 以随机的顺序遍历映射的键和值，因为映射是一个非有序的键/值对集合。但有时需要按照特定的顺序遍历时，要自己写一些代码了。</p>
+<p>例子：使名字按照字母表的顺序输出，使用了两个for循环，第一个循环遍历映射里边所有的键，忽略值，并把其增加到一个字符串的切片上，然后把切片传递给sort包中的Strings函数来以字母表顺序排序。第二个for循环并不遍历映射，而是遍历变量排序后的名字的切片，输出名字，并从映射中获取与名字对应的值，仍然处理映射中的每一个键和值，但是从已排序好的切片中获取而不是从映射中获取的键。</p>
+<pre tabindex="0"><code>package main
+
+import (
+        &#34;fmt&#34;
+        &#34;sort&#34;
+)
+
+func main() {
+        grades := map[string]float64{&#34;Alma&#34;: 74.2, &#34;Rohit&#34;: 86.5, &#34;Carl&#34;: 59.7}
+        var names []string
+        for name := range grades {
+                names = append(names, name)
+        }
+        sort.Strings(names)
+        for _, name := range names {
+                fmt.Printf(&#34;%s has a grade of %0.1f%%\n&#34;, name, grades[name])
+        }
+}
+</code></pre><p>按照以上代码执行，名字是按照字母表顺序排列，不管执行多少次都是如此。</p>
+<p>若不在乎映射中的数据如何处理，使用for&hellip;range循环就可以，但若是需要顺序，就需要自己写代码处理排序问题。</p>
+<h1 id="使用forrange更新程序">使用for&hellip;range更新程序</h1>
+<p>将打印整个映射的行用for&hellip;range替换，把键赋给name变量，把映射的值赋值给count变量，然后用printf输出人命和得票数。</p>
+<pre tabindex="0"><code>package main
+
+import (
+        &#34;fmt&#34;
+        &#34;xxx/xxx/datafile&#34;
+        &#34;log&#34;
+)
+
+func main() {
+        lines, err := datafile.GetStrings(&#34;votes.txt&#34;)
+        if err != nil {
+                log.Fatal(err)       
+        }
+        counts := make(map[string]int)
+        for _, line := range lines {
+                counts[line]++
+        }
+        for name, count := range counts {
+                fmt.Printf(&#34;Votes for %s: %d\n&#34;, name, count)
+        }
+}
+</code></pre><p>当可用的数据集合是数组和切片时，需要很多额外的代码和处理时间来查找，但使用映射处理起来更简便。</p>
+<p>当需要查找集合中的值的时候，可以考虑映射！</p>
 </article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
-<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/6.%E5%88%87%E7%89%87/"><span class="iconfont icon-article"></span>6.切片</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/8.%E7%BB%93%E6%9E%84%E4%BD%93struct/"><span class="iconfont icon-article"></span>8.结构体：struct</a></p><p><a class="link" href="/posts/6.%E5%88%87%E7%89%87/"><span class="iconfont icon-article"></span>6.切片</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
     window.disqus_config = function () {
     
