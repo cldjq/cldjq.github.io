@@ -20,7 +20,233 @@
 &lt;p&gt;有时需要保存超过一种类型的数据。&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;切片可以保存一组数据，映射能保存一组键和一组值，这两种数据结构都只能保存一种类型。有时需要一组不同类型的数据，例如邮件地址，其中包含了街道名、邮编等，无法使用切片或者映射来保存，但是可以使用 &lt;code&gt;struct&lt;/code&gt; 类型来保存。&lt;/p&gt;
-&lt;h1 id=&#34;切片和映射只保存一种类型的值&#34;&gt;切片和映射只保存一种类型的值&lt;/h1&gt;
+&lt;h1 id=&#34;struct是由多种类型的值构成&#34;&gt;struct是由多种类型的值构成&lt;/h1&gt;
+&lt;p&gt;使用struct关键字来声明一个 struct 类型，后面跟花括号，在括号中，可以定义一个或多个字段：struct 组合的值。每一个字段定义在一个单独的行，由字段名称、后面跟着的字段需要保存的值类型组成。&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/8-struct/struct%e8%af%ad%e6%b3%95.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;可以使用一个struct类型来最为定义的变量的类型，例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var myStruct struct {
+       number float64
+       word   string
+       toggle bool
+}
+fmt.Printf(&amp;#34;%#v\n&amp;#34;, myStruct)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;struct { number float64; word string; toggle bool }
+{number:0, word:&amp;#34;&amp;#34;, toggle:false}   //struct中每个字段都被设置成其类型的零值
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当调用Printf中的 %#v 时，将myStruct中的值作为struct字面量打印。&lt;/p&gt;
+&lt;p&gt;写struct字段时，仅仅在字段名称和类型之间插入一个空格即可，go fmt 会自动格式化。&lt;/p&gt;
+&lt;h1 id=&#34;使用点运算符访问struct字段&#34;&gt;使用点运算符访问struct字段&lt;/h1&gt;
+&lt;p&gt;我们使用点运算符来表示函数属于另一个包，或方法属于一个值。&lt;/p&gt;
+&lt;p&gt;与此类似，可以使用点运算符来标识属于struct的字段，这也可以用于它们的赋值和检索。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var myStruct struct {
+        number float64
+        word   string
+        toggle bool
+}
+myStruct.number = 3.14
+myStruct.word = &amp;#34;pie&amp;#34;
+myStruct.toggle = &amp;#34;true&amp;#34;   //给struct字段赋值
+fmt.Println(myStruct.number)  
+fmt.Println(myStruct.word)
+fmt.Println(myStruct.toggle)  //从struct字段取值
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;在struct中保存订阅者的数据&#34;&gt;在struct中保存订阅者的数据&lt;/h1&gt;
+&lt;p&gt;我们知道了如何声明一个保存了struct的变量和如何给字段赋值，可以创建一个来保存杂志订阅者的数据。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var subscriber struct {
+        name   string
+        rate   float64
+        active bool
+}
+subscriber.name = &amp;#34;Aman Singh&amp;#34;
+subscriber.rate = 4.99
+subscriber.active = true
+fmt.Println(&amp;#34;Name:&amp;#34;, subscriber.name)
+fmt.Println(&amp;#34;Monthly rate:&amp;#34;, subscriber.rate)
+fmt.Println(&amp;#34;Active?&amp;#34;, subscriber.active)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;尽管订阅者的数据使用了多种方式存储，struct让我们把这些都集中在一个方便的包里。&lt;/p&gt;
+&lt;h1 id=&#34;定义类型和struct&#34;&gt;定义类型和struct&lt;/h1&gt;
+&lt;p&gt;定义struct变量很麻烦，定义每一个变量时需要重复整个struct类型声明。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var subscriber1 struct {
+        name   string
+        rate   float64
+        active bool
+}      //为subscriber1变量定义struct类型
+subscriber1.name = &amp;#34;Aman Singh&amp;#34;
+fmt.Println(&amp;#34;Name:&amp;#34;, subscriber1.name)
+var subscriber2 struct {
+        name   string
+        rate   float64
+        active bool
+}     //为subscriber2变量定义struct类型
+subscriber2.name = &amp;#34;Beth Ryan&amp;#34;
+fmt.Println(&amp;#34;Name:&amp;#34;, subscriber2.name)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们已经使用了多种类型，像int、string、bool、切片、映射和struct，但是无法创建全新类型。&lt;/p&gt;
+&lt;p&gt;类型定义允许自己创建新的类型，可以基于基础类型来创建新的定义类型。&lt;/p&gt;
+&lt;p&gt;定义一个类型，需要使用&lt;code&gt;type&lt;/code&gt;关键字，后跟新类型的名字，然后是希望基于的基础类型，若使用struct类型作为基础类型，需要使用struct关键字，后跟以花括号包裹的一组字段定义，就像声明struct变量时一样。&lt;/p&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/8-struct/type%e7%b1%bb%e5%9e%8b.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;与变量一样，类型定义可以被放在一个函数中，但把它的作用域限定在该函数块中，意味着不能在函数外面使用，所以类型经常定义在函数外的包级别。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type part struct {    //定义一个名为part的类型，part基础类型有下面这俩字段的结构体
+	description string
+	count       int
+}   
+
+type car struct {    //定义一个名为car的类型，car的基础类型是有下面这些字段的struct
+	name     string
+	topSpeed float64
+}
+
+func main() {
+	var porsche car    //定义一个car类型的变量
+	porsche.name = &amp;#34;Porsche 911 R&amp;#34;   //访问struct的字段
+	porsche.topSpeed = 323
+	fmt.Println(&amp;#34;Name:&amp;#34;, porsche.name)
+	fmt.Println(&amp;#34;Top speed:&amp;#34;, porsche.topSpeed)
+
+	var bolts part
+	bolts.description = &amp;#34;Hex bolts&amp;#34;
+	bolts.count = 24
+	fmt.Println(&amp;#34;Description:&amp;#34;, bolts.description)
+	fmt.Println(&amp;#34;Count:&amp;#34;, bolts.count)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当这些变量被声明后，可以设置这些字段的值和取回这些值。&lt;/p&gt;
+&lt;h1 id=&#34;定义一个类型&#34;&gt;定义一个类型&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type subscriber struct {
+        name    string
+        rate    float64
+        active  bool
+}
+
+func main() {
+        var sub subscriber   //定义一个subscriber类型的变量
+        sub.name = &amp;#34;Aman Singh&amp;#34;
+        fmt.Println(&amp;#34;Name:&amp;#34;, sub.name)
+        var sub2 subscriber  //使用subscriber类型定义第二个变量
+        sub2.name = &amp;#34;Beth Ryan&amp;#34;
+        fmt.Println(&amp;#34;Name:&amp;#34;, sub2.name)
+        
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;与函数一起使用已定义类型&#34;&gt;与函数一起使用已定义类型&lt;/h1&gt;
+&lt;p&gt;已定义类型可以用于变量类型以外的地方，也可以用于函数参数和返回值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type part struct {
+	description string
+	count       int
+}
+
+func showInfo(p part) { //声明一个以part作为类型的参数
+	fmt.Println(&amp;#34;Description:&amp;#34;, p.description)
+	fmt.Println(&amp;#34;Count:&amp;#34;, p.count)
+}
+
+func main() {
+	var bolts part
+	bolts.description = &amp;#34;Hex bolts&amp;#34;
+	bolts.count = 24
+	showInfo(bolts) //将part传递给函数
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;函数接受一个单独的参数，使用part作为参数的类型，在showInfo内部，可以像其他struct变量一样通过参数变量访问字段。&lt;/p&gt;
+&lt;p&gt;还有一个minimumOrder函数来根据特定的描述创建part和预赋值其中的count字段，将minimumOrder的返回值类型定义为part，这样就能返回一个新的struct：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func minimumOrder(description string) part {  //声明一个part类型的返回值
+        var p part    //创建一个part值
+        p.description = description
+        p.count = 100
+        return p   //返回part
+}
+
+func main() {
+        p := minimumOrder(&amp;#34;Hex bolts&amp;#34;)     //调用minimumOrder，使用一个变量的短声明来保存返回的part
+        fmt.Println(p.description, p.count)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;下面例子，printInfo函数接受subscriber作为参数，并输出它的字段值，defaultSubscriber函数来建立一个新的subscriber struct并赋一些初始的值，它们接受一个名为name的字符串参数并用它来设置新的subscriber的name字段，然后把rate和active字段设置为默认值，最后将整个subscriber struce返回给调用者。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type subscriber struct {
+	name   string
+	rate   float64
+	active bool
+}
+
+func printInfo(s subscriber) { //声明一个参数，使用subscriber类型
+	fmt.Println(&amp;#34;Name:&amp;#34;, s.name)
+	fmt.Println(&amp;#34;Monthly rate:&amp;#34;, s.rate)
+	fmt.Println(&amp;#34;Active:&amp;#34;, s.active)
+}
+
+func defaultSubscriber(name string) subscriber { //返回一个subscriber值
+	var s subscriber //创建一个新的subscriber
+	s.name = name
+	s.rate = 5.99
+	s.active = true //设置struct字段
+	return s        //返回subscriber
+}
+
+func main() {
+	subscriber1 := defaultSubscriber(&amp;#34;Aman Singh&amp;#34;) //使用名字来建立一个subscriber
+	subscriber1.rate = 4.99                        //使用一个特定的费率
+	printInfo(subscriber1)                         //打印字段值
+	subscriber2 := defaultSubscriber(&amp;#34;Beth Ryan&amp;#34;)  //使用名字来建立一个subscriber
+	printInfo(subscriber2)                         //打印字段值
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Name: Aman Singh
+Monthly rate: 4.99
+Active: true
+Name: Beth Ryan
+Monthly rate: 5.99
+Active: true
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在主函数中，可以将subscriber的名称传递给defaultSubscriber来创建一个新的subscriber struct，一个subscriber获取一个打折的费率，所以直接重设struct的字段，传递给一个已经填充完全的subscriber struct给printInfo函数来打印它的内容。&lt;/p&gt;
+&lt;p&gt;不要使用一个已经存在的类型名称作为变量的名称！&lt;/p&gt;
+&lt;h1 id=&#34;使用函数修改struct&#34;&gt;使用函数修改struct&lt;/h1&gt;
+&lt;p&gt;go 是一个按值传递的语言，函数调用时接收的是一个参数的拷贝，若函数修改了参数值，其修改的只是拷贝，而不是原始值。&lt;/p&gt;
+&lt;p&gt;对于 struct 也是一样。&lt;/p&gt;
+&lt;p&gt;函数能够接收指针来代替直接接收值，当调用这个函数时，使用取址运算符&lt;code&gt;&amp;amp;&lt;/code&gt;来传送需要更新的值的指针，然后在函数内部，使用&lt;code&gt;*&lt;/code&gt;来更新指针指向的值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        amount := 6
+        double(&amp;amp;amount)   //传递一个指针来取代变量的值
+        fmt.Println(amount)
+}
+func double(number *int) {  //接受一个指针来代替int值
+        *number *= 2  //使用指针更新值
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;12
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用指针来让函数也能更新struct：更新 s 参数类型来接受一个 subscriber struct 的指针，而不是直接使用struct，然后更新 struct 中的rate字段，在main中，调用applyDiscount并传入 subscriber struct 的指针，在输出rate字段时，能看到被更新成功。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type subscriber struct {
+	name   string
+	rate   float64
+	active bool
+}
+
+func applyDiscount(s *subscriber) { //获取struct的指针，而不是struct
+	s.rate = 4.99 //更新struct字段
+}
+
+func main() {
+	var s subscriber
+	applyDiscount(&amp;amp;s) //传入一个指针，而不是struct
+	fmt.Println(s.rate)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在double函数中，需要使用 * 运算符来获取指针指向的值，当在applyDiscount函数中设置rate字段时不需要 * 吗？&lt;br&gt;
+使用点运算符在struct指针和struct上都可以访问字段。&lt;/p&gt;
+&lt;h1 id=&#34;通过指针访问struct的字段&#34;&gt;通过指针访问struct的字段&lt;/h1&gt;
 </description>
     </item>
     
