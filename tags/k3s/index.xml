@@ -11,6 +11,19 @@
     
     
     <item>
+      <title>9.定义类型</title>
+      <link>https://tinklespring.com/posts/9.%E5%AE%9A%E4%B9%89%E7%B1%BB%E5%9E%8B/</link>
+      <pubDate>Sat, 05 Aug 2023 12:28:25 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/9.%E5%AE%9A%E4%B9%89%E7%B1%BB%E5%9E%8B/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;本篇展示使用任意类型作为基础类型。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;具有底层基础类型的定义类型&#34;&gt;具有底层基础类型的定义类型&lt;/h1&gt;
+</description>
+    </item>
+    
+    <item>
       <title>8.结构体：struct</title>
       <link>https://tinklespring.com/posts/8.%E7%BB%93%E6%9E%84%E4%BD%93struct/</link>
       <pubDate>Sat, 29 Jul 2023 18:29:46 +0800</pubDate>
@@ -24,7 +37,7 @@
 &lt;p&gt;使用struct关键字来声明一个 struct 类型，后面跟花括号，在括号中，可以定义一个或多个字段：struct 组合的值。每一个字段定义在一个单独的行，由字段名称、后面跟着的字段需要保存的值类型组成。&lt;br&gt;
 &lt;img  src=&#34;https://tinklespring.com/img/Golang/8-struct/struct%e8%af%ad%e6%b3%95.png&#34;
         alt/&gt;&lt;/p&gt;
-&lt;p&gt;可以使用一个struct类型来最为定义的变量的类型，例：&lt;/p&gt;
+&lt;p&gt;可以使用一个struct类型来作为定义的变量的类型，例：&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var myStruct struct {
        number float64
        word   string
@@ -247,6 +260,336 @@ func main() {
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在double函数中，需要使用 * 运算符来获取指针指向的值，当在applyDiscount函数中设置rate字段时不需要 * 吗？&lt;br&gt;
 使用点运算符在struct指针和struct上都可以访问字段。&lt;/p&gt;
 &lt;h1 id=&#34;通过指针访问struct的字段&#34;&gt;通过指针访问struct的字段&lt;/h1&gt;
+&lt;p&gt;若尝试打印一个变量的指针，会看到其指向的内存地址：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        var value int = 2
+        var pointer *int = &amp;amp;value
+        fmt.Println(pointer)  //输出的是指针不是值
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;应该使用 &lt;code&gt;*&lt;/code&gt; 运算符，就像调用取值运算符一样，来获取指针指向的值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        var value int = 2
+        var pointer *int = &amp;amp;value
+        fmt.Println(*pointer)  //输出指针指向的值
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;所以也需要对指向 struct 的指针使用 &lt;code&gt;*&lt;/code&gt; 运算符，但是直接把 &lt;code&gt;*&lt;/code&gt; 放到指针前是无法工作的，需要使用括号包裹。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type myStruct struct {
+        myField int
+}
+
+func main() {
+        var value myStruct
+        value.myField = 3
+        var pointer *myStruct = &amp;amp;value
+        fmt.Println((*pointer).myField)   //获取指针指向的的struct值，然后访问struct的字段
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;点运算符允许通过struct的指针来访问字段，就像可以通过struct值直接访问一样，可以不需要括号和&lt;code&gt;*&lt;/code&gt;运算符。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        var value myStruct
+        value.myField = 3
+        var pointer *myStruct = &amp;amp;value
+        fmt.Println(pointer.myField)   //通过指针访问struct字段
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;也可以通过指针来赋值给struct字段：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        var vaule myStruct
+        var pointer *myStruct = &amp;amp;value
+        pointer.myField = 9     //通过指针来赋值给struct字段
+        fmt.Println(pointer.myField)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这就是上边 applyDiscount 函数可以更新struct字段而不用&lt;code&gt;*&lt;/code&gt;运算符，它通过struct指针赋值给rate字段。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func applyDiscount(s *subscriber) { //获取struct的指针，而不是struct
+	s.rate = 4.99 //通过指针赋值给struct字段
+}
+
+func main() {
+	var s subscriber
+	applyDiscount(&amp;amp;s) //传入一个指针，而不是struct
+	fmt.Println(s.rate)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在设置struct字段前展示了defaultSubscriber函数，但是它不需要任何指针，这是为什么？&lt;br&gt;
+答：defaultSubscriber函数返回了一个struct值，若调用者保存了返回的值，那么struct值中的字段同时会被保存。只有函数修改已经存在的struct而没有返回它们的时候需要使用指针来保存修改项。&lt;br&gt;
+若需要时，defaultSubscriber可以返回一个struct的指针。&lt;/p&gt;
+&lt;h1 id=&#34;使用指针传递大型struct&#34;&gt;使用指针传递大型struct&lt;/h1&gt;
+&lt;p&gt;函数行参接收一个函数调用的实参的拷贝，即使是struct也是这样，若传递一个有很多字段的比较大的struct，会占用很多内存，会为原始的struct和被拷贝的struct都划分空间。&lt;/p&gt;
+&lt;p&gt;除非struct字段少，否则要向函数传入struct的指针，即使函数并不修改struct也是如此。当传递一个struct指针时，内存中只有一个原始的struct，并可以读取、修改等操作，都不会产生一个额外的拷贝。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type subscriber struct {
+	name   string
+	rate   float64
+	active bool
+}
+
+func printInfo(s *subscriber) { //获取指针
+	fmt.Println(&amp;#34;Name:&amp;#34;, s.name)
+	fmt.Println(&amp;#34;Monthly rate:&amp;#34;, s.rate)
+	fmt.Println(&amp;#34;Active:&amp;#34;, s.active)
+}
+
+func defaultSubscriber(name string) *subscriber { //返回指针
+	var s subscriber
+	s.name = name
+	s.rate = 5.99
+	s.active = true
+	return &amp;amp;s //返回一个指向struct的指针，而不是struct自己
+}
+
+func applyDiscount(s *subscriber) {
+	s.rate = 4.99
+}
+
+func main() {
+	subscriber1 := defaultSubscriber(&amp;#34;Aman Singh&amp;#34;) //一个struct指针
+	applyDiscount(subscriber1)                     //由于这里已经是struct的指针，去掉取址运算符
+	printInfo(subscriber1)
+	subscriber2 := defaultSubscriber(&amp;#34;Beth Ryan&amp;#34;)
+	printInfo(subscriber2)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这里defaultSubscriber函数，更改为返回一个指针，且printInfo函数也改成接受一个指针，这些函数不需要像applyDiscount一样修改struct，使用指针确保对于每个struct值，只有一个拷贝在内存中，也能保证程序正常工作。&lt;/p&gt;
+&lt;h1 id=&#34;将struct类型移动到另一个包&#34;&gt;将struct类型移动到另一个包&lt;/h1&gt;
+&lt;p&gt;将type类型保存在magazine包中：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package magazine
+
+type Subscriber struct {
+        name   string
+        Rate   float64
+        active bool
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+       &amp;#34;fmt&amp;#34;
+       &amp;#34;xxx/xxx/magazine&amp;#34;
+)
+
+func main() {
+        var s magazine.Subscriber
+        s.Rate = 4.99
+        fmt.Println(s.Rate)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go类型名称与变量和函数名称规则一样，首字母大写被认为可导出，可以从外部包来访问。&lt;/p&gt;
+&lt;p&gt;从包中导出struct字段，字段名称的首字母也必须大写。&lt;/p&gt;
+&lt;h1 id=&#34;struct字面量&#34;&gt;struct字面量&lt;/h1&gt;
+&lt;p&gt;代码定义一个struct并且一个一个的赋值，很不友好，跟切片、映射一样，Go提供了struct字面量来让你创建一个struct并同时为其字段赋值。&lt;/p&gt;
+&lt;p&gt;类型列在前，跟着一对花括号，在花括号内部，可以给一些或所有的struct字段赋值，使用字段名称、冒号和值，若定义多个字段，使用逗号分隔。&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/8-struct/type%e5%ad%97%e9%9d%a2%e9%87%8f.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;使用struct字面量，创建Subscriber并设置值：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;subscriber := magazine.Subscriber{Name: &amp;#34;Aman Singh&amp;#34;, Rate: 4.99, Active: true}
+fmt.Println(&amp;#34;Name:&amp;#34;, subscriber.Name)
+fmt.Println(&amp;#34;Rate:&amp;#34;, subscriber.Rate)
+fmt.Println(&amp;#34;Active:&amp;#34;, subscriber.Active)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不得不对struct变量使用长声明的方式（除非struct从一个函数中返回），struct字面量允许对刚创建的struct使用短变量声明。&lt;/p&gt;
+&lt;p&gt;可以在花括号中忽略一些甚至所有的字段，被忽略的字段会被设置为它们的零值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;subscriber := magazine.Subscriber{Rate: 4.99}
+fmt.Println(&amp;#34;Name:&amp;#34;, subscriber.Name)
+fmt.Println(&amp;#34;Rate:&amp;#34;, subscriber.Rate)
+fmt.Println(&amp;#34;Active:&amp;#34;, subscriber.Active)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Name:           //被忽略的字段获得了零值
+Rate: 4.99
+Active: false   //被忽略的字段获得了零值
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;创建一个employee-struct类型&#34;&gt;创建一个Employee struct类型&lt;/h1&gt;
+&lt;p&gt;这个新的magazine包，在发布前，需要一个Employee strcut类型来追踪营业员的名称和薪水，并需要把邮件地址放到雇员和订阅者的结构中。&lt;/p&gt;
+&lt;p&gt;在magazine包中增加一个类型：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;pacakge magazine
+
+type Subscriber struct {
+        Name    string
+        Rate    float64
+        Active  bool
+}
+
+type Employee struct {
+        Name    string
+        Salary  float64
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+        &amp;#34;fmt&amp;#34;
+        &amp;#34;xxx/xxx/magazine&amp;#34;
+)
+
+func main() {
+        var emplpoyee magazine.Employee
+        emplpoyee.Name = &amp;#34;Joy Carr&amp;#34;
+        emplpoyee.Salary = 60000
+        fmt.Println(emplpoyee.Name)
+        fmt.Println(emplpoyee.Salary)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;创建一个address-struct类型&#34;&gt;创建一个Address struct类型&lt;/h1&gt;
+&lt;p&gt;在Subscriber和Employee类型中增加一个地址，街道、城市、州、和邮编。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Subscriber struct {
+        Name    string
+        Rate    float64
+        Active  bool
+        Street  string
+        City    string
+        State   string
+        PostalCode string
+}
+
+type Employee struct {
+        Name    string
+        Salary  float64
+        Street  string
+        City    string
+        State   string
+        PostalCode string
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是邮政地址都有相同的格式，无论属于哪个类型，将所有字段在多个类型中重复是痛苦的事情。&lt;/p&gt;
+&lt;p&gt;struct字段可以保存任何类型，甚至是struct类型，所以我们创建一个Address struct 类型，然后在Subscriber和Employee类型中增加一个Address类型的字段，并且如果想要修改地址格式，可以保证类型之间的一致性。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Address struct {
+        Street  string
+        City    string
+        State   string
+        PostalCode string
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+        &amp;#34;fmt&amp;#34;
+        &amp;#34;xxx/xxx/magazine&amp;#34;
+)
+
+func main() {
+        var address magazine.Address
+        address.Street = &amp;#34;123 Oak St&amp;#34;
+        address.City = &amp;#34;Omaha&amp;#34;
+        address.State = &amp;#34;NE&amp;#34;
+        address.PostalCode = &amp;#34;12345&amp;#34;
+        fmt.Println(address)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;将struct作为字段增加到另一个类型中&#34;&gt;将struct作为字段增加到另一个类型中&lt;/h1&gt;
+&lt;p&gt;给 Subscriber 和 Employee 类型增加一个HomeAddress字段，在struct类型中增加一个struct类型字段与增加其他类型字段相同，字段名称和字段类型。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package magazine
+
+type Address struct {
+        Street  string
+        City    string
+        State   string
+        PostalCode string
+}
+
+type Subscriber Struct {
+        Name    string
+        Rate    float64
+        Active  bool
+        HomeAddress Address
+}
+
+type Employee struct {
+        Name    string
+        Salary  float64
+        HomeAddress Address
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;在另一个struct中设置struct&#34;&gt;在另一个struct中设置struct&lt;/h1&gt;
+&lt;p&gt;在Subscriber struct中设置 Address struct的字段值，这里有两种方式。&lt;/p&gt;
+&lt;p&gt;第一种是创建一个独立的Address struct并使用它填充 Subscriber的整个Address字段：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+        &amp;#34;fmt&amp;#34;
+        &amp;#34;xxx/xxx/magazine&amp;#34;
+)
+
+func main() {
+        address := magazine.Address{Street: &amp;#34;123 Oak St&amp;#34;, City: &amp;#34;Omaha&amp;#34;, State: &amp;#34;NE&amp;#34;, PostalCode: &amp;#34;12345&amp;#34;}
+        subscriber := magazine.Subscriber{Name: &amp;#34;Aman Singh&amp;#34;}  //创建一个Address所属的Subscriber struct
+        subscriber.HomeAddress = address    //设置HomeAddress字段
+        fmt.Println(subscriber.HomeAddress)  //打印HomeAddress字段
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;另一种方法是通过外部struct来设置内部struct的字段。&lt;br&gt;
+当一个Subscriber struct被创建后，其HomeAddress字段也被设置：它是一个Address struct，所有的字段都被设置为零值，若对fmt.Printf使用&amp;quot;%#v&amp;quot;动词来打印HomeAddress，会打印出它在go代码中的样子，也就是说像struct字面量一样，将看到每一个Address字段被设置为空字符串，也就是string类型的零值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;subscriber := magazine.Subscriber()
+fmt.Printf(&amp;#34;%#v\n&amp;#34;, subscriber.HomeAddress)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;magazine.Address{Street:&amp;#34;&amp;#34;, City:&amp;#34;&amp;#34;, State:&amp;#34;&amp;#34;, PostalCode:&amp;#34;&amp;#34;}  //字段已经像Address struct一样被设置了，每一个字段都被设置为空字符串（字符串的零值）
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若subscriber是一个包含Subscriber struct的变量，当输入subscriber.HomeAddress时，会获得一个Address struct，即使没有明确设置HomeAddress。&lt;/p&gt;
+&lt;p&gt;可以使用点运算符“链”的方式来访问Address struct中的字段，简单使用subscriber.HomeAddress来访问Address struct，后面跟另一个点运算符和想要访问的Address struct中的字段名称：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;subscriber.HomeAddress.City    //subscriber.HomeAddress 这部分返回一个Address struct，City 部分访问Address struct中的City部分
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在subscriber变量中保存一个Subscriber struct，在subscriber的HomeAddress字段中自动创建一个Address struct，设置subscriber.HomeAddress.Street、subscriber.HomeAddress.City和其他的值，然后输出这些值。然后在employee变量中保存Employee struct，并在HomeAddress struct中做相同操作。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;xxx/xxx/magazine&amp;#34;
+)
+
+func main() {
+	subscriber := magazine.Subscriber{Name: &amp;#34;Aman Singh&amp;#34;}
+	subscriber.HomeAddress.Street = &amp;#34;123 Oak St&amp;#34;
+	subscriber.HomeAddress.City = &amp;#34;Omaha&amp;#34;
+	subscriber.HomeAddress.State = &amp;#34;NE&amp;#34;
+	subscriber.HomeAddress.PostalCode = &amp;#34;12345&amp;#34;
+	fmt.Println(&amp;#34;Subscriber Name:&amp;#34;, subscriber.Name)
+	fmt.Println(&amp;#34;Street:&amp;#34;, subscriber.HomeAddress.Street)
+	fmt.Println(&amp;#34;City:&amp;#34;, subscriber.HomeAddress.City)
+	fmt.Println(&amp;#34;State&amp;#34;, subscriber.HomeAddress.State)
+	fmt.Println(&amp;#34;Postal Code:&amp;#34;, subscriber.HomeAddress.PostalCode)
+
+	// ...  //employee 省略
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;匿名struct字段&#34;&gt;匿名struct字段&lt;/h1&gt;
+&lt;p&gt;通过外部struct访问内部struct的字段有点繁琐，想要访问内部struct字段的时候，不得不每次输入代表struct字段的名称。go允许定义一个匿名字段：struct字段没有名字，仅仅只有类型，可以使用匿名字段来让内部struct访问更简单。&lt;/p&gt;
+&lt;p&gt;更新 Subscriber 和 Employee 类型，让HomeAddress字段作为一个匿名字段，只需移除字段名称，仅保留字段类型。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package magazine
+
+type Subscriber struct {
+        Name string
+        Rate float64
+        Active bool
+        Address
+}
+
+type Employee struct {
+        Name  string
+        Salary float64
+        Address   //删除字段名称（HomeAddress），仅保留类型
+}
+
+type Address struct {
+        // Fields omitted
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当声明一个匿名字段时，可以使用字段类型名称作为字段名称，所以 subscriber.Address和 employee.Address在下面的代码中仍然访问Address struct：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;subscriber := magazine.Subscriber{Name: &amp;#34;Aman Singh&amp;#34;}
+subscriber.Address.Street = &amp;#34;123 Oak St&amp;#34;
+subscriber.Address.City = &amp;#34;Omaha&amp;#34;
+fmt.Println(&amp;#34;Street:&amp;#34;, subscriber.Address.Street)
+fmt.Println(&amp;#34;City:&amp;#34;, subscriber.Address.City)
+//...
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;嵌入struct&#34;&gt;嵌入struct&lt;/h1&gt;
+&lt;p&gt;匿名字段不只是使struct定义中省略了字段名称。&lt;/p&gt;
+&lt;p&gt;一个内部struct使用匿名字段的方式存储在了外部的struct中，这被称为嵌入了外部struct，嵌入struct的字段被提升到了外部struct，可以像访问外部struct的字段一样访问它们。&lt;/p&gt;
+&lt;p&gt;所以Address struct类型被嵌入了Subscriber struct和Employee struct类型，不需要写下subscriber.Address.City来获取City字段，可以只写subscriber.City，不需要写下 employee.Address.State，可以只写employee.State。&lt;/p&gt;
+&lt;p&gt;修改为将Address当作一个内嵌类型，可以将代码写成完全没有Address类型，就像Address的字段属于它嵌入的struct类型。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;xxx/xxx/magazine&amp;#34;
+)
+
+func main() {
+	subscriber := magazine.Subscriber{Name: &amp;#34;Aman Singh&amp;#34;}
+	subscriber.Street = &amp;#34;123 Oak St&amp;#34;
+	subscriber.City = &amp;#34;Omaha&amp;#34;
+	subscriber.State = &amp;#34;NE&amp;#34;
+	subscriber.PostalCode = &amp;#34;12345&amp;#34;  //设置Address的字段就像它们在Subscriber上被定义过一样
+	fmt.Println(&amp;#34;Subscriber Name:&amp;#34;, subscriber.Name)
+	fmt.Println(&amp;#34;Street:&amp;#34;, subscriber.Street)
+	fmt.Println(&amp;#34;City:&amp;#34;, subscriber.City)
+	fmt.Println(&amp;#34;State&amp;#34;, subscriber.State)
+	fmt.Println(&amp;#34;Postal Code:&amp;#34;, subscriber.PostalCode)
+
+	...  //employee 省略
+
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不是必须内嵌内部struct，也不是必须使用内部struct，有时给外部struct增加新字段会使代码更干净。&lt;/p&gt;
 </description>
     </item>
     
@@ -3263,42 +3606,6 @@ fmt.Println(reflect.TypeOf(float64(myInt)))
 float64
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在进行转换时，它们可能会更改结果值，float64变量可以存储小数值，但int不可以，将float64转换为int时，小数部分会被删掉。&lt;/p&gt;
 </description>
-    </item>
-    
-    <item>
-      <title>ssh密钥类型选择</title>
-      <link>https://tinklespring.com/posts/ssh%E5%AF%86%E9%92%A5%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9/</link>
-      <pubDate>Thu, 25 May 2023 13:37:48 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/ssh%E5%AF%86%E9%92%A5%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9/</guid>
-      <description>&lt;p&gt;As everyone knows，ssh key can improve ssh connection security.&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;RSA（Rivest–Shamir–Adleman）是最早的公钥密码系统之一，被广泛用于安全数据传输。它的安全性取决于整数分解，因此永远不需要安全的RNG（随机数生成器）。与DSA相比，RSA的签名验证速度更快，但生成速度较慢。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;DSA（数字签名算法）是用于数字签名的联邦信息处理标准。它的安全性取决于离散的对数问题。与RSA相比，DSA的签名生成速度更快，但验证速度较慢。如果使用错误的数字生成器，可能会破坏安全性。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;ECDSA（椭圆曲线数字签名算法）是DSA（数字签名算法）的椭圆曲线实现。椭圆曲线密码术能够以较小的密钥提供与RSA相对相同的安全级别。它还具有DSA对不良RNG敏感的缺点。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;EdDSA（爱德华兹曲线数字签名算法）是一种使用基于扭曲爱德华兹曲线的Schnorr签名变体的数字签名方案。签名创建在EdDSA中是确定性的，其安全性是基于某些离散对数问题的难处理性，因此它比DSA和ECDSA更安全，后者要求每个签名都具有高质量的随机性。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Ed25519是EdDSA签名方案，但使用SHA-512 / 256和Curve25519；它是一条安全的椭圆形曲线，比DSA，ECDSA和EdDSA 提供更好的安全性，并且具有更好的性能（人为注意）。&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;ssh key的类型有四种，分别是dsa、rsa、 ecdsa、ed25519。&lt;/p&gt;
-&lt;p&gt;根据数学特性，这四种类型又可以分为两大类，dsa/rsa是一类，ecdsa/ed25519是一类，后者算法更先进。&lt;/p&gt;
-&lt;p&gt;dsa因为安全问题，已不再使用了。&lt;/p&gt;
-&lt;p&gt;ecdsa因为政治原因和技术原因，也不推荐使用。&lt;/p&gt;
-&lt;p&gt;rsa是目前兼容性最好的，应用最广泛的key类型，在用ssh-keygen工具生成key的时候，默认使用的也是这种类型。不过在生成key时，如果指定的key size太小的话，也是有安全问题的，推荐key size是3072或更大。&lt;/p&gt;
-&lt;p&gt;ed25519是目前最安全、加解密速度最快的key类型，由于其数学特性，它的key的长度比rsa小很多，优先推荐使用。它目前唯一的问题就是兼容性，即在旧版本的ssh工具集中可能无法使用。&lt;/p&gt;
-&lt;h2 id=&#34;综合来看优先选择ed25519&#34;&gt;综合来看，优先选择ed25519&lt;/h2&gt;
-&lt;p&gt;下面来简介下如何生成&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ssh-keygen -t ed25519 -C &amp;#34;yourname&amp;#34;
-&lt;/code&gt;&lt;/pre&gt;</description>
     </item>
     
   </channel>
