@@ -11,6 +11,20 @@
     
     
     <item>
+      <title>10.保密：封装和嵌入</title>
+      <link>https://tinklespring.com/posts/10.%E4%BF%9D%E5%AF%86%E5%B0%81%E8%A3%85%E5%92%8C%E5%B5%8C%E5%85%A5/</link>
+      <pubDate>Mon, 07 Aug 2023 16:27:10 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/10.%E4%BF%9D%E5%AF%86%E5%B0%81%E8%A3%85%E5%92%8C%E5%B5%8C%E5%85%A5/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;有时，程序会接收到无效的数据，从用户输入、文件读取或其他方式。&lt;code&gt;封装&lt;/code&gt;：一个保护string字段免受无效数据的方法。这样，数据字段能够安全使用。&lt;br&gt;
+也会在类型内部嵌入其他的类型，若struct类型需要已经存在于其他类型的方法，不需要赋值方法代码，可以将其嵌入struct类型中，然后像使用自己的类型的定义方法一样使用嵌入的方法。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;创建一个日期struct类型&#34;&gt;创建一个日期struct类型&lt;/h1&gt;
+</description>
+    </item>
+    
+    <item>
       <title>9.定义类型</title>
       <link>https://tinklespring.com/posts/9.%E5%AE%9A%E4%B9%89%E7%B1%BB%E5%9E%8B/</link>
       <pubDate>Sat, 05 Aug 2023 12:28:25 +0800</pubDate>
@@ -20,7 +34,382 @@
 &lt;p&gt;本篇展示使用任意类型作为基础类型。&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h1 id=&#34;具有底层基础类型的定义类型&#34;&gt;具有底层基础类型的定义类型&lt;/h1&gt;
-</description>
+&lt;p&gt;Go经常使用 struct 作为基础类型来定义类型，但也能基于 int、string、bool或其他任何类型。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Liters float64
+type Gallons float64  //定义两个新类型，基础类型都是float64
+
+func main() {
+        var carFuel Gallons
+        var busFuel Liters
+        carFuel = Gallons(10.0)   //把float64转换为Gallons
+        busFuel = Liters(240.0)   //把float64转换为Liters
+        fmt.Println(carFuel, busFuel)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;一旦定义一个类型，可以把任何基础类型的值转换为定义的类型，像其他类型转换一样，写下需要转换到的类型，后面跟着小括号中的希望转换的值。&lt;/p&gt;
+&lt;p&gt;若需要，上面代码中可以使用短变量声明:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;carFuel := Gallons(10.0)
+busFuel := Liters(240.0)  //与类型转换同时使用短变量声明
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若变量使用了已定义的类型，不能把另一个类型的值赋给它，即使另一个类型也具有相同的基础类型。&lt;/p&gt;
+&lt;p&gt;但是可以在具有相同基础类型的类型之间转换，Liters可以与Gallons互相转换，因为其基础类型都是float64，但是Go只在转换时考虑基础类型的值，Gallons(Liters(240.0)) 与 Liters(Gallons(240.0)) 没有区别，简单地把值从一个类型转换到另一个类型使针对这个类型应该出现的错误保护机制失效。&lt;/p&gt;
+&lt;p&gt;升与加仑转换：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;carFuel = Gallons(Liters(40.0) * 0.264)
+busFuel = Liters(Gallons(63.0) * 3.785)
+fmt.Printf(&amp;#34;Gallons: %0.1f Liters: %0.1f\n&amp;#34;, carFuel, busFuel)
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;定义类型和运算符&#34;&gt;定义类型和运算符&lt;/h1&gt;
+&lt;p&gt;一个定义类型提供与所有基础类型相同的运算，基于float64类型，提供算数运算符&lt;code&gt;+、-、*、/&lt;/code&gt;，也提供比较运算&lt;code&gt;==、&amp;gt;、&amp;lt;&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;并且基于基础类型string的类型，支持&lt;code&gt;+、==、&amp;gt;、&amp;lt;&lt;/code&gt;，但是不支持&lt;code&gt;-&lt;/code&gt;，因为 - 对于string不是合法的运算符。&lt;/p&gt;
+&lt;p&gt;一个定义类型可以被用来与字面值一起运算：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(Liters(1.2) + 3.4)
+fmt.Println(Gallons(5.5) - 2.2)
+fmt.Println(Gallons(1.2) == 1.2)
+fmt.Println(Liters(1.2) &amp;lt; 3.4)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;4.6
+3.3
+true
+true
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;定义类型不能用来与不同类型的值一起运算，即使它们来自相同的基础类型。若想要将一个Liters中的值与Gallons中的值作运算，需要将其中一个类型转换为另一个类型。&lt;/p&gt;
+&lt;h1 id=&#34;使用函数进行类型转换&#34;&gt;使用函数进行类型转换&lt;/h1&gt;
+&lt;p&gt;让不同类型的值一起运算，需要进行类型转换：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;carFuel = Gallons(Liters(40.0) * 0.264)
+busFuel = Liters(Gallons(63.0) * 3.785)
+
+	func ToGallons(l Liters) Gallons {
+                return Gallons(l * 0.364)
+	}
+
+        func ToLiters(g Gallons) Liters {
+                return Liters(g * 3.785)
+        }
+
+        func main() {
+                carFuel := Gallons(1.2)
+                busFuel := Liters(4.5)
+                carFuel += ToGallons(Liters(40.0))   //先将Liters转换为Gallons
+                busFuel += ToLiters(Gallons(30.0))   //先将Gallons转换为Liters
+                fmt.Printf(&amp;#34;Car fuel: %0.1f gallons\n&amp;#34;, carFuel)
+                fmt.Printf(&amp;#34;Bus fuel: %0.1f liters\n&amp;#34;, busFuel)
+        }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Car fuel: 11.8 gallons
+Bus fuel: 118.1 litters
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;增加一个新类型，Milliliters：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Liters float64
+type Milliliters float64
+type Gallons float64
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;也需要将Milliliters类型进行转换，但如果增加一个Milliliters转换为Gallons的函数，会产生错误，不能在同一个包中出现两个ToGallons函数！&lt;/p&gt;
+&lt;p&gt;可以分别修改两个ToGallons函数的名字：LitersToGallons和MillilitersToGallons：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func LitersToGallons(l Liters) Gallons {
+        return Gallons(l * 0.264)
+}
+func MillilitersToGallons(m Milliliters) Gallons {
+        return Gallons(m * 0.000264)
+}
+func GallonsToLiters(g Gallons) Liters {
+        return Liters(g * 3.785)
+}
+func GallonsToMilliliters(g Gallons) Milliliters {
+        return Milliliters(g * 3785.41)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;虽然这样消除了冲突，但是名字很长，不方便。&lt;/p&gt;
+&lt;p&gt;其他语言的重载，允许存在多个同名函数，只要其参数不同即可，但go不支持重载，有其他方式能达到类似的效果。&lt;/p&gt;
+&lt;h1 id=&#34;使用方法修复函数名冲突&#34;&gt;使用方法修复函数名冲突&lt;/h1&gt;
+&lt;p&gt;方法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        var now time.Time = time.Now()  //time.Now返回一个time.Time值代表当前日期和时间
+        var year int = now.Year()  //time.Time值有一个Year方法来返回当前年
+        fmt.Printlnt(year)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        broken := &amp;#34;G# r#cks&amp;#34;
+        replacer := strings.NewReplacer(&amp;#34;#&amp;#34;, &amp;#34;o&amp;#34;)  //返回一个strings.Replacer值，被设置为&amp;#34;#&amp;#34;到&amp;#34;o&amp;#34;的转换
+        fixed := replacer.Replace(broken)  //调用strings.Replacer的Replace方法，并传入一个字符串来作转换
+        fmt.Println(fixed)  //输出Replace方法返回的字符串
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以用自定义方法来帮助解决类型转换的问题。&lt;/p&gt;
+&lt;p&gt;不允许有多个ToGallons函数，所以不得不写很长的函数名称；但是可以有多个名为ToGallons的方法，只要它们被定义在单独的类型中，不用担心名称冲突，让方法名称更短小。&lt;/p&gt;
+&lt;h1 id=&#34;定义方法&#34;&gt;定义方法&lt;/h1&gt;
+&lt;p&gt;方法定义与函数定义类似，只有一点不同：需要增加一个额外的参数，一个接收器参数，在函数名称之前的括号中；需要提供一个接收器参数的名称，后面跟着类型。&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/9-type/%e5%ae%9a%e4%b9%89%e6%96%b9%e6%b3%95.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;为了调用定义的方法，键入要在其上调用方法的值，一个点和要调用的方法的名称，跟着一对括号；这里调用的方法被称为&lt;code&gt;方法接收器&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;当调用一个方法时，接收器要被列为第一个，并当定义一个方法的时候，接收器参数也被列为第一个。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;value := MyType(&amp;#34;a MyType value&amp;#34;)
+value.sayHi()  //value为方法接收器，sayHi为方法名称
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;方法定义中的接收器参数的名称不重要，重要的是它的类型，定义的方法与此类型的值都关联。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type MyType string   //定义一个类型
+
+func (m MyType) sayHi() {  //定义一个接收器，函数被定义在MyType上
+        fmt.Println(&amp;#34;Hi&amp;#34;)
+}
+
+func main() {
+        value := MyType(&amp;#34;a MyType value&amp;#34;)  //创建一个MyType值
+        value.sayHi()  //在这个值上调用sayHi
+        anotherValue := MyType(&amp;#34;another value&amp;#34;)  //创建另一个MyType值
+        anotherValue.sayHi()  //在另一个值上调用sayHi
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Hi
+Hi
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;首先定义了一个名为MyType的类型，使用string作为基础类型，然后定义一个名为sayHi的方法，由于sayHi有一个MyType类型的接收器参数，可以使用任何MyType的值来调用sayHi方法。&lt;/p&gt;
+&lt;p&gt;一旦方法被定义在了某个类型，它就能被该类型的任何值调用。&lt;/p&gt;
+&lt;h1 id=&#34;接收器参数几乎就是另一个参数&#34;&gt;接收器参数（几乎）就是另一个参数&lt;/h1&gt;
+&lt;p&gt;接收器参数的类型是与之联系的方法的类型，除此以外，接收器在Go中没有什么特殊，可以在方法块中访问它们的内容，就像其他的函数参数一样。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type MyType string
+
+func (m MyType) sayHi() {  //输出接收器参数的值
+        fmt.Println(&amp;#34;Hi from&amp;#34;, m)
+}
+
+func main() {
+        value := MyType(&amp;#34;a MyType value&amp;#34;)  //调用方法所需的值
+        value.sayHi()  //传递给接收器参数的接收器
+        anotherValue := MyType(&amp;#34;another value&amp;#34;)  //调用方法所需的值
+        anotherValue.sayHi()  //传递给接收器参数的接收器
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Hi from a MyType value
+Hi from another value    //获取了输出中的接收器的值
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go可以命名接收器的名称，但是若类型定义的所有方法的接收器参数名称一致，则更易读。&lt;/p&gt;
+&lt;p&gt;Go开发者通常使用一个字母作为名称：小写的接受器类型名称的首字母（使用m作为MyType接收器的参数名称）。&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;1.能否为任何类型定义新的方法？&lt;br&gt;
+方法和类型必须定义在同一包中；意味着不会在hacking包中定义security包中的类型的方法，并且不会为像int或string一类的普通类型定义新的方法。&lt;/p&gt;
+&lt;p&gt;2.需要在别人的类型上使用自己的方法&lt;br&gt;
+首先考虑是否需要一个函数就足够，函数可以接受需要的任何类型作为参数，但若真的需要一个值具有自定义的方法，在不同的包中给类型增加一些方法，可以创建一个新的类型并将其他包的类型作为匿名字段嵌入，后边会演示如何操作。&lt;/p&gt;
+&lt;h1 id=&#34;方法几乎就像一个函数&#34;&gt;方法（几乎）就像一个函数&lt;/h1&gt;
+&lt;p&gt;除了在接收器上被调用外，方法与函数完全相同，与其他函数一样，可以在方法名称后面的括号中定义额外的参数，参数变量与接收器参数一样，可以被方法块所访问。当调用方法时，将需要为每个参数提供值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (m MyType) MethodWithParameters(number int, flag bool) {
+        fmt.Println(m)
+        fmt.Println(number)
+        fmt.Println(flag)
+}
+
+func main() {
+        value := MyType(&amp;#34;MyType value&amp;#34;)
+        value.MethodWithParameters(4, true)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;MyType value
+4
+true
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;与函数一样，可以为方法声明一个或多个返回值，返回值将在函数被调用时返回：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (m MyType) WithReturn() int {
+        return len(m)
+}
+
+func main() {
+        value := MyType(&amp;#34;MyType value&amp;#34;)
+        fmt.Println(value.WithReturn())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;12
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;与函数一样，方法名称以大写字母开头，则认为是可导出的，若以小写字母开头，认为是不可导出的。想要在当前包之外使用定义的方法，要确保名字以大写字母开头。&lt;/p&gt;
+&lt;h1 id=&#34;指针类型的接收器参数&#34;&gt;指针类型的接收器参数&lt;/h1&gt;
+&lt;p&gt;定义了一个新的以int为基础类型的Number类型，为Number类型提供一个名为double的方法，它将接收器的基础类型值乘以2并且重新赋值给接收器，从输出上看方法的接收器并未更新。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Number int  //定义一个基础类型为int的类型
+
+func (n Number) Double() {   //定义一个Number类型
+        n *= 2  //接收器的值乘以2，尝试更新接收器
+}
+
+func main() {
+        number := Number(4)  //创建一个Number的值
+        fmt.Println(&amp;#34;Original value of number:&amp;#34;, number)
+        number.Double()  //尝试加倍Number
+        fmt.Println(&amp;#34;number after calling Double:&amp;#34;, number)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Original value of number: 4
+number after calling Double: 4  //Number并未加倍
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;之前的double函数也有同样的问题，函数参数接收的是函数调用时的拷贝，不是原始值，当函数退出后任何更新都会失效，为了能让double函数正常，传递一个要更新的值的指针，然后更新该指针指向的值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        amount := 6
+        double(&amp;amp;amount)  //传递一个指针而不是值
+        fmt.Println(amount)
+}
+
+func double(number *int) {  //接收指针而不是int值
+        *number *= 2  //更新指针指向的值
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;需要修改Double方法以使用指针来作其接收器参数：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (n *Number) Double() {  //接收器参数接收指针类型
+        *n *= 2  //修改指针指向的值
+}
+
+func main() {
+        number := Number(4)
+        fmt.Println(&amp;#34;Original value of number:&amp;#34;, number)
+        number.Double()  //不需要修改方法的调用
+        fmt.Println(&amp;#34;number after calling Double:&amp;#34;, number)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Original value of number: 4
+number after calling Double: 8  //指针指向的值被更新
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不需要修改方法的调用，当用一个非指针的变量调用一个需要指针的接收器的方法时，Go会自动将非指针类型转换为指针类型，同样指针类型也会自动转换为非指针类型，若调用一个要求值类型的接收器，Go会自动获取指针指向的值，然后传递给方法。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyType string
+
+func (m MyType) method() {
+        fmt.Println(&amp;#34;Method with value receiver&amp;#34;)
+}
+func (m *MyType) pointerMethod() {
+        fmt.Println(&amp;#34;Method with pointer receiver&amp;#34;)
+}
+
+func main() {
+        value := MyType(&amp;#34;a value&amp;#34;)
+        pointer := &amp;amp;value
+        value.method()
+        value.pointerMethod()   //值类型自动转换为指针
+        pointer.method()   //指针类型自动转换为值
+        pointer.pointerMethod()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Method with value receiver
+Method with pointer receiver
+Method with value receiver
+Method with pointer receiver
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;名为method的方法接受一个值类型的接收器，但我们同时使用了值类型和指针类型，如果需要，Go会自动转换；名为pointerMethod的方法接受一个指针类型的接收器，但是使用了值类型和指针类型调用，如果需要，Go会自动转换。&lt;/p&gt;
+&lt;p&gt;为了一致性，所有的类型函数接受值类型或者都接受指针类型，避免混用。&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;为了调用需要接收器指针的方法，需要或者这个值类型的指针！&lt;/p&gt;
+&lt;p&gt;只能获取保存在变量中的指针，若尝试获取没有保存在变量中的值的地址，会得到错误：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;&amp;amp;MyType(&amp;#34;a value&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;错误输出:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;cannot take the address of MyType(&amp;#34;a value&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;相同的限制也存在于使用接收器指针调用方法时，Go无法将值类型转换为指针类型，除非将接收器的值保存在变量中，若尝试在值类型上调用方法，Go也不会转换为指针，会得到相同的错误：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;MyType(&amp;#34;a value&amp;#34;).pointerMethod()
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;错误输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;cannot call pointer method on MyType(&amp;#34;a value&amp;#34;)
+cannot take the address of MyType(&amp;#34;a value&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;需要将值保存在变量中，允许Go能得到一个指向它的指针：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;value := MyType(&amp;#34;a value&amp;#34;)
+value.pointerMethod()   //将其转化为指针
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+&lt;p&gt;这是一个Number类型，定义了两个方法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+import &amp;#34;fmt&amp;#34;
+type Number int
+func (n *Number) Display() {
+        fmt.Println(*n)
+}
+func (n *Number) Double() {
+        *n *= 2
+}
+func main() {
+        number := Number(4)
+        number.Double()
+        number.Display()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;若如此&amp;hellip;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;代码会失败，因为：&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;func (n &lt;del&gt;*Number&lt;/del&gt;int) Double() {&lt;br&gt;        *n *= 2&lt;br&gt;}&lt;br&gt;&lt;pre&gt;将接收器参数类型改为一个未在当前包中定义的类型&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;只能为定义在当前包中的类型定义方法。为一个像int一样全局定义的类型定义方法会导致编译错误&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;func (n &lt;del&gt;*&lt;/del&gt;Number) Double() {&lt;br&gt;        &lt;del&gt;*&lt;/del&gt;n *= 2&lt;br&gt;}&lt;br&gt;&lt;pre&gt;将Double方法的接收器参数改为一个非指针类型&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;接收器参数接受了一个接收器的拷贝，若Double函数仅修改这个拷贝，当Double返回的时候，原值不会改变&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;Number(4).Double()&lt;pre&gt;在一个没有保存到变量的值上直接调用一个需求接收器的指针的方法&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;当调用一个指针类型的接收器时，如果接收器保存在变量中，Go会自动将值转换为指针类型，若没有保存，会得到一个错误&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;func (n &lt;del&gt;*&lt;/del&gt;Number) Display() {&lt;br&gt;        fmt.Println(&lt;del&gt;*&lt;/del&gt;n)&lt;br&gt;}&lt;br&gt;&lt;pre&gt;将Display方法的接收器参数改为一个非指针类型&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;在修改之后，代码仍能正常运行，但破坏了惯例，方法中的接收器参数可以都是指针，或者都是值类型，避免混用&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h1 id=&#34;使用方法将liters和milliliters转换为gallons&#34;&gt;使用方法将Liters和Milliliters转换为Gallons&lt;/h1&gt;
+&lt;p&gt;不同于函数，只要方法定义在不同的类型中，就可以重名。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Liters float64
+type Milliliters float64
+type Gallons float64
+
+func (l Liters) ToGallons() Gallons {
+	return Gallons(l * 0.264)
+}
+func (m Milliliters) ToGallons() Gallons {
+	return Gallons(m * 0.000264)
+}
+
+func main() {
+	soda := Liters(2)
+	fmt.Printf(&amp;#34;%0.3f liters equals %0.3f gallons\n&amp;#34;, soda, soda.ToGallons())
+	water := Milliliters(500)
+	fmt.Printf(&amp;#34;%0.3f milliliters equals %0.3f gallons\n&amp;#34;, water, water.ToGallons())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2.000 liters equals 0.528 gallons
+500.000 milliliters equals 0.132 gallons
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;没有使用指针类型作为接收器参数，不需要修改接收器，值类型没有消耗很多内存，参数接受一个拷贝也是合适的。&lt;/p&gt;
+&lt;h1 id=&#34;使用方法将gallons转换为liters和milliliters&#34;&gt;使用方法将Gallons转换为Liters和Milliliters&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (g Gallons) ToLiters() Liters {
+	return Liters(g * 3.785)
+}
+func (g Gallons) ToMilliliters() Milliliters {
+	return Milliliters(g * 3785.41)
+}
+
+func main() {
+	milk := Gallons(2)
+	fmt.Printf(&amp;#34;%0.3f gallons equals %0.3f liters\n&amp;#34;, milk, milk.Toliters())
+	fmt.Printf(&amp;#34;%0.3f gallons equals %0.3f milliliters\n&amp;#34;, milk, milk.ToMilliliters())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;练习：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Liters float64
+type Milliliters float64
+type Gallons float64
+
+func (l Liters) ToMilliliters() Milliliters {
+	return Milliliters(l * 1000)
+}
+func (m Milliliters) ToLiters() Liters {
+	return Liters(m / 1000)
+}
+
+func main() {
+	l := Liters(3)
+	fmt.Printf(&amp;#34;%0.1f liters is %0.1f milliliters\n&amp;#34;, l, l.ToMilliliters())
+	ml := Milliliters(500)
+	fmt.Printf(&amp;#34;%0.1f milliliters is %0.1f liters\n&amp;#34;, ml, ml.ToLiters())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;3.0 liters is 3000.0 milliliters
+500.0 milliliters is 0.5 liters
+&lt;/code&gt;&lt;/pre&gt;</description>
     </item>
     
     <item>
@@ -3290,322 +3679,6 @@ ch2 selected
 # 等效于
 for{}
 &lt;/code&gt;&lt;/pre&gt;</description>
-    </item>
-    
-    <item>
-      <title>1.golang语法基础</title>
-      <link>https://tinklespring.com/posts/1.golang%E8%AF%AD%E6%B3%95%E5%9F%BA%E7%A1%80/</link>
-      <pubDate>Thu, 25 May 2023 15:16:11 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/1.golang%E8%AF%AD%E6%B3%95%E5%9F%BA%E7%A1%80/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;go 语言打怪升级之路～&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;出发&#34;&gt;出发～&lt;/h1&gt;
-&lt;p&gt;让我们先来看一段代码&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func main() {
-	fmt.Println(&amp;#34;Hello,World!&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;package main&lt;/code&gt; 这行表示文件中的所有其余代码都属于 &amp;ldquo;main&amp;rdquo; 包。&lt;br&gt;
-&lt;code&gt;import &amp;quot;fmt&amp;quot;&lt;/code&gt; 表示将使用 &amp;ldquo;fmt&amp;rdquo; 包中的文本格式代码。
-&lt;code&gt;func main()&lt;/code&gt;  &amp;ldquo;main&amp;rdquo; 函数比较特殊，当程序运行时它首先运行。&lt;br&gt;
-&lt;code&gt;fmt.Println&lt;/code&gt;  通过从 &amp;ldquo;fmt&amp;rdquo; 包调用 &amp;ldquo;Println&amp;rdquo; 函数来实现。&lt;br&gt;
-&lt;code&gt;Hello,World!&lt;/code&gt; 这一行会显示在终端或者web浏览器上。&lt;/p&gt;
-&lt;p&gt;每个go文件最后一部分都是实际代码，通常被分割成一个或多个function（函数）。function是由一行或多行代码组成的组，可以从程序中的其他位置调用（运行）。当一个程序运行时，会寻找一个名为main的函数并首先运行它，这就是为什么将这个函数命名为main的原因。&lt;/p&gt;
-&lt;h2 id=&#34;font-color0099ff-size3-face黑体go文件布局font&#34;&gt;&lt;font color=#0099ff size=3 face=&#34;黑体&#34;&gt;go文件布局&lt;/font&gt;&lt;/h2&gt;
-&lt;p&gt;可以发现几乎每个go文件中都是这三个部分。&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;package 子句 &lt;code&gt;package main&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;任何import语句 &lt;code&gt;import &amp;quot;fmt&amp;quot;&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;实际代码&lt;/li&gt;
-&lt;/ol&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-        fmt.Println(&amp;#34;Hello,World!&amp;#34;) 
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;go 编译器带有标准格式化工具 &lt;code&gt;go fmt&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;调用函数&#34;&gt;调用函数&lt;/h1&gt;
-&lt;p&gt;&lt;code&gt;fmt.Println(&amp;quot;First argument&amp;quot;, &amp;quot;Second argument&amp;quot;)&lt;/code&gt;&lt;br&gt;
-&lt;code&gt;fmt&lt;/code&gt; 为包名；&lt;br&gt;
-&lt;code&gt;Println&lt;/code&gt; 为函数名；&lt;/p&gt;
-&lt;h1 id=&#34;函数返回值&#34;&gt;函数返回值&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;math&amp;#34;
-	&amp;#34;strings&amp;#34;
-)
-
-func main() {
-	math.Floor(2.75)
-	strings.Title(&amp;#34;how are you&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这个程序不产生任何输出。&lt;br&gt;
-要查看函数调用的结果，需要获取返回值并将其传递给 &lt;code&gt;fmt.Println&lt;/code&gt;&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;math&amp;#34;
-	&amp;#34;strings&amp;#34;
-)
-
-func main() {
-	fmt.Println(math.Floor(2.75))
-	fmt.Println(strings.Title(&amp;#34;how are you&amp;#34;))
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;字符串&#34;&gt;字符串&lt;/h1&gt;
-&lt;p&gt;字符串是一系列字节，表示文本字符，在代码中可以使用字符串字面量来定义字符串：双引号之间的文本，go将其视为字符串。&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;转义序列&lt;/th&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;值&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;\n&lt;/code&gt;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;换行符&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;\t&lt;/code&gt;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;制表符&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;\&amp;quot;&lt;/code&gt;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;双引号&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;\\&lt;/code&gt;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;反斜杠&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;示例&lt;/font&gt;&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;输入&lt;/th&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;输出&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;&amp;quot;Hello,\nGo!&amp;quot;&lt;/code&gt;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;hello,&lt;br&gt;Go!&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;&amp;quot;Hello,\tGo!&amp;quot;&lt;/code&gt;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;Hello, Go!&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;&amp;quot;Quotes: \&amp;quot;\&amp;quot;&amp;quot;&lt;/code&gt;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;Quotes: &amp;quot;&amp;quot;&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;&amp;quot;Backslash: \\&amp;quot;&lt;/code&gt;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;Backslash: \&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h1 id=&#34;符文&#34;&gt;符文&lt;/h1&gt;
-&lt;ul&gt;
-&lt;li&gt;字符串通常表示一系列文本字符，go的符文（&lt;code&gt;rune&lt;/code&gt;）则用于表示单个字符。&lt;/li&gt;
-&lt;li&gt;字符串字面量由双引号 &lt;code&gt;&amp;quot;&amp;quot;&lt;/code&gt; 包围，但 &lt;code&gt;rune&lt;/code&gt; 字面量由单引号 &lt;code&gt;&#39;&#39;&lt;/code&gt; 包围。&lt;/li&gt;
-&lt;li&gt;go可以使用地球上任何语言的任何字符，因为go 使用Unicode标准来存储rune，rune被保存为数字代码，而不是字符本身，如果把rune传递给 &lt;code&gt;fmt.Println&lt;/code&gt; ，会在输出中看到数字代码，而不是原始字符。&lt;/li&gt;
-&lt;li&gt;与字符串字面量一样，转义序列也可以用在rune字面量中，用来表示程序代码中难以包含的字符。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&#34;布尔值&#34;&gt;布尔值&lt;/h1&gt;
-&lt;p&gt;布尔值只能是两个值的其中一个：&lt;code&gt;true&lt;/code&gt; 或 &lt;code&gt;false&lt;/code&gt; .&lt;/p&gt;
-&lt;p&gt;他们对条件语句特别有用，条件语句只在条件为 &lt;code&gt;true&lt;/code&gt; 或 &lt;code&gt;false&lt;/code&gt; 时才会运行代码。&lt;/p&gt;
-&lt;h1 id=&#34;数字&#34;&gt;数字&lt;/h1&gt;
-&lt;p&gt;还可以直接在代码中定义数字，比字符串字面量更简单：只需要输入数字即可。&lt;/p&gt;
-&lt;p&gt;go 将整数和浮点数视为不同的类型，可以使用小数点来区分整数和浮点数。&lt;/p&gt;
-&lt;h1 id=&#34;数学运算与比较&#34;&gt;数学运算与比较&lt;/h1&gt;
-&lt;p&gt;&lt;code&gt;+&lt;/code&gt; 表示加法&lt;br&gt;
-&lt;code&gt;-&lt;/code&gt; 表示减法&lt;br&gt;
-&lt;code&gt;*&lt;/code&gt; 表示乘法&lt;br&gt;
-&lt;code&gt;/&lt;/code&gt; 表示除法&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;&amp;lt;&lt;/code&gt; 与 &lt;code&gt;&amp;gt;&lt;/code&gt; 比较两个值&lt;br&gt;
-&lt;code&gt;&amp;gt;=&lt;/code&gt; 与 &lt;code&gt;&amp;lt;=&lt;/code&gt; 比较两个值大于等于或小于等于&lt;br&gt;
-&lt;code&gt;==&lt;/code&gt;  比较两个是否相等&lt;br&gt;
-&lt;code&gt;!=&lt;/code&gt;  比较两个值是否不相等&lt;/p&gt;
-&lt;p&gt;比较的结果是一个&lt;code&gt;布尔值&lt;/code&gt;，&lt;code&gt;true&lt;/code&gt; 和 &lt;code&gt;false&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;类型&#34;&gt;类型&lt;/h1&gt;
-&lt;p&gt;go中的值都被划分为不同的类型，这些类型指定了这些值的用途。整数可以用在数学运算中，但是字符串不可以；字符串可以大写，但是数字不能。&lt;/p&gt;
-&lt;p&gt;go是静态类型的，在程序运行之前就知道值的类型。&lt;br&gt;
-函数期望它们的参数具有特定的类型，返回值也具有类型（可能与参数类型相同，也可能不同）。&lt;br&gt;
-&lt;font color=#0099ff size=3 face=&#34;黑体&#34;&gt;go是静态类型，在错误的位置使用了错误的值类型，go会告诉你。&lt;/font&gt;&lt;/p&gt;
-&lt;p&gt;可以将任何值传递给reflect包的TypeOf函数：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;reflect&amp;#34;
-)
-
-func main() {
-	fmt.Println(reflect.TypeOf(42))
-	fmt.Println(reflect.TypeOf(3.1415))
-	fmt.Println(reflect.TypeOf(true))
-	fmt.Println(reflect.TypeOf(&amp;#34;Hello, World!&amp;#34;))
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;int
-float64
-bool
-string
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;类型用途：&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;类型&lt;/th&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;描述&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;int&lt;/code&gt;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;整型。保存数字&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;float64&lt;/code&gt;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;浮点数。保存带小数部分的数字（类型名中的64是因为要用64位的数据来保存数字。这意味着四舍五入之前，float64值可以相当精确，但不能无限精确）&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;bool&lt;/code&gt;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;布尔值。只能是true或false&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;string&lt;/code&gt;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;字符串，通常表示文本字符的一系列数据&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h1 id=&#34;声明变量&#34;&gt;声明变量&lt;/h1&gt;
-&lt;p&gt;在go中，变量是包含值的一块存储。可以使用变量声明为变量命名，使用关键字&lt;code&gt;var&lt;/code&gt;，后跟所需的名称以及变量将保存的值的类型 &lt;code&gt;var 变量名 类型&lt;/code&gt;&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var quantity int
-var length, width float64
-var customerName string
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;声明变量后，可以用 &lt;code&gt;=&lt;/code&gt; 为其分配该类型的任何值。&lt;/p&gt;
-&lt;p&gt;可以在同一语句中为多个变量赋值，将变量名放在 &lt;code&gt;=&lt;/code&gt; 左边，将相同数量的值放右边，用逗号分隔，如：&lt;br&gt;
-&lt;code&gt;length, width = 1.2, 2.4&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;给变量赋值后，可以在任何使用要使用原始值的上下文中使用：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-)
-
-func main() {
-	//声明变量
-	var quantity int
-	var length, width float64
-	var customerName string
-
-	//给变量赋值
-	quantity = 4
-	length, width = 1.2, 2.4
-	customerName = &amp;#34;Domain cole&amp;#34;
-
-	//使用变量
-	fmt.Println(customerName)
-	fmt.Println(&amp;#34;has ordered&amp;#34;, quantity, &amp;#34;sheets&amp;#34;)
-	fmt.Println(&amp;#34;each with an area of&amp;#34;)
-	fmt.Println(length*width, &amp;#34;squence meters&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Domain cole
-has ordered 4 sheets
-each with an area of
-2.88 squence meters
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若提前知道变量值是什么，可以在声明变量时一起赋值：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//声明变量并赋值
-var quantity int = 4
-var length, width float64 = 1.2, 2.4
-var customerName string = &amp;#34;Domain cole&amp;#34;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以为现有变量分配新值，但必须是相同类型的值。go的静态类型确保不会将错误的类型赋值给变量。&lt;/p&gt;
-&lt;p&gt;在声明变量的同时赋值，可以在变量声明中省略变量类型，分配给变量的值的类型将用作该变量的类型。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var quantity = 4
-var length, width = 1.2, 2.4
-var customerName = &amp;#34;Domain cole&amp;#34;
-fmt.Println(reflect.TypeOf(quantity))
-fmt.Println(reflect.TypeOf(length))
-fmt.Println(reflect.TypeOf(width))
-fmt.Println(reflect.TypeOf(customerName))
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;零值&#34;&gt;零值&lt;/h1&gt;
-&lt;p&gt;若声明一个变量而没有给其赋值，则该变量将包含其类型的零值。对于数值类型，零值就是0。&lt;br&gt;
-&lt;code&gt;int&lt;/code&gt; 变量零值 &lt;code&gt;0&lt;/code&gt;&lt;br&gt;
-&lt;code&gt;float64&lt;/code&gt; 变量零值 &lt;code&gt;0&lt;/code&gt;&lt;br&gt;
-&lt;code&gt;string&lt;/code&gt;  变量零值 &lt;code&gt;空字符串&lt;/code&gt;&lt;br&gt;
-&lt;code&gt;bool&lt;/code&gt; 变量零值 &lt;code&gt;false&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;短变量声明&#34;&gt;短变量声明&lt;/h1&gt;
-&lt;p&gt;若声明变量时就知道初始值，可以使用短变量声明。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-)
-
-func main() {
-	quantity := 4
-	length, width := 1.2, 2.4
-	customerName := &amp;#34;Domain cole&amp;#34;
-
-	fmt.Println(customerName)
-	fmt.Println(&amp;#34;has ordered&amp;#34;, quantity, &amp;#34;sheets&amp;#34;)
-	fmt.Println(&amp;#34;each with an area of&amp;#34;)
-	fmt.Println(length*width, &amp;#34;squence meters&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不需要声明变量的类型，赋给变量的值的类型成为该变量的类型。&lt;/p&gt;
-&lt;h1 id=&#34;命名规则&#34;&gt;命名规则&lt;/h1&gt;
-&lt;p&gt;适用于变量、函数和类型的名称：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;名称必须以字母开头，可以有任意数量的额外的字母和数字。&lt;/li&gt;
-&lt;li&gt;若变量、函数或类型的名称以大写字母开头，则认为是可导出的，可以从当前包之外的包访问它。&lt;/li&gt;
-&lt;li&gt;若变量、函数或类型的名称以小写字母开头，则认为该名称是未导出的，只能在当前包中使用。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;以上是go语言强制执行的唯一规则。&lt;/p&gt;
-&lt;p&gt;社区约定：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;若一个名称由多个单词组成，那么第一个单词之后的每个单词的首字母大写，且连接在一起，中间没有空格。（第一个单词首字母，只有想从包中导出时才应大写。）&lt;/li&gt;
-&lt;li&gt;当名称的含义在上下文中很明显时，社区惯例是缩写，用i代替index，max代替maximum等。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&#34;转换&#34;&gt;转换&lt;/h1&gt;
-&lt;p&gt;go中的数学运算和比较运算要求包含的值应具有相同的类型，若不同，则会运行报错。
-&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;示例&lt;/font&gt;&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var length float64 = 1.2
-var width int = 2
-fmt.Println(&amp;#34;Area is&amp;#34;, length*width)
-fmt.Println(&amp;#34;length &amp;gt; width?&amp;#34;, length &amp;gt; width)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;invalid operation: length * width (mismatched types float64 and int)
-invalid operation: length &amp;gt; width (mismatched types float64 and int)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;为变量分配新值也一样，若所赋值的类型与变量的声明类型不匹配也会报错：&lt;br&gt;
-将int值赋给float64变量&amp;hellip;&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var length float64 = 1.2
-var width int = 2
-length = width
-fmt.Println(length)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;报错：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;cannot use width (type int) as type float64 in assignment
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;怎么解决呢？当然是使用转换，转换允许将值从一种类型转换为另一种类型，只需提供要将值转换成的类型，后面紧接着是在圆括号中要转换的值。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var myInt int = 2
-float64(myInt)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;结果是所需类型的新值。&lt;/p&gt;
-&lt;p&gt;对整型变量中的值调用TypeOf，在转换为float64后对相同的值再次调用TypeOf：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var myInt int = 2
-fmt.Println(reflect.TypeOf(myInt))
-fmt.Println(reflect.TypeOf(float64(myInt)))
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;int
-float64
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在进行转换时，它们可能会更改结果值，float64变量可以存储小数值，但int不可以，将float64转换为int时，小数部分会被删掉。&lt;/p&gt;
-</description>
     </item>
     
   </channel>

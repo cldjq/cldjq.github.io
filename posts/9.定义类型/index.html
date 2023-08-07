@@ -19,9 +19,384 @@
 <p>本篇展示使用任意类型作为基础类型。</p>
 </blockquote>
 <h1 id="具有底层基础类型的定义类型">具有底层基础类型的定义类型</h1>
-</article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
+<p>Go经常使用 struct 作为基础类型来定义类型，但也能基于 int、string、bool或其他任何类型。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+type Liters float64
+type Gallons float64  //定义两个新类型，基础类型都是float64
+
+func main() {
+        var carFuel Gallons
+        var busFuel Liters
+        carFuel = Gallons(10.0)   //把float64转换为Gallons
+        busFuel = Liters(240.0)   //把float64转换为Liters
+        fmt.Println(carFuel, busFuel)
+}
+</code></pre><p>一旦定义一个类型，可以把任何基础类型的值转换为定义的类型，像其他类型转换一样，写下需要转换到的类型，后面跟着小括号中的希望转换的值。</p>
+<p>若需要，上面代码中可以使用短变量声明:</p>
+<pre tabindex="0"><code>carFuel := Gallons(10.0)
+busFuel := Liters(240.0)  //与类型转换同时使用短变量声明
+</code></pre><p>若变量使用了已定义的类型，不能把另一个类型的值赋给它，即使另一个类型也具有相同的基础类型。</p>
+<p>但是可以在具有相同基础类型的类型之间转换，Liters可以与Gallons互相转换，因为其基础类型都是float64，但是Go只在转换时考虑基础类型的值，Gallons(Liters(240.0)) 与 Liters(Gallons(240.0)) 没有区别，简单地把值从一个类型转换到另一个类型使针对这个类型应该出现的错误保护机制失效。</p>
+<p>升与加仑转换：</p>
+<pre tabindex="0"><code>carFuel = Gallons(Liters(40.0) * 0.264)
+busFuel = Liters(Gallons(63.0) * 3.785)
+fmt.Printf(&#34;Gallons: %0.1f Liters: %0.1f\n&#34;, carFuel, busFuel)
+</code></pre><h1 id="定义类型和运算符">定义类型和运算符</h1>
+<p>一个定义类型提供与所有基础类型相同的运算，基于float64类型，提供算数运算符<code>+、-、*、/</code>，也提供比较运算<code>==、&gt;、&lt;</code>。</p>
+<p>并且基于基础类型string的类型，支持<code>+、==、&gt;、&lt;</code>，但是不支持<code>-</code>，因为 - 对于string不是合法的运算符。</p>
+<p>一个定义类型可以被用来与字面值一起运算：</p>
+<pre tabindex="0"><code>fmt.Println(Liters(1.2) + 3.4)
+fmt.Println(Gallons(5.5) - 2.2)
+fmt.Println(Gallons(1.2) == 1.2)
+fmt.Println(Liters(1.2) &lt; 3.4)
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>4.6
+3.3
+true
+true
+</code></pre><p>定义类型不能用来与不同类型的值一起运算，即使它们来自相同的基础类型。若想要将一个Liters中的值与Gallons中的值作运算，需要将其中一个类型转换为另一个类型。</p>
+<h1 id="使用函数进行类型转换">使用函数进行类型转换</h1>
+<p>让不同类型的值一起运算，需要进行类型转换：</p>
+<pre tabindex="0"><code>carFuel = Gallons(Liters(40.0) * 0.264)
+busFuel = Liters(Gallons(63.0) * 3.785)
+
+	func ToGallons(l Liters) Gallons {
+                return Gallons(l * 0.364)
+	}
+
+        func ToLiters(g Gallons) Liters {
+                return Liters(g * 3.785)
+        }
+
+        func main() {
+                carFuel := Gallons(1.2)
+                busFuel := Liters(4.5)
+                carFuel += ToGallons(Liters(40.0))   //先将Liters转换为Gallons
+                busFuel += ToLiters(Gallons(30.0))   //先将Gallons转换为Liters
+                fmt.Printf(&#34;Car fuel: %0.1f gallons\n&#34;, carFuel)
+                fmt.Printf(&#34;Bus fuel: %0.1f liters\n&#34;, busFuel)
+        }
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Car fuel: 11.8 gallons
+Bus fuel: 118.1 litters
+</code></pre><p>增加一个新类型，Milliliters：</p>
+<pre tabindex="0"><code>type Liters float64
+type Milliliters float64
+type Gallons float64
+</code></pre><p>也需要将Milliliters类型进行转换，但如果增加一个Milliliters转换为Gallons的函数，会产生错误，不能在同一个包中出现两个ToGallons函数！</p>
+<p>可以分别修改两个ToGallons函数的名字：LitersToGallons和MillilitersToGallons：</p>
+<pre tabindex="0"><code>func LitersToGallons(l Liters) Gallons {
+        return Gallons(l * 0.264)
+}
+func MillilitersToGallons(m Milliliters) Gallons {
+        return Gallons(m * 0.000264)
+}
+func GallonsToLiters(g Gallons) Liters {
+        return Liters(g * 3.785)
+}
+func GallonsToMilliliters(g Gallons) Milliliters {
+        return Milliliters(g * 3785.41)
+}
+</code></pre><p>虽然这样消除了冲突，但是名字很长，不方便。</p>
+<p>其他语言的重载，允许存在多个同名函数，只要其参数不同即可，但go不支持重载，有其他方式能达到类似的效果。</p>
+<h1 id="使用方法修复函数名冲突">使用方法修复函数名冲突</h1>
+<p>方法：</p>
+<pre tabindex="0"><code>func main() {
+        var now time.Time = time.Now()  //time.Now返回一个time.Time值代表当前日期和时间
+        var year int = now.Year()  //time.Time值有一个Year方法来返回当前年
+        fmt.Printlnt(year)
+}
+</code></pre><pre tabindex="0"><code>func main() {
+        broken := &#34;G# r#cks&#34;
+        replacer := strings.NewReplacer(&#34;#&#34;, &#34;o&#34;)  //返回一个strings.Replacer值，被设置为&#34;#&#34;到&#34;o&#34;的转换
+        fixed := replacer.Replace(broken)  //调用strings.Replacer的Replace方法，并传入一个字符串来作转换
+        fmt.Println(fixed)  //输出Replace方法返回的字符串
+}
+</code></pre><p>可以用自定义方法来帮助解决类型转换的问题。</p>
+<p>不允许有多个ToGallons函数，所以不得不写很长的函数名称；但是可以有多个名为ToGallons的方法，只要它们被定义在单独的类型中，不用担心名称冲突，让方法名称更短小。</p>
+<h1 id="定义方法">定义方法</h1>
+<p>方法定义与函数定义类似，只有一点不同：需要增加一个额外的参数，一个接收器参数，在函数名称之前的括号中；需要提供一个接收器参数的名称，后面跟着类型。<br>
+<img  src="/img/Golang/9-type/%e5%ae%9a%e4%b9%89%e6%96%b9%e6%b3%95.png"
+        alt/></p>
+<p>为了调用定义的方法，键入要在其上调用方法的值，一个点和要调用的方法的名称，跟着一对括号；这里调用的方法被称为<code>方法接收器</code>。</p>
+<p>当调用一个方法时，接收器要被列为第一个，并当定义一个方法的时候，接收器参数也被列为第一个。</p>
+<pre tabindex="0"><code>value := MyType(&#34;a MyType value&#34;)
+value.sayHi()  //value为方法接收器，sayHi为方法名称
+</code></pre><p>方法定义中的接收器参数的名称不重要，重要的是它的类型，定义的方法与此类型的值都关联。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+type MyType string   //定义一个类型
+
+func (m MyType) sayHi() {  //定义一个接收器，函数被定义在MyType上
+        fmt.Println(&#34;Hi&#34;)
+}
+
+func main() {
+        value := MyType(&#34;a MyType value&#34;)  //创建一个MyType值
+        value.sayHi()  //在这个值上调用sayHi
+        anotherValue := MyType(&#34;another value&#34;)  //创建另一个MyType值
+        anotherValue.sayHi()  //在另一个值上调用sayHi
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Hi
+Hi
+</code></pre><p>首先定义了一个名为MyType的类型，使用string作为基础类型，然后定义一个名为sayHi的方法，由于sayHi有一个MyType类型的接收器参数，可以使用任何MyType的值来调用sayHi方法。</p>
+<p>一旦方法被定义在了某个类型，它就能被该类型的任何值调用。</p>
+<h1 id="接收器参数几乎就是另一个参数">接收器参数（几乎）就是另一个参数</h1>
+<p>接收器参数的类型是与之联系的方法的类型，除此以外，接收器在Go中没有什么特殊，可以在方法块中访问它们的内容，就像其他的函数参数一样。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+type MyType string
+
+func (m MyType) sayHi() {  //输出接收器参数的值
+        fmt.Println(&#34;Hi from&#34;, m)
+}
+
+func main() {
+        value := MyType(&#34;a MyType value&#34;)  //调用方法所需的值
+        value.sayHi()  //传递给接收器参数的接收器
+        anotherValue := MyType(&#34;another value&#34;)  //调用方法所需的值
+        anotherValue.sayHi()  //传递给接收器参数的接收器
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Hi from a MyType value
+Hi from another value    //获取了输出中的接收器的值
+</code></pre><p>Go可以命名接收器的名称，但是若类型定义的所有方法的接收器参数名称一致，则更易读。</p>
+<p>Go开发者通常使用一个字母作为名称：小写的接受器类型名称的首字母（使用m作为MyType接收器的参数名称）。</p>
+<hr>
+<p>1.能否为任何类型定义新的方法？<br>
+方法和类型必须定义在同一包中；意味着不会在hacking包中定义security包中的类型的方法，并且不会为像int或string一类的普通类型定义新的方法。</p>
+<p>2.需要在别人的类型上使用自己的方法<br>
+首先考虑是否需要一个函数就足够，函数可以接受需要的任何类型作为参数，但若真的需要一个值具有自定义的方法，在不同的包中给类型增加一些方法，可以创建一个新的类型并将其他包的类型作为匿名字段嵌入，后边会演示如何操作。</p>
+<h1 id="方法几乎就像一个函数">方法（几乎）就像一个函数</h1>
+<p>除了在接收器上被调用外，方法与函数完全相同，与其他函数一样，可以在方法名称后面的括号中定义额外的参数，参数变量与接收器参数一样，可以被方法块所访问。当调用方法时，将需要为每个参数提供值。</p>
+<pre tabindex="0"><code>func (m MyType) MethodWithParameters(number int, flag bool) {
+        fmt.Println(m)
+        fmt.Println(number)
+        fmt.Println(flag)
+}
+
+func main() {
+        value := MyType(&#34;MyType value&#34;)
+        value.MethodWithParameters(4, true)
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>MyType value
+4
+true
+</code></pre><p>与函数一样，可以为方法声明一个或多个返回值，返回值将在函数被调用时返回：</p>
+<pre tabindex="0"><code>func (m MyType) WithReturn() int {
+        return len(m)
+}
+
+func main() {
+        value := MyType(&#34;MyType value&#34;)
+        fmt.Println(value.WithReturn())
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>12
+</code></pre><p>与函数一样，方法名称以大写字母开头，则认为是可导出的，若以小写字母开头，认为是不可导出的。想要在当前包之外使用定义的方法，要确保名字以大写字母开头。</p>
+<h1 id="指针类型的接收器参数">指针类型的接收器参数</h1>
+<p>定义了一个新的以int为基础类型的Number类型，为Number类型提供一个名为double的方法，它将接收器的基础类型值乘以2并且重新赋值给接收器，从输出上看方法的接收器并未更新。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+type Number int  //定义一个基础类型为int的类型
+
+func (n Number) Double() {   //定义一个Number类型
+        n *= 2  //接收器的值乘以2，尝试更新接收器
+}
+
+func main() {
+        number := Number(4)  //创建一个Number的值
+        fmt.Println(&#34;Original value of number:&#34;, number)
+        number.Double()  //尝试加倍Number
+        fmt.Println(&#34;number after calling Double:&#34;, number)
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Original value of number: 4
+number after calling Double: 4  //Number并未加倍
+</code></pre><p>之前的double函数也有同样的问题，函数参数接收的是函数调用时的拷贝，不是原始值，当函数退出后任何更新都会失效，为了能让double函数正常，传递一个要更新的值的指针，然后更新该指针指向的值。</p>
+<pre tabindex="0"><code>func main() {
+        amount := 6
+        double(&amp;amount)  //传递一个指针而不是值
+        fmt.Println(amount)
+}
+
+func double(number *int) {  //接收指针而不是int值
+        *number *= 2  //更新指针指向的值
+}
+</code></pre><p>需要修改Double方法以使用指针来作其接收器参数：</p>
+<pre tabindex="0"><code>func (n *Number) Double() {  //接收器参数接收指针类型
+        *n *= 2  //修改指针指向的值
+}
+
+func main() {
+        number := Number(4)
+        fmt.Println(&#34;Original value of number:&#34;, number)
+        number.Double()  //不需要修改方法的调用
+        fmt.Println(&#34;number after calling Double:&#34;, number)
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Original value of number: 4
+number after calling Double: 8  //指针指向的值被更新
+</code></pre><p>不需要修改方法的调用，当用一个非指针的变量调用一个需要指针的接收器的方法时，Go会自动将非指针类型转换为指针类型，同样指针类型也会自动转换为非指针类型，若调用一个要求值类型的接收器，Go会自动获取指针指向的值，然后传递给方法。</p>
+<pre tabindex="0"><code>type MyType string
+
+func (m MyType) method() {
+        fmt.Println(&#34;Method with value receiver&#34;)
+}
+func (m *MyType) pointerMethod() {
+        fmt.Println(&#34;Method with pointer receiver&#34;)
+}
+
+func main() {
+        value := MyType(&#34;a value&#34;)
+        pointer := &amp;value
+        value.method()
+        value.pointerMethod()   //值类型自动转换为指针
+        pointer.method()   //指针类型自动转换为值
+        pointer.pointerMethod()
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Method with value receiver
+Method with pointer receiver
+Method with value receiver
+Method with pointer receiver
+</code></pre><p>名为method的方法接受一个值类型的接收器，但我们同时使用了值类型和指针类型，如果需要，Go会自动转换；名为pointerMethod的方法接受一个指针类型的接收器，但是使用了值类型和指针类型调用，如果需要，Go会自动转换。</p>
+<p>为了一致性，所有的类型函数接受值类型或者都接受指针类型，避免混用。</p>
+<hr>
+<p>为了调用需要接收器指针的方法，需要或者这个值类型的指针！</p>
+<p>只能获取保存在变量中的指针，若尝试获取没有保存在变量中的值的地址，会得到错误：</p>
+<pre tabindex="0"><code>&amp;MyType(&#34;a value&#34;)
+</code></pre><p>错误输出:</p>
+<pre tabindex="0"><code>cannot take the address of MyType(&#34;a value&#34;)
+</code></pre><p>相同的限制也存在于使用接收器指针调用方法时，Go无法将值类型转换为指针类型，除非将接收器的值保存在变量中，若尝试在值类型上调用方法，Go也不会转换为指针，会得到相同的错误：</p>
+<pre tabindex="0"><code>MyType(&#34;a value&#34;).pointerMethod()
+</code></pre><p>错误输出：</p>
+<pre tabindex="0"><code>cannot call pointer method on MyType(&#34;a value&#34;)
+cannot take the address of MyType(&#34;a value&#34;)
+</code></pre><p>需要将值保存在变量中，允许Go能得到一个指向它的指针：</p>
+<pre tabindex="0"><code>value := MyType(&#34;a value&#34;)
+value.pointerMethod()   //将其转化为指针
+</code></pre><hr>
+<p>这是一个Number类型，定义了两个方法：</p>
+<pre tabindex="0"><code>package main
+import &#34;fmt&#34;
+type Number int
+func (n *Number) Display() {
+        fmt.Println(*n)
+}
+func (n *Number) Double() {
+        *n *= 2
+}
+func main() {
+        number := Number(4)
+        number.Double()
+        number.Display()
+}
+</code></pre><table>
+<thead>
+<tr>
+<th style="text-align:center">若如此&hellip;</th>
+<th style="text-align:center">代码会失败，因为：</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><pre>func (n <del>*Number</del>int) Double() {<br>        *n *= 2<br>}<br><pre>将接收器参数类型改为一个未在当前包中定义的类型</td>
+<td style="text-align:center">只能为定义在当前包中的类型定义方法。为一个像int一样全局定义的类型定义方法会导致编译错误</td>
+</tr>
+<tr>
+<td style="text-align:center"><pre>func (n <del>*</del>Number) Double() {<br>        <del>*</del>n *= 2<br>}<br><pre>将Double方法的接收器参数改为一个非指针类型</td>
+<td style="text-align:center">接收器参数接受了一个接收器的拷贝，若Double函数仅修改这个拷贝，当Double返回的时候，原值不会改变</td>
+</tr>
+<tr>
+<td style="text-align:center"><pre>Number(4).Double()<pre>在一个没有保存到变量的值上直接调用一个需求接收器的指针的方法</td>
+<td style="text-align:center">当调用一个指针类型的接收器时，如果接收器保存在变量中，Go会自动将值转换为指针类型，若没有保存，会得到一个错误</td>
+</tr>
+<tr>
+<td style="text-align:center"><pre>func (n <del>*</del>Number) Display() {<br>        fmt.Println(<del>*</del>n)<br>}<br><pre>将Display方法的接收器参数改为一个非指针类型</td>
+<td style="text-align:center">在修改之后，代码仍能正常运行，但破坏了惯例，方法中的接收器参数可以都是指针，或者都是值类型，避免混用</td>
+</tr>
+</tbody>
+</table>
+<h1 id="使用方法将liters和milliliters转换为gallons">使用方法将Liters和Milliliters转换为Gallons</h1>
+<p>不同于函数，只要方法定义在不同的类型中，就可以重名。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+type Liters float64
+type Milliliters float64
+type Gallons float64
+
+func (l Liters) ToGallons() Gallons {
+	return Gallons(l * 0.264)
+}
+func (m Milliliters) ToGallons() Gallons {
+	return Gallons(m * 0.000264)
+}
+
+func main() {
+	soda := Liters(2)
+	fmt.Printf(&#34;%0.3f liters equals %0.3f gallons\n&#34;, soda, soda.ToGallons())
+	water := Milliliters(500)
+	fmt.Printf(&#34;%0.3f milliliters equals %0.3f gallons\n&#34;, water, water.ToGallons())
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>2.000 liters equals 0.528 gallons
+500.000 milliliters equals 0.132 gallons
+</code></pre><p>没有使用指针类型作为接收器参数，不需要修改接收器，值类型没有消耗很多内存，参数接受一个拷贝也是合适的。</p>
+<h1 id="使用方法将gallons转换为liters和milliliters">使用方法将Gallons转换为Liters和Milliliters</h1>
+<pre tabindex="0"><code>func (g Gallons) ToLiters() Liters {
+	return Liters(g * 3.785)
+}
+func (g Gallons) ToMilliliters() Milliliters {
+	return Milliliters(g * 3785.41)
+}
+
+func main() {
+	milk := Gallons(2)
+	fmt.Printf(&#34;%0.3f gallons equals %0.3f liters\n&#34;, milk, milk.Toliters())
+	fmt.Printf(&#34;%0.3f gallons equals %0.3f milliliters\n&#34;, milk, milk.ToMilliliters())
+}
+</code></pre><p>练习：</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+type Liters float64
+type Milliliters float64
+type Gallons float64
+
+func (l Liters) ToMilliliters() Milliliters {
+	return Milliliters(l * 1000)
+}
+func (m Milliliters) ToLiters() Liters {
+	return Liters(m / 1000)
+}
+
+func main() {
+	l := Liters(3)
+	fmt.Printf(&#34;%0.1f liters is %0.1f milliliters\n&#34;, l, l.ToMilliliters())
+	ml := Milliliters(500)
+	fmt.Printf(&#34;%0.1f milliliters is %0.1f liters\n&#34;, ml, ml.ToLiters())
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>3.0 liters is 3000.0 milliliters
+500.0 milliliters is 0.5 liters
+</code></pre></article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
-<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/8.%E7%BB%93%E6%9E%84%E4%BD%93struct/"><span class="iconfont icon-article"></span>8.结构体：struct</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/10.%E4%BF%9D%E5%AF%86%E5%B0%81%E8%A3%85%E5%92%8C%E5%B5%8C%E5%85%A5/"><span class="iconfont icon-article"></span>10.保密：封装和嵌入</a></p><p><a class="link" href="/posts/8.%E7%BB%93%E6%9E%84%E4%BD%93struct/"><span class="iconfont icon-article"></span>8.结构体：struct</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
     window.disqus_config = function () {
     
