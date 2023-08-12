@@ -21,6 +21,315 @@
 也会在类型内部嵌入其他的类型，若struct类型需要已经存在于其他类型的方法，不需要赋值方法代码，可以将其嵌入struct类型中，然后像使用自己的类型的定义方法一样使用嵌入的方法。&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h1 id=&#34;创建一个日期struct类型&#34;&gt;创建一个日期struct类型&lt;/h1&gt;
+&lt;p&gt;在struct中增加Year、Month、Day字段，每个都是int类型，在main函数中，将执行一个快速的测试来测试新类型，使用struct字面量来创建一个Date值，并填充所有字段。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Date struct {
+        Year  int
+        Month int
+        Day   int
+}
+
+func main() {
+        date := Date{Year: 2023, Month: 8, Day: 10}
+        fmt.Println(date)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;将date-struct字段设置为无效值&#34;&gt;将Date struct字段设置为无效值&lt;/h1&gt;
+&lt;p&gt;用户将日期格式设置的很奇怪，比如：&amp;ldquo;2023 14 50&amp;rdquo; 或 &amp;ldquo;0 0 -2&amp;rdquo; 等，我们知道只有1以上的年的数字才合法，但程序没做任何措施预防用户把日志以外设置为0或-999，月份也只有1-12合法，日只有1-31合法。&lt;/p&gt;
+&lt;p&gt;需要一种方法，让用户数据在被赋值之前是合法的，在CS领域中，被称为&lt;code&gt;数据校验&lt;/code&gt;，需要测试Year被设置为大于或等于1，Month被设置为1-12，Day被设置为1-31。&lt;/p&gt;
+&lt;h1 id=&#34;setter方法&#34;&gt;setter方法&lt;/h1&gt;
+&lt;p&gt;一个struct类型就是另一个定义的类型，可以像对其他类型一样定义它的方法。可以在Date类型上创建 SetYear、SetMonth、SetDay方法来接收值，判断是否有效，若有效则设置到struct字段。&lt;/p&gt;
+&lt;p&gt;这类方法被称为 &lt;code&gt;setter方法&lt;/code&gt; , Go的setter方法名为&lt;code&gt;SetX&lt;/code&gt;的形式，X 是想要设置的名称。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;setter 方法 是用来设置字段或基础类型中的其他值的方法。&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;在SetYear方法上进行第一次尝试，接收器参数是Date struct，SetYear接受想要设置的年份作为参数，并设置接收器Date struct上的Year字段，此时并不校验值有效性。在main方法中创建Date并调用SetYear，然后输出struct的Year字段。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Date struct {
+        Year  int
+        Month int
+        Day   int
+}
+
+func (d Date) SetYear(year int) {
+        d.Year = year    //设置struct字段
+}
+
+func main() {
+        date := Date{}  //创建一个Date
+        date.SetYear(2023)  //通过方法设置Year字段
+        fmt.Println(date.Year)  //打印Year字段
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当执行时，并没有正常工作，创建了一个Date并使用新值调用了它的setYear方法，Year字段仍被设置为零值。&lt;/p&gt;
+&lt;h1 id=&#34;setter方法需要指针接收器&#34;&gt;setter方法需要指针接收器&lt;/h1&gt;
+&lt;p&gt;之前Number类型上的Double方法，使用了一个普通的值接收器类型Number，像其他参数一样，接收器参数接受了一个原值的拷贝，Double方法只是更新了拷贝，在方法退出时更新就丢失了。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (n *Number) Double() {   //接收器类型为一个指针类型
+        *n *= 2  //修改指针指向的值
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;需要更新Double来接受指针的接收器类型 &lt;code&gt;*Number&lt;/code&gt; ，当更新指针指向的值的时候，在Double退出后更新会保留。&lt;/p&gt;
+&lt;p&gt;同样，SetYear也适用，Date接收器从原struct获取了一个拷贝，任何字段更新都在setYear退出后消失。&lt;/p&gt;
+&lt;p&gt;通过将接收器的值修改为指针来修正，不需要更新SetYear方法块，因为 d.Year 会自动获取指针指向的值（与&lt;code&gt;(*d).Year&lt;/code&gt; 一样），main函数中的date.SetYear也不需要修改，因为当Date值传递给方法的时候，会自动转换为 &lt;code&gt;*Date&lt;/code&gt; 。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Date struct {
+        Year  int
+        Month int
+        Day   int
+}
+
+func (d *Date) SetYear(year int) {
+        d.Year = year
+}
+
+func main() {
+        date := Date{}
+        date.SetYear(2023)  //自动转换为指针
+        fmt.Println(date.Year)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2023
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;添加其余的setter方法&#34;&gt;添加其余的setter方法&lt;/h1&gt;
+&lt;p&gt;按照这个模式在Date类型上定义SetMonth和SetDay方法，只需要在方法中使用指针接收器即可，在调用方法时，Go会自动把接收器转换为指针，并在修改struct字段时能够把指针转换回struct值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Date struct {
+	Year  int
+	Month int
+	Day   int
+}
+
+func (d *Date) SetYear(year int) {
+	d.Year = year
+}
+
+func (d *Date) SetMonth(month int) {
+	d.Month = month
+}
+
+func (d *Date) SetDay(day int) {
+	d.Day = day
+}
+
+func main() {
+	date := Date{}
+	date.SetYear(2023)
+	date.SetMonth(5)
+	date.SetDay(27)
+	fmt.Println(date)  //输出所有字段
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在main函数中，创建了一个Date struct的值，通过新的方法设置了它的Year、Month和Day字段，并输出了整个struct查看结果。&lt;/p&gt;
+&lt;h1 id=&#34;在setter方法中添加校验&#34;&gt;在setter方法中添加校验&lt;/h1&gt;
+&lt;p&gt;在每个setter方法中，将测试值是否在正确合法范围内，若非法，返回error值，若合法，将正常设置 Date struct字段，并返回nil作为错误值。&lt;/p&gt;
+&lt;p&gt;首先对SetYear方法增加校验，修改方法的声明，增加一个error类型的返回值，在方法块的开始处，测试调用者传入的year参数是否小于1，若小于1，返回一个error信息，若大于等于1，将其设置为struct的Year字段并返回nil，表示没有错误。&lt;/p&gt;
+&lt;p&gt;在main函数中，调用SetYear并把返回值保存到名为err的变量中，若err不为nil，意味着赋值无效，所以记录错误并退出，否则继续输出Date struct的Year字段。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;errors&amp;#34; //允许创建error值
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;log&amp;#34; //允许记录error并退出
+)
+
+type Date struct {
+	Year  int
+	Month int
+	Day   int
+}
+
+func (d *Date) SetYear(year int) error { //增加一个error类型的返回值
+	if year &amp;lt; 1 {
+		return errors.New(&amp;#34;invalid year&amp;#34;) //若year是非法的，返回错误
+	}
+	d.Year = year
+	return nil
+}
+
+func main() {
+	date := Date{}
+	err := date.SetYear(0) //抓捕任何错误
+	if err != nil {
+		log.Fatal(err)  //若值无效记录错误并退出
+	}
+	fmt.Println(date.Year)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2023/08/10 16:56:33 invalid year
+exit status 1
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;传入一个无效的值给SetYear导致程序报错并退出，但若传入有效值，程序会继续输出，SetYear方法工作正常。&lt;/p&gt;
+&lt;p&gt;SetMonth 与 SetDay 方法中的校验代码与SetYear类似：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (d *Date) SetYear(year int) error { //增加一个error类型的返回值
+	if year &amp;lt; 1 {
+		return errors.New(&amp;#34;invalid year&amp;#34;) //若year是非法的，返回错误
+	}
+	d.Year = year
+	return nil
+}
+
+func (d *Date) SetMonth(month int) error {
+	if month &amp;lt; 1 || month &amp;gt; 12 {
+		return errors.New(&amp;#34;invalid month&amp;#34;)
+	}
+	d.Month = month
+	return nil
+}
+
+func (d *Date) SetDay(day int) error {
+	if day &amp;lt; 1 || day &amp;gt; 31 {
+		return errors.New(&amp;#34;invalid day&amp;#34;)
+	}
+	d.Day = day
+	return nil
+}
+
+func main() {
+        //try
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在SetMonth中，测试提供的月份值，若小于1或大于12，就返回错误，否则设置字段并返回nil。&lt;/p&gt;
+&lt;p&gt;在SetDay中，测试提供的日期小于1或大于31，返回错误，有效值设置字段并返回nil。&lt;/p&gt;
+&lt;h1 id=&#34;字段仍可以设置为无效值&#34;&gt;字段仍可以设置为无效值&lt;/h1&gt;
+&lt;p&gt;使用setter方法，提供校验很不错，但是用户可以直接设置struct字段，仍然能设置无效值。&lt;/p&gt;
+&lt;p&gt;没有任何方法能阻止直接设置Date struct字段，若这么做，就会绕过setter方法中的校验代码。&lt;/p&gt;
+&lt;p&gt;需要一个方式来保护这些字段，让Date类型只能使用setter方法来更新字段，Go提供了一个方式：&lt;code&gt;把Date类型移动到另一个包，并将数据字段设置为非导出的&lt;/code&gt;。未导出的变量、函数等在大多数情况下无法导出，即使之前的magazine包中的Subscriber struct类型被导出(字段首字母非大写)，但是它的字段并未被导出，导致在magazine包之外无法访问。&lt;/p&gt;
+&lt;h1 id=&#34;将date类型移动到另外的包中&#34;&gt;将Date类型移动到另外的包中&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package calendar
+
+import &amp;#34;errors&amp;#34;
+
+type Date struct {
+	year  int
+	month int
+	day   int
+}  //将字段名称修改为小写字母让其不可被导出
+
+func (d *Date) SetYear(year int) error {
+	if year &amp;lt; 1 {
+		return errors.New(&amp;#34;invalid year&amp;#34;)
+	}
+	d.year = year //更新字段名称匹配声明
+	return nil
+}
+
+func (d *Date) SetMonth(month int) error {
+	if month &amp;lt; 1 || month &amp;gt; 12 {
+		return errors.New(&amp;#34;invalid month&amp;#34;)
+	}
+	d.month = month //更新字段名称匹配声明
+	return nil
+}
+
+func (d *Date) SetDay(day int) error {
+	if day &amp;lt; 1 || day &amp;gt; 31 {
+		return errors.New(&amp;#34;invalid day&amp;#34;)
+	}
+	d.day = day  //更新字段名称匹配声明
+	return nil
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改main包：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+        &amp;#34;fmt&amp;#34;
+        &amp;#34;xxx/xxx/calendar&amp;#34;
+)
+
+func main() {
+        date := calendar.Date{}
+        date.year = 2023
+        date.month = 14
+        date.day = 50
+        fmt.Println(date)
+
+        date = calendar.Date{year: 0, month: 0, day: -2}
+        fmt.Println(date)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Date的字段未导出，从main包中访问，会导致编译错误。&lt;/p&gt;
+&lt;h1 id=&#34;通过导出的方法访问未导出的字段&#34;&gt;通过导出的方法访问未导出的字段&lt;/h1&gt;
+&lt;p&gt;可以间接访问字段。未导出的变量、struct字段、函数、方法等仍然能被相同包的导出的函数或者方法访问。所以当mian包中的代码在Date值上调用导出方法SetYear时，SetYear可以修改Date的year字段，即使year是未导出的。导出方法SetYear可以更新未导出的month字段等。&lt;/p&gt;
+&lt;p&gt;修改main包来使用setter方法，可以更新Date值的字段。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+        &amp;#34;fmt&amp;#34;
+        &amp;#34;xxx/xxx/calendar&amp;#34;
+        &amp;#34;log&amp;#34;
+)
+
+func main() {
+        date := calendar.Date{}
+        err := date.SetYear(2023)
+        if err != nil {
+                log.Fatal(err)
+        }
+        err = date.SetMonth(5)
+        if err != nil {
+                log.Fatal(err)
+        }
+        err = date.SetDay(27)
+        if err != nil {
+                log.Fatal(err)
+        }
+        fmt.Println(date)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{2023 5 27}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;未导出的变量、struct字段、函数、方法等仍然能够被相同包的导出的函数或方法访问。&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;此时若传入无效值，执行时会得到错误。&lt;/p&gt;
+&lt;p&gt;现在的Date值的字段只能通过setter方法更新，程序被保护，避免意外输出无效数据。&lt;/p&gt;
+&lt;h1 id=&#34;getter方法&#34;&gt;getter方法&lt;/h1&gt;
+&lt;p&gt;将值设置给struct字段或者变量的方法称为 &lt;code&gt;setter&lt;/code&gt; 方法。&lt;/p&gt;
+&lt;p&gt;获取struct字段或者变量的值的方法称为 &lt;code&gt;getter&lt;/code&gt; 方法。&lt;/p&gt;
+&lt;p&gt;按照惯例，getter方法的名称应该与访问的字段或者变量的名字相同。（若希望方法被导出，首字母应该大写。）所以Date需要一个Year方法来访问year字段，Month方法来访问month字段，Day方法来访问day字段。&lt;/p&gt;
+&lt;p&gt;getter方法不需要修改接收器，直接使用Date的值作为接收器。若类型的任何方法接受接收器指针类型，为了一致性，通常所有的方法都应该这样做。由于必须对所有的setter方法使用接收器指针，也应对所有的getter方法使用指针。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package calendar
+
+import &amp;#34;errors&amp;#34;
+
+type Date struct {
+	year  int
+	month int
+	day   int
+}
+
+func (d *Date) Year() int {  //与setter方法一致，使用一个接收器指针类型；Year与字段名称相同，为了导出首字母大写。
+	return d.year   //返回字段值
+}
+
+func (d *Date) Month() int {
+	return d.month
+}
+
+func (d *Date) Day() int {
+	return d.day
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改main：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        date := calendar.Date{}
+        err := date.SetYear(2023)
+        if err != nil {
+                log.Fatal(err)
+        }
+        err = date.SetMonth(5)
+        if err != nil {
+                log.Fatal(err)
+        }
+        err = date.SetDay(27)
+        if err != nil {
+                log.Fatal(err)
+        }
+        fmt.Println(date.Year())
+        fmt.Println(date.Month())
+        fmt.Println(date.Day())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出(getter方法返回的值)：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2023
+5
+27
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;封装&#34;&gt;封装&lt;/h1&gt;
 </description>
     </item>
     
