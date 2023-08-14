@@ -5,10 +5,23 @@
     <description>Recent content in Posts on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Mon, 07 Aug 2023 16:27:10 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 14 Aug 2023 17:48:56 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/posts/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>11.接口</title>
+      <link>https://tinklespring.com/posts/11.%E6%8E%A5%E5%8F%A3/</link>
+      <pubDate>Mon, 14 Aug 2023 17:48:56 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/11.%E6%8E%A5%E5%8F%A3/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;有时并不关心一个值的特定类型，只需知道它能做特定的事情，能够在其上调用特定的接口。这就是Go接口的目标：允许定义能够保存任何类型的变量和函数参数，前提是定义了特定的方法。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;具有相同方法的两种不同类型&#34;&gt;具有相同方法的两种不同类型&lt;/h1&gt;
+</description>
+    </item>
     
     <item>
       <title>10.保密：封装和嵌入</title>
@@ -330,6 +343,227 @@ func (d *Date) Day() int {
 5
 27
 &lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;封装&#34;&gt;封装&lt;/h1&gt;
+&lt;p&gt;将程序中的数据隐藏在一部分代码中而对另一部分不可见的方法称为&lt;code&gt;封装&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;封装可以用来防止无效数据，同样也可以修改程序代码的封装部分，而不用担心其他代码的访问，因为它们不可直接访问。&lt;/p&gt;
+&lt;p&gt;许多其他编程语言用类进行封装，类与Go的类型概念类似，但不完全相同，在Go中使用未导出的变量、struct字段、函数或者方法，把数据封装在包中。&lt;/p&gt;
+&lt;p&gt;Go通常在需要的时候才使用封装，不需要封装一个字段，通常导出并且允许直接访问。&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;问：其他语言不允许在定义封装的值的类之外访问该值，Go允许包内其他代码访问未导出代码是否安全？&lt;br&gt;
+答：通常一个包内的所有代码是一个开发者（或一组开发者）开发，包里所有的代码通常有相似的目的，相同包的代码的作者有可能需要访问未导出数据，并且有可能只用合理的方式来使用数据，所以在包内共享未导出数据是安全的。包外的代码有可能是其他开发者编写，但未导出代码是隐藏的，不会意外将其值改为无效数据。&lt;/p&gt;
+&lt;p&gt;问：其他语言所有getter方法的名字都以“Get”开头，比如GetName、GetCity等，在go中是否可以这样做？&lt;br&gt;
+答：Go允许这样做，但不推荐。Go社区大会讨论后决定在getter方法前面去掉Get前缀，保留它只会让后继者感到困惑。Go仍然对setter方法使用Set前缀，因为需要区分同一个字段的setter方法和getter方法。&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;练习：&lt;/p&gt;
+&lt;p&gt;要求：
+1.字段未导出&lt;br&gt;
+2.为每个字段增加一个getter方法（遵守约定：一个getter方法应该与它访问的字段名称相同，若需要导出，首字母大写）&lt;br&gt;
+3.为setter方法增加校验，SetLatitude若接收到小于-90或大于90的值返回错误，Setlongitude若接收到小于-180大于180的值返回错误。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package geo
+
+import &amp;#34;errors&amp;#34;
+
+type Coordinates struct {
+	latitude  float64
+	longitude float64 //字段需要未导出的
+}
+
+func (c *Coordinates) Latitude() float64 { //getter方法名应该与字段名相同，但是首字母需要大写；返回与字段类型相同
+	return c.latitude
+}
+
+func (c *Coordinates) Longitude() float64 {
+	return c.longitude
+}
+
+func (c *Coordinates) SetLatitude(latitude float64) error { //需要返回错误类型
+	if latitude &amp;lt; -90 || latitude &amp;gt; 90 {
+		return errors.New(&amp;#34;invalid latitude&amp;#34;) //返回一个新的错误值
+	}
+	c.latitude = latitude
+	return nil //如果没有错误返回nil
+}
+
+func (c *Coordinates) SetLongitude(longitude float64) error {
+	if longitude &amp;lt; -180 || longitude &amp;gt; 180 {
+		return errors.New(&amp;#34;invalid longitude&amp;#34;)
+	}
+	c.longitude = longitude
+	return nil
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;main 包代码要求：
+1.遍历每个settter方法，保存error返回值&lt;br&gt;
+2.若error不为nil，使用log.Fatal函数记录错误并退出&lt;br&gt;
+3.若设置字段没有错误，调用所有getter方法输出字段值&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;geo&amp;#34;
+	&amp;#34;log&amp;#34;
+)
+
+func main() {
+	coordinates := geo.Coordinates{}
+	err := coordinates.SetLatitude(37.42) //保存返回的错误值
+	if err != nil {                       //若有错误，记录并返回
+		log.Fatal(err)
+	}
+	err = coordinates.SetLongitude(-1122.08) //一个无效值
+	if err != nil {                          //若有错误记录并返回
+		log.Fatal(err)
+	}
+	fmt.Println(coordinates.Latitude())
+	fmt.Println(coordinates.Longitude()) //getter方法
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;在event类型中嵌入date类型&#34;&gt;在Event类型中嵌入Date类型&lt;/h1&gt;
+&lt;p&gt;Date类型很棒，setter方法确保了只有合法的数据才能设置字段，getter方法让我们能取回这些值，现在只需给事件分配标题。&lt;/p&gt;
+&lt;p&gt;定义一个Event类型，并内嵌一个Date作为匿名字段。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package calendar
+
+type Event struct {
+        Title string
+        Date   //使用一个匿名字段嵌入Date
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在calendar包中创建另外一个文件，名为event.go（将把它放到已存在的date.go），在那个文件中，定义一个含有两个字段的类型：一个string类型的Title字段和一个匿名的Date字段。&lt;/p&gt;
+&lt;h1 id=&#34;未导出的字段不会被提升&#34;&gt;未导出的字段不会被提升&lt;/h1&gt;
+&lt;p&gt;将Date嵌入到Event类型中并不会导致Date的字段被提升到Event，Date字段是未导出的，并且Go不会将未导出的字段提升到封闭类型。确认字段被封装，就只能够被setter 方法和getter方法访问，不希望封装被字段提升绕开。&lt;/p&gt;
+&lt;p&gt;在main包中，若尝试通过包裹它的Event设置Date中的month字段，会得到错误：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;xxx/xxx/calendar&amp;#34;
+
+func main() {
+        event := calendar.Event{}
+        event.month = 5  //未导出的Date字段并没有提升到Event
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        event := calendar.Event{}
+        event.Date.year = 2023
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用点运算符链来返回Date字段并且直接访问其中的字段也无法工作，不能单独访问一个Date的未导出字段，当Date是Event的一部分的时，也不能访问Event中Date未导出的字段。&lt;/p&gt;
+&lt;h1 id=&#34;导出的方法像字段一样被提升&#34;&gt;导出的方法像字段一样被提升&lt;/h1&gt;
+&lt;p&gt;若嵌入了一个具有导出方法的struct类型，它的方法会被提升到外部类型，意味着可以调用这个方法，就像在外部类型上定义了该方法一样。&lt;/p&gt;
+&lt;p&gt;有一个定义了两种类型的包，MyType是一个struct类型，其中嵌入了第二个类型EmbeddedType，是一个匿名字段：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package mypackage  //类型在它们自己的包中
+
+import &amp;#34;fmt&amp;#34;
+
+type MyType struct {  //声明MyType是一个struct类型
+        EmbeddedType  //EmbeddedType是一个嵌入MyType的类型
+}
+
+type EmbeddedType string  //声明一个被嵌入的类型（并不在意它是否是个struct）
+
+func (e EmbeddedType) ExportedMethod() {  //这个方法会被提升至MyType
+        fmt.Println(&amp;#34;Hi from ExportedMethod on EmbeddedType&amp;#34;)
+}
+
+func (e EmbeddedType) unexportedMethod() {  //这个方法不会被提升
+
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;因为EmbeddedType定义了一个导出的方法（名为ExportedMethod），这个类型被提升到MyType，并可以被MyType值所调用。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;mypackage&amp;#34;
+
+func main() {
+        value := mypackage.MyType{}
+        value.ExportedMethod()  //调用从EmbeddedType提升的方法
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;对于未导出的字段，未导出的方法没有被提升，若尝试调用，会得到一个错误。&lt;/p&gt;
+&lt;p&gt;Date字段不会被提升到Event类型，因为它们未导出，但是Date上的getter和setter方法被导出了，它们提升到了Event类型。&lt;/p&gt;
+&lt;p&gt;意味着我们可以创建一个Event值，并在Event值上直接调用Date的getter和setter方法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+        &amp;#34;fmt&amp;#34;
+        &amp;#34;xxx/xxx/calendar&amp;#34;
+        &amp;#34;log&amp;#34;
+)
+
+func main() {
+        event := calendar.Event{}
+        err := event.SetYear(2023)
+        if err != nil {
+                log.Faltal(err)
+        }
+        err = event.SetMonth(5)
+        if err != nil {
+                log.Faltal(err)
+        }
+        err = event.SetDay(27)
+        if err != nil {
+                log.Faltal(err)
+        }
+        fmt.Println(event.Year())
+        fmt.Println(event.Month())
+        fmt.Println(event.Day())  //这个Date的getter方法被提升到了Event
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当然，也可以使用运算符链来调用Date值上的方式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(event.Date.Year())
+fmt.Println(event.Date.Month())
+fmt.Println(event.Date.Day())   //获取Event的Date字段，然后调用其getter方法
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;封装event的title字段&#34;&gt;封装Event的Title字段&lt;/h1&gt;
+&lt;p&gt;由于Event struct的Title字段被导出，仍然可以直接访问它。&lt;/p&gt;
+&lt;p&gt;这会面临与之前Date字段相同的问题，例如，Title字符串没有长度限制：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        event := calendar.Event{}
+        event.Title = &amp;#34;An extremely long title that is impractical to print&amp;#34;
+        fmt.Println(event.Title)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;将Title字段封装起来，这样就能校验新的值，将其命名为title，然后增加setter和getter方法，来自 unicode/utf8 包中的RuneCountInString函数被用来确保string中没有过多的字符。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package calendar
+
+import (
+        &amp;#34;errors&amp;#34;
+        &amp;#34;unicode/utf8&amp;#34;
+)
+
+type Event struct {
+        title string  //修改为非导出
+        Date
+}
+
+func (e *Event) Title() string {   //getter方法
+        return e.title
+}
+
+func (e *Event) SetTitle(title string) error {  //setter方法
+	if utf.RuneCountInString(title) &amp;gt; 30 {
+                return errors.New(&amp;#34;invalid title&amp;#34;)
+	}
+        e.title = title
+        return nil
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;提升的方法与外部类型的方法共存&#34;&gt;提升的方法与外部类型的方法共存&lt;/h1&gt;
+&lt;p&gt;现在已经为title字段添加了getter和setter方法，若title长度超过30个字符，会返回错误。&lt;/p&gt;
+&lt;p&gt;Event类型的Title和SetTitle方法与从嵌入的Date类型提升的方法一同存在，导入calendar包的代码可以让所有的方法被视为属于Event类型，而不用考虑它们真正定义在哪个类型上。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        event := calendar.Event{}
+        err := event.SetTitle(&amp;#34;Mom&amp;#39;s birthday&amp;#34;)  //定义在Event上
+        if err != nil {
+                log.Fatal(err)
+        }
+        err = event.SetYear(2023)  //从Date提升
+        if err != nil {
+                log.Fatal(err)
+        }
+        err = event.SetMonth(5)  //从Date提升
+        if err != nil {
+                log.Fatal(err)
+        }
+        err = event.SetDay(27)  //从Date提升
+        if err != nil {
+                log.Fatal(err)
+        }
+        fmt.Println(event.Title())  //Event自己定义的
+        fmt.Println(event.Year())   //从Date提升
+        fmt.Println(event.Month())  //从Date提升
+        fmt.Println(event.Day())    //从Date提升
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+&lt;p&gt;现在能在Event上直接调用Title和SetTitle方法，并调用方法设置年月日就像它们是属于Event一样，它们实际上是在Date上定义的，但我们不需要关心。&lt;/p&gt;
+&lt;p&gt;方法提升允许使用其他类型的方法就像使用自己的一样，可以用这个来组合类型，该类型组合了多种其他类型的方法，这可以帮助保持代码整洁，且不牺牲便利性。&lt;/p&gt;
 </description>
     </item>
     
@@ -3352,642 +3586,6 @@ func main() {
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在循环之后，添加了一个if块来打印失败消息，if块只有在条件的计算结果为true时运行，我们希望success为false时执行打印，所以添加布尔求反运算符&lt;code&gt;!&lt;/code&gt;。&lt;/p&gt;
 </description>
-    </item>
-    
-    <item>
-      <title>1-1.golang25个保留关键字</title>
-      <link>https://tinklespring.com/posts/1-1.golang25%E4%B8%AA%E4%BF%9D%E7%95%99%E5%85%B3%E9%94%AE%E5%AD%97/</link>
-      <pubDate>Wed, 31 May 2023 11:18:24 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/1-1.golang25%E4%B8%AA%E4%BF%9D%E7%95%99%E5%85%B3%E9%94%AE%E5%AD%97/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;golang 有25个保留关键字，比26个英文字母还少一个～&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;break&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;default&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;func&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;interface&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;select&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;case&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;defer&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;go&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;map&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;struct&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;chan&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;else&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;goto&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;package&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;switch&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;const&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;fallthrough&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;if&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;range&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;type&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;continue&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;for&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;import&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;return&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;var&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;Go 25个关键字不能用作标识符，分为3类：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;包管理：
-import  package
-
-程序实体声明与定义：
-chan const func interface map struct type var
-
-程序流程控制：
-break  case         continue  default  defer
-else   fallthrough  for       go       goto
-if     range        return    select   switch
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;包管理&#34;&gt;包管理&lt;/h1&gt;
-&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;import&lt;/font&gt;&lt;br&gt;
-用于导入包，这样就可以使用包中被导出的标识符。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;import (
-    _ &amp;#34;package path&amp;#34;
-    . &amp;#34;package path&amp;#34;
-    alias &amp;#34;package path&amp;#34;
-)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;包路径前面有三种修饰符：&lt;br&gt;
-&lt;code&gt;_&lt;/code&gt; 下划线即空白标识符，表示不使用包中的标识符，计算包级变量的初始化表达式和执行导入包的init初始化函数。&lt;br&gt;
-&lt;code&gt;.&lt;/code&gt; 点号代替包的别名，表示访问包中的导出标识符无需使用包名。&lt;br&gt;
-&lt;code&gt;alias&lt;/code&gt; 表示包的别名。&lt;/p&gt;
-&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;package&lt;/font&gt; &lt;br&gt;
-package用于声明包的名称，需要放在go文件所有代码的最前面，一个包由一个或多个go源文件组成，需放在同一个目录下，且同一个目录下的这些go文件的package的名字只能有一个。&lt;/p&gt;
-&lt;h1 id=&#34;程序实体声明与定义&#34;&gt;程序实体声明与定义&lt;/h1&gt;
-&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;chan&lt;/font&gt;&lt;br&gt;
-&lt;code&gt;chan&lt;/code&gt; 用于声明信道（channel）。&lt;br&gt;
-信道提供一种机制使两个并发执行的函数实现同步，并通过传递具体元素类型的值来通信，未初始化的信道值为&lt;code&gt;nil&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;声明格式：
-&lt;code&gt;chan T&lt;/code&gt;   可以被用来发送和接收类型T的值。&lt;br&gt;
-&lt;code&gt;chan&amp;lt;- T&lt;/code&gt; 只能被用来发送类型T的值。&lt;br&gt;
-&lt;code&gt;&amp;lt;-chan T&lt;/code&gt; 只能被用来接收类型T的值。&lt;br&gt;
-其中 &lt;code&gt;&amp;lt;-&lt;/code&gt; 操作符指定信道的方向，发送或接收，没有给定方向，则信道是双向的，信道可以通过类型转换或赋值被强制为只发送或只接收。&lt;br&gt;
-信道的初始化可以通过 make 函数来实现，其结果值充当了对底层数据结构的引用。初始化时可以为信道设置缓冲区大小，默认值是零，表示不带缓冲的或同步的信道。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;ci := make(chan int)&lt;/code&gt;           整数类型的无缓冲信道&lt;br&gt;
-&lt;code&gt;cj := make(chan int, 0)&lt;/code&gt;        整数类型的无缓冲信道&lt;br&gt;
-&lt;code&gt;cp := make(chan *os.file, 100)&lt;/code&gt; 指向文件指针的带缓冲信道&lt;/p&gt;
-&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;const&lt;/font&gt;&lt;br&gt;
-const 用于声明常量，需指明初始值，一旦创建不可修改。&lt;br&gt;
-由于编译时的限制，定义它们的表达式必须也是可被编译器求值的常量表达式。例如 1&amp;laquo;3 就是一个常量表达式，而 math.Sin(math.Pi/4) 则不是，因为对 math.Sin 的函数调用在运行时才会发生。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const name T = value                    // 指明类型
-const name0, name1 T = value0, value1   // 指明类型，定义多个常量
-const name = value                      // 无类型常量
-const name0, name1 = value0, value1     // 无类型常量，可定义多个
-
-// const name0 T, name1 T = value0, value1	// 错误，const 不能在同一行出现多个类型名（同一类型也不行）
-
-// 将常量定义放在小括号中
-const (
-	name0 = value0
-	name1 = value1
-)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在小括号中的常量声明列表，const 常与iota常量生成器联用，用来申明连续的 数值常量集。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 无类型数值常量集（可转为整型或浮点型）
-const (
-	Sunday = iota       // 0
-	Monday	            // 1
-	Tuesday	            // 2
-	Wednesday           // 3
-	Thursday            // 4
-	Friday	            // 5
-	Partyday            // 6
-	numberOfDays        // 7，该常量未导出
-)
-
-// 无类型数值常量集（可转为浮点型）
-const (
-	Sunday = iota + 0.1   // 0.1
-	Monday		      // 1.1
-	Tuesday		      // 2.1
-	Wednesday	      // 3.1
-	Thursday	      // 4.1
-	Friday		      // 5.1
-	Partyday	      // 6.1
-	numberOfDays 	      // 7.1，该常量未导出
-)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;关于go的常量还有：&lt;br&gt;
-1）常量可以是类型化的或无类型化的。字面常量，true，false， iota 和某些只包含无类型化操作数的常量表达式是无类型化的；&lt;/p&gt;
-&lt;p&gt;2）常量可由常量声明或类型转换显式地赋予其类型， 也可由变量声明或赋值以及作为表达式中的操作数隐式地赋予其类型。若常量的值不能由其类型表示就会产生一个错误。 例如，3.0 可赋予任何整数或浮点数类型的常量，而 2147483648.0 （等价于 1&amp;laquo;31）则只能赋予 float32, float64 或 uint32 类型的常量，而不能赋予 int32 或 string类型的常量；&lt;/p&gt;
-&lt;p&gt;3）尽管数值常量在该语言中可拥有任意精度， 但编译器可能使用其有限精度的内部表示来实现它们。即，每个实现必须：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;使用至少256位表示整数常量；&lt;/li&gt;
-&lt;li&gt;使用至少256位表示浮点常量，包括复数常量及尾数部分，和至少16位的有符号指数；&lt;/li&gt;
-&lt;li&gt;若无法精确表示一个整数常量，则给出一个错误；&lt;/li&gt;
-&lt;li&gt;若由于溢出而无法表示一个浮点或复数常量，则给出一个错误；&lt;/li&gt;
-&lt;li&gt;若由于精度限制而无法表示一个浮点或复数常量，则舍入为最近似的可表示常量。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;这些要求适用于 字面常量 和 常量表达式 的求值结果。&lt;/p&gt;
-&lt;p&gt;golang中的const 不支持 C/C++ 中修饰函数的参数和返回值，如下语句是非法的：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func test(const name *string)
-func test(name *string) const *string
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;func&lt;/font&gt;&lt;br&gt;
-func 用于定义函数，go函数支持变参且返回值支持多个，但不支持默认参数，若函数存在多个返回值形参则需要使用小括号括起来，格式：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func funcName(){}			    //无参无返回值
-func funcName(t T) T {}			    //有参有返回值
-func funcName(t T, list ...T) (T1,T1) {}    //有变参有多个返回值
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;格式上要注意，函数体的第一个大括号必须函数名同行。&lt;/p&gt;
-&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;interface&lt;/font&gt;&lt;br&gt;
-interface 用于定义接口。一个接口是一个方法集，如果一个类型实现了一个接口中的所有方法集，那么说明该类型实现此接口。接口类型变量可以存储任何实现了该接口的类型的值。特别的，&lt;code&gt;interface{}&lt;/code&gt;表示空接口类型，默认地，所有类型均实现了空接口，所以&lt;code&gt;interface{}&lt;/code&gt;可以接收任意类型值。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 空接口
-interface{}
-
-// 一个简单的 File 接口
-type File interface {
-	Read(b Buffer) bool
-	Write(b Buffer) bool
-	Close()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;map&lt;/font&gt;&lt;br&gt;
-map 用于声明映射变量。映射属容器类类型，是一个同种类型元素的无序组，通过唯一的键可以获取对应的值。可以使用 make 创建 map 变量，在定义 map 时可以省略容量，超出容量时会自动扩容，但尽量提供一个合理的初始值。未初始化的映射值为 nil。&lt;/p&gt;
-&lt;p&gt;// 由于map底层是一个hash map，其并没有具体的容量，指定容量也是一个建议值，所以无法使用 &lt;code&gt;cap()&lt;/code&gt;函数来获取map的容量。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 错误示例
-func main() {
-    m := make(map[string]int, 99)
-    println(cap(m))     // error: invalid argument m1 (type map[string]int) for cap  
-}    
-&lt;/code&gt;&lt;/pre&gt;&lt;h6 id=&#34;创建map&#34;&gt;创建map&lt;/h6&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 创建 0 容量的 map
-var myMap = make(map[T1]T2) 
-var myMap = map[T1]T2{}
-
-// 创建指定容量的 map
-var myMap = make(map[T1]T2, hint) 
-
-// 创建并初始化 map
-var myMap = map[string]int {
-	&amp;#34;dable&amp;#34; : 27,
-	&amp;#34;cat&amp;#34; : 28,
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;示例：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func main() {
-	nameAge := make(map[string]int)
-	nameAge[&amp;#34;bob&amp;#34;] = 18                     //增
-	nameAge[&amp;#34;tom&amp;#34;] = 16                     //增
-	delete(nameAge, &amp;#34;bob&amp;#34;)                  //删
-	nameAge[&amp;#34;tom&amp;#34;] = 19                     //改
-	v := nameAge[&amp;#34;tom&amp;#34;]                     //查
-	fmt.Println(&amp;#34;v=&amp;#34;,v)
-	v, ok := nameAge[&amp;#34;tom&amp;#34;]                 //查，推荐用法
-	if ok { 
-		fmt.Println(&amp;#34;v=&amp;#34;,v,&amp;#34;ok=&amp;#34;,ok)
-	}   
-	for k, v :=range nameAge {      		//遍历
-		fmt.Println(k, v)
-	}   
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出结果：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;v= 19
-v= 19 ok= true
-tom 19
-&lt;/code&gt;&lt;/pre&gt;&lt;h6 id=&#34;map-遍历&#34;&gt;map 遍历&lt;/h6&gt;
-&lt;p&gt;遍历所有key&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 方式一
-for k := range mapVar {
-	...
-}
-
-// 方式二（不推荐）
-for k, _ := range mapVar {
-	...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;遍历所有value&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for _, v := range mapVar {
-	...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;遍历所有key与value&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for k, v := range mapVar {
-	...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;// map 在没有被修改的情况下，使用range多次遍历map时输出的key和value的顺序可能不同，这是go设计者有意为之，在每次range时的顺序被随机化，旨在提示开发者，go底层实现并不保证map遍历顺序稳定，请大家不要依赖range遍历结果顺序。&lt;a href=&#34;https://go.dev/blog/maps&#34;target=&#34;_blank&#34; rel=&#34;noopener noreferrer&#34;&gt;Go maps in action&lt;/a&gt;
-&lt;/p&gt;
-&lt;h6 id=&#34;map增删改查&#34;&gt;map增删改查&lt;/h6&gt;
-&lt;p&gt;向map写入元素时，键值对不存在会自动添加，键值存在时将被新值覆盖。使用 &lt;code&gt;delete()&lt;/code&gt; 删除某键值对，使用 &lt;code&gt;len()&lt;/code&gt; 获取元素个数。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 新增或修改
-m[&amp;#34;name&amp;#34;] = &amp;#34;wade&amp;#34;
- 
-// 删除，key 不存在则啥也不干
-delete(m, &amp;#34;name&amp;#34;)
- 
-// 三种查询方式 
-// 查询，key 不存在返回 value 类型的零值
-v := m[&amp;#34;name&amp;#34;]
-v, ok := m[&amp;#34;name&amp;#34;]
-_, ok := m[&amp;#34;name&amp;#34;]
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-&lt;p&gt;map使用需注意：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;map默认初始值为 &lt;code&gt;nil&lt;/code&gt;
-map 声明时未初始化的情况下值为 nil。对 nil map 取值，返回对应类型的零值，不会引发 panic；但写入会引发 panic，所以推荐做法是向 map 写入时先判断 map 是否为 nil；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;map range 的顺序是随机的&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;map 值传递表现出引用传递的效果
-Go 没有引用传递，只有值传递与指针传递。所以 map 作为函数实参传递时本质上也是值传递，只不过因为 map 底层数据结构是通过指针指向实际的元素存储空间，在被调函数中修改 map，对调用者同样可见，所以 map 作为函数实参传递时表现出了引用传递的效果。因此，传递 map 时，函数形参无需使用指针；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;map 的元素不可选址
-map 中的元素并不是一个变量，而是一个值，对 map 元素取值将报运行时错误，因此当 map 的元素为结构体类型的值，那么无法直接修改结构体中的字段值。如果想修改，有两个解决办法，一是存储 struct 的指针类型，二是使用临时变量，每次取出来后再设置回去；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;map 并发读写不安全
-需要加锁，或只用 &lt;code&gt;sync.Map&lt;/code&gt; ，否则会引发panic。&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;示例：&lt;a href=&#34;https://dablelv.blog.csdn.net/article/details/90729484&#34;target=&#34;_blank&#34; rel=&#34;noopener noreferrer&#34;&gt;go map 三板斧&lt;/a&gt;
-&lt;/p&gt;
-&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;struct&lt;/font&gt;&lt;br&gt;
-&lt;code&gt;struct&lt;/code&gt; 用于定义结构体，结构体属容器类型，是多个相同或不同类型值的集合。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-type Vertex struct {
-	X, Y int
-}
-
-var (
-	v1 = Vertex{1, 2}  // 类型为 Vertex
-	v2 = Vertex{X: 1}  // Y:0 被省略
-	v3 = Vertex{}      // X:0 和 Y:0
-	p  = &amp;amp;Vertex{1, 2} // 类型为 *Vertex
-)
-
-func main() {
-	fmt.Printf(&amp;#34;%#v %#v %#v %#v\n&amp;#34;, v1, v2, v3, p)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;type&lt;/font&gt;&lt;br&gt;
-&lt;code&gt;type&lt;/code&gt; 用于定义类型，比如定义struct、interface、func与等价类型。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 定义struct
-type Person struct { name string }
-
-// 定义接口
-type Person interface {
-	speak(word string)
-}
-
-// 定义函数类型
-type FuncType func(int, int) int
-
-// 定义等价类型，rune等价于int32
-type rune int32
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;var&lt;/font&gt;&lt;br&gt;
-&lt;code&gt;var&lt;/code&gt; 用于声明函数级变量和包级变量。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var name T							// 指明类型，使用类型零值
-var name T = value					// 指明类型，指明初始值
-var name0, name1 T					// 指明类型，使用类型零值定义多个变量
-var name0, name1 T = value0, value1	// 指明类型，指明初始值定义多个变量
-
-var name = value					// 根据值推断变量类型
-var name0, name1 = value0, value1	// 根据值推断变量类型，可定义多个不同类型变量
-
-// var name0 T, name1 T				// 错误，var 不能在同一行出现多个类型名（同一类型也不行）
-
-// 将变量定义放在括号中
-var (
-	name0 = value0
-	name1 = value1
-)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;定义变量可以使用短变量声明方式（:=） 替代var，但短变量声明方式只能用于函数体内声明函数级变量，且需指明初始值，声明时不能指明变量类型，类型由初始化确定。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;name := value			// 申明一个变量
-name0, name1 := value0, value1	// 申明多个变量，变量类型可以不同
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;声明多个变量时候，只要有一个是新的即可。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-	oldVar := 1
-	oldVar, newVar := 2, 3
-	fmt.Printf(&amp;#34;oldVar=%v newVar=%v\n&amp;#34;, oldVar, newVar) // oldVar=2 newVar=3
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;var&lt;/code&gt; 与 &lt;code&gt;:=&lt;/code&gt; 区别：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;var 既可以声明函数级变量，也可以声明包级变量，而短变量只能声明函数级变量&lt;/li&gt;
-&lt;li&gt;var 可以不指定初始值，短变量声明方式必须指定初始值&lt;/li&gt;
-&lt;li&gt;var 可以指定数据类型，短变量声明方式不能指定数据类型&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&#34;程序流程控制&#34;&gt;程序流程控制&lt;/h1&gt;
-&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;for range break continue&lt;/font&gt;&lt;br&gt;
-for 是go 中唯一用于循环结构的关键词，有三种使用方式，分别是单个循环条件，经典的初始化/条件/后续形式，还有和 range 关键词结合使用来遍历容器类对象（数组、切片、映射、信道）。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 单条件
-i := 1
-for i &amp;lt;= 3 {
-	fmt.Println(i)
-	i = i + 1
-}
-
-// 初始化/条件/后续形式
-// 注意 Go 中没有前置自增与自减运算符，即++i是非法的
-for i:=0; i &amp;lt; 3; i++ {
-	fmt.Println(i)
-}
-
-// for range 遍历数组
-array :=[...]int{0,1,2,3,4,5}
-for i, v :=range array{
-	fmt.Println(i,v)
-}
-
-// 只遍历下标
-for i := range array {
-	fmt.Println(i)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;break&lt;/code&gt; 用于终止最内层的 &lt;code&gt;for&lt;/code&gt; &lt;code&gt;switch&lt;/code&gt; &lt;code&gt;select&lt;/code&gt; 语句的执行，break 可以携带标签，用于跳出多层，若存在标签，则标签必须放在&lt;code&gt;for&lt;/code&gt; &lt;code&gt;switch&lt;/code&gt; &lt;code&gt;select&lt;/code&gt; 语句的开始处。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 终止for
-L:
-for i &amp;lt; n {
-	switch i {
-	case 5:
-		break L
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;continue&lt;/code&gt; 用于结束当前循环，提前进入下一轮循环。也可以像break一样携带标签，此时程序的执行流跳转到标签的指定位置，可用于跳出多层&lt;code&gt;for&lt;/code&gt; &lt;code&gt;switch&lt;/code&gt; &lt;code&gt;select&lt;/code&gt; ，提前进入下一轮执行。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 提前进入下一轮循环
-for i:=0; i &amp;lt; 3; i++ { 
-	if i == 1 {
-		continue
-	}
-	fmt.Println(i)
-}
-// 输出结果
-0
-2
-
-// 提前进入标签处for的下一轮循环
-L:
-for i:=0; i &amp;lt; 2; i++ { 
-	for j:=0; j &amp;lt; 3; j++{
-		if j == 1 {
-			continue L
-		}
-		fmt.Println(i, j)
-	}
-}
-//输出结果
-0 0
-1 0
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;goto&lt;/font&gt;&lt;br&gt;
-&lt;code&gt;goto&lt;/code&gt; 用于将程序的执行转移到与其标签相应的语句。可以使用 goto 退出多层&lt;code&gt;for&lt;/code&gt; &lt;code&gt;switch&lt;/code&gt; &lt;code&gt;select&lt;/code&gt;，功能类似于break携带标签。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 终止for
-L:
-	for i &amp;lt; n {
-		switch i {
-		case 5:
-			goto L
-		}
-	}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;注意事项：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;执行&lt;code&gt;goto&lt;/code&gt; 不能在跳转过程中跳过变量的定义，否则编译报错。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;	goto L  //编译报错
-	v := 3
-L:
-	fmt.Println(v)
-&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
-&lt;li&gt;在块外的goto语句不能跳转至该块中的标签。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if n%2 == 1 {
-	goto L1
-}
-for n &amp;gt; 0 {
-	f()
-	n--
-L1:
-	f()
-	n--
-}
-//是错误的，因为标签L1在for语句中的块而goto则不在。
-&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
-&lt;li&gt;程序设计时，尽量避免使用goto语句，因为程序执行流的随意跳转会破坏结构化设计风格，导致代码可读性下降。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;switch case default fallthrough&lt;/font&gt;&lt;br&gt;
-这四个关键词是结合使用的。switch 语句提供多路执行，表达式或类型说明符与 switch 中的 case 相比较从而决定执行哪一分支。如果存在一个且最多只能存在一个 default 默认分支，所有的 case 分支都不满足时将执行 default 分支，且 default 分支不一定要放在最后的位置。Go switch 语句在执行完某个 case 子句后，不会再顺序地执行后面的 case 子句，而是结束当前 switch 语句。使用 fallthrough 可以继续执行下一个 case 或 default 子句。case 表达式可以提供多个待匹配的值，使用逗号分隔。&lt;/p&gt;
-&lt;p&gt;switch 有两种形式，表达式选择 和 类型选择 。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;表达式选择
-表达式选择可以没有表达式，缺省为 true，这种写法也习惯地取代 if-else-if-else 语句链。表达式可以不是常量。表达式前面可以有简单语句，比如短变量申明语句。可见 Go switch 相对于 C 有较大的区别且更加灵活。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;switch tag {
-default: s3()		// default 子句可以出现在任意位置，不一定是最后一个
-case 0, 1, 2, 3: s1()	// case 表达式可以提供多个待匹配的值，使用逗号分隔
-case 4, 5, 6, 7: s2()
-}
-
-switch {		// 缺失的表达式为 true
-case x &amp;lt; y: f1()
-fallthrough		// 强制执行下一个 case 子句
-case x &amp;lt; z: f2()
-// 此处没有 fallthrough，switch 执行流在此终止	
-case x == 4: f3()
-}
-
-switch x := f() {	// 缺省表达式试为 true 且前面存在一条短变量申明语句
-case x &amp;lt; 0: return -x	// case 表达式无需为常量
-default: return x
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
-&lt;li&gt;类型选择&lt;br&gt;
-类型选择比较类型而不是值。它类似于表达式选择，由一个特殊的表达式表示类型，该表达式的形式是使用保留字 type 的类型断言而不是实际的类型。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;switch x.(type) {
-// cases
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用实际类型 T 与表达式 x 的动态类型进行匹配。与类型断言一样，x 必须是接口类型，列出的每个非接口类型T必须实现 x 且不能相同。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;switch i := x.(type) {
-case int:
-	printInt(i)                            // i 类型为 int
-case float64:
-	printFloat64(i)                        // i 类型为 float64
-case func(int) float64:
-	printFunction(i)                       // i 类型为 func(int) float64
-case bool, string:
-	printString(&amp;#34;type is bool or string&amp;#34;)  // i 类型为 bool or string
-default:
-	printString(&amp;#34;don&amp;#39;t know the type&amp;#34;)     // i 类型未知
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;if else&lt;/font&gt;&lt;br&gt;
-if 与else 实现条件控制：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;可省略条件表达式的括号&lt;/li&gt;
-&lt;li&gt;支持初始化语句，可定义代码块局部变量&lt;/li&gt;
-&lt;li&gt;if 与 else 块中只有一条语句也需要添加大括号&lt;/li&gt;
-&lt;li&gt;起始大括号必须与 if 和 else 同行&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if err := file.Chmod(0664); err != nil {
-	log.Print(err)
-	return err
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;return&lt;/font&gt;&lt;br&gt;
-return 用于函数执行的终止并可选地提供一个或多个返回值。 任何在函数 F 中被推迟的函数会在 F 返回给其调用者前执行。如果返回值在函数返回形参中指定了名字，那么 return 时可不带返回值列表。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 无返回值
-func noResult() {
-	return
-}
-
-// 单返回值
-func simpleF() int {
-	return 2
-}
-
-// 多返回值
-func complexF2() (float64, float64) {
-	re = 7.0
-	im = 4.0
-	return re, im
-}
-
-// 返回值已具名
-unc complexF3() (re float64, im float64) {
-	re = 7.0
-	im = 4.0
-	return
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;defer&lt;/font&gt;&lt;br&gt;
-defer 用于预设一个函数调用，推迟函数的执行。 被推迟的函数会在执行 defer 的函数返回之前立即执行。 例如无论以何种路径返回，都必须释放资源的函数。 典型的例子就是解锁和关闭文件。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//将文件的内容作为字符串返回。
-func Contents(filename string) (string, error) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return &amp;#34;&amp;#34;, err
-	}
-	defer f.Close()  // f.Close 会在函数结束后运行
-
-	var result []byte
-	buf := make([]byte, 100)
-	for {
-		n, err := f.Read(buf[0:])
-		result = append(result, buf[0:n]...)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return &amp;#34;&amp;#34;, err  // 我们在这里返回后，f 就会被关闭
-		}
-	}
-	return string(result), nil // 我们在这里返回后，f 就会被关闭
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;推迟诸如 Close 之类的函数调用有两点好处：&lt;br&gt;
-第一，它能确保你不会忘记关闭文件。如果你以后又为该函数添加了新的返回路径时，这种情况往往就会发生；&lt;br&gt;
-第二，它意味着“关闭”离“打开”很近，这总比将它放在函数结尾处要清晰明了。&lt;/p&gt;
-&lt;p&gt;使用 &lt;code&gt;defer&lt;/code&gt; 注意的点：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;defer 函数的入参在defer 时确定&lt;br&gt;
-被推迟函数的实参（如果该函数为方法还包括接收者）在推迟执行时就会求值，而不是在调用执行时才求值。这样不仅无需担心变量在 defer 函数执行前被改变，还意味着可以给 defer 函数传递不同实参。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for i := 0; i &amp;lt; 5; i++ {
-	defer fmt.Printf(&amp;#34;%d &amp;#34;, i)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;多个defer函数的执行顺序为后进先出&lt;br&gt;
-被推迟的函数按照后进先出（Last In First Out，LIFO）的顺序执行，因此以上代码在函数返回时会打印 4 3 2 1 0。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;defer 函数在 return 语句赋值返回值与ret之间执行&lt;br&gt;
-return 语句不是原子操作，而是被拆成了两步&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;rval = xxx
-ret
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;而defer函数就是在这两条语句之间执行&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;rval = xxx
-defer_func
-ret
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;所以被defer 的函数可以读取和修改带名称的返回值&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 返回值为 2
-func c() (i int) {
-    defer func() { i++ }()
-    return 1
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;go&lt;/font&gt;&lt;br&gt;
-go 用于创建 Go 程（goroutine），实现并发编程。Go 程是与其它 Go 程并发运行在同一地址空间的函数，相比于线程与进程，它是轻量级的。Go 程在多线程操作系统上可实现多路复用，因此若一个线程阻塞，比如说等待 I/O，那么其它的线程就会运行。Go 程的设计隐藏了线程创建和管理的诸多复杂性。&lt;/p&gt;
-&lt;p&gt;在函数或方法前添加 go 关键字能够在新的 Go 程中调用它。当调用完成后，该 Go 程也会安静地退出。效果有点像 Unix Shell 中的 &amp;amp; 符号，它能让命令在后台运行。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;   
-	&amp;#34;time&amp;#34;  
-)
-
-func main() {
-	go func(){ 
-		fmt.Println(&amp;#34;in first goroutine&amp;#34;)
-	}()     
-	go func(){ 
-		fmt.Println(&amp;#34;in second goroutine&amp;#34;)
-	}()     
-
-	fmt.Println(&amp;#34;main thread start sleep, and other goroutine start execute&amp;#34;)
-	time.Sleep(10*time.Second)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出结果：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;main thread start sleep, and other goroutine start execute
-in second goroutine
-in first goroutine
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出结果得知，go程 的执行顺序和创建的顺序是没有关系的，也就是说存在多个 go程 时，其执行顺序是随机的。&lt;/p&gt;
-&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;select&lt;/font&gt;&lt;br&gt;
-select 语句用来选择一组中某个 case 中的发送或接收操作可以被立即执行。它类似于 switch 语句，但是它的 case 必须是一个通信操作。&lt;/p&gt;
-&lt;p&gt;也就是说 select 是用来监听和 channel 有关的 IO 操作，它与 select，poll，epoll 相似，当 IO 操作发生时，触发相应的动作，实现 IO 多路复用。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func main() {
-    ch1 := make(chan int, 1)
-    ch2 := make(chan int, 1)
-
-    ch1 &amp;lt;- 3
-    ch2 &amp;lt;- 5
-
-    select {
-    case &amp;lt;- ch1:
-        fmt.Println(&amp;#34;ch1 selected&amp;#34;)
-    case &amp;lt;- ch2:
-        fmt.Println(&amp;#34;ch2 selected&amp;#34;)
-	default:
-		// 如果ch1与ch2没有数据到来，则进入default处理流程。如果没有default子句，则select一直阻塞等待ch1与ch2的数据到来
-		fmt.Println(&amp;#34;default&amp;#34;)
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ch1 selected
-
-// 或者
-ch2 selected
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;从输出结果得知，当存在多个case满足条件，即有多个 channel 存在数据时，会随机地选择一个执行。&lt;br&gt;
-若想让某个 go程 永久阻塞，可以使用没有case和default语句的select：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;select{}
-
-# 等效于
-for{}
-&lt;/code&gt;&lt;/pre&gt;</description>
     </item>
     
   </channel>

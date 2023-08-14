@@ -329,9 +329,230 @@ func (d *Date) Day() int {
 5
 27
 </code></pre><h1 id="封装">封装</h1>
+<p>将程序中的数据隐藏在一部分代码中而对另一部分不可见的方法称为<code>封装</code>。</p>
+<p>封装可以用来防止无效数据，同样也可以修改程序代码的封装部分，而不用担心其他代码的访问，因为它们不可直接访问。</p>
+<p>许多其他编程语言用类进行封装，类与Go的类型概念类似，但不完全相同，在Go中使用未导出的变量、struct字段、函数或者方法，把数据封装在包中。</p>
+<p>Go通常在需要的时候才使用封装，不需要封装一个字段，通常导出并且允许直接访问。</p>
+<hr>
+<p>问：其他语言不允许在定义封装的值的类之外访问该值，Go允许包内其他代码访问未导出代码是否安全？<br>
+答：通常一个包内的所有代码是一个开发者（或一组开发者）开发，包里所有的代码通常有相似的目的，相同包的代码的作者有可能需要访问未导出数据，并且有可能只用合理的方式来使用数据，所以在包内共享未导出数据是安全的。包外的代码有可能是其他开发者编写，但未导出代码是隐藏的，不会意外将其值改为无效数据。</p>
+<p>问：其他语言所有getter方法的名字都以“Get”开头，比如GetName、GetCity等，在go中是否可以这样做？<br>
+答：Go允许这样做，但不推荐。Go社区大会讨论后决定在getter方法前面去掉Get前缀，保留它只会让后继者感到困惑。Go仍然对setter方法使用Set前缀，因为需要区分同一个字段的setter方法和getter方法。</p>
+<hr>
+<p>练习：</p>
+<p>要求：
+1.字段未导出<br>
+2.为每个字段增加一个getter方法（遵守约定：一个getter方法应该与它访问的字段名称相同，若需要导出，首字母大写）<br>
+3.为setter方法增加校验，SetLatitude若接收到小于-90或大于90的值返回错误，Setlongitude若接收到小于-180大于180的值返回错误。</p>
+<pre tabindex="0"><code>package geo
+
+import &#34;errors&#34;
+
+type Coordinates struct {
+	latitude  float64
+	longitude float64 //字段需要未导出的
+}
+
+func (c *Coordinates) Latitude() float64 { //getter方法名应该与字段名相同，但是首字母需要大写；返回与字段类型相同
+	return c.latitude
+}
+
+func (c *Coordinates) Longitude() float64 {
+	return c.longitude
+}
+
+func (c *Coordinates) SetLatitude(latitude float64) error { //需要返回错误类型
+	if latitude &lt; -90 || latitude &gt; 90 {
+		return errors.New(&#34;invalid latitude&#34;) //返回一个新的错误值
+	}
+	c.latitude = latitude
+	return nil //如果没有错误返回nil
+}
+
+func (c *Coordinates) SetLongitude(longitude float64) error {
+	if longitude &lt; -180 || longitude &gt; 180 {
+		return errors.New(&#34;invalid longitude&#34;)
+	}
+	c.longitude = longitude
+	return nil
+}
+</code></pre><p>main 包代码要求：
+1.遍历每个settter方法，保存error返回值<br>
+2.若error不为nil，使用log.Fatal函数记录错误并退出<br>
+3.若设置字段没有错误，调用所有getter方法输出字段值</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+	&#34;geo&#34;
+	&#34;log&#34;
+)
+
+func main() {
+	coordinates := geo.Coordinates{}
+	err := coordinates.SetLatitude(37.42) //保存返回的错误值
+	if err != nil {                       //若有错误，记录并返回
+		log.Fatal(err)
+	}
+	err = coordinates.SetLongitude(-1122.08) //一个无效值
+	if err != nil {                          //若有错误记录并返回
+		log.Fatal(err)
+	}
+	fmt.Println(coordinates.Latitude())
+	fmt.Println(coordinates.Longitude()) //getter方法
+}
+</code></pre><h1 id="在event类型中嵌入date类型">在Event类型中嵌入Date类型</h1>
+<p>Date类型很棒，setter方法确保了只有合法的数据才能设置字段，getter方法让我们能取回这些值，现在只需给事件分配标题。</p>
+<p>定义一个Event类型，并内嵌一个Date作为匿名字段。</p>
+<pre tabindex="0"><code>package calendar
+
+type Event struct {
+        Title string
+        Date   //使用一个匿名字段嵌入Date
+}
+</code></pre><p>在calendar包中创建另外一个文件，名为event.go（将把它放到已存在的date.go），在那个文件中，定义一个含有两个字段的类型：一个string类型的Title字段和一个匿名的Date字段。</p>
+<h1 id="未导出的字段不会被提升">未导出的字段不会被提升</h1>
+<p>将Date嵌入到Event类型中并不会导致Date的字段被提升到Event，Date字段是未导出的，并且Go不会将未导出的字段提升到封闭类型。确认字段被封装，就只能够被setter 方法和getter方法访问，不希望封装被字段提升绕开。</p>
+<p>在main包中，若尝试通过包裹它的Event设置Date中的month字段，会得到错误：</p>
+<pre tabindex="0"><code>package main
+
+import &#34;xxx/xxx/calendar&#34;
+
+func main() {
+        event := calendar.Event{}
+        event.month = 5  //未导出的Date字段并没有提升到Event
+}
+</code></pre><pre tabindex="0"><code>func main() {
+        event := calendar.Event{}
+        event.Date.year = 2023
+}
+</code></pre><p>使用点运算符链来返回Date字段并且直接访问其中的字段也无法工作，不能单独访问一个Date的未导出字段，当Date是Event的一部分的时，也不能访问Event中Date未导出的字段。</p>
+<h1 id="导出的方法像字段一样被提升">导出的方法像字段一样被提升</h1>
+<p>若嵌入了一个具有导出方法的struct类型，它的方法会被提升到外部类型，意味着可以调用这个方法，就像在外部类型上定义了该方法一样。</p>
+<p>有一个定义了两种类型的包，MyType是一个struct类型，其中嵌入了第二个类型EmbeddedType，是一个匿名字段：</p>
+<pre tabindex="0"><code>package mypackage  //类型在它们自己的包中
+
+import &#34;fmt&#34;
+
+type MyType struct {  //声明MyType是一个struct类型
+        EmbeddedType  //EmbeddedType是一个嵌入MyType的类型
+}
+
+type EmbeddedType string  //声明一个被嵌入的类型（并不在意它是否是个struct）
+
+func (e EmbeddedType) ExportedMethod() {  //这个方法会被提升至MyType
+        fmt.Println(&#34;Hi from ExportedMethod on EmbeddedType&#34;)
+}
+
+func (e EmbeddedType) unexportedMethod() {  //这个方法不会被提升
+
+}
+</code></pre><p>因为EmbeddedType定义了一个导出的方法（名为ExportedMethod），这个类型被提升到MyType，并可以被MyType值所调用。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;mypackage&#34;
+
+func main() {
+        value := mypackage.MyType{}
+        value.ExportedMethod()  //调用从EmbeddedType提升的方法
+}
+</code></pre><p>对于未导出的字段，未导出的方法没有被提升，若尝试调用，会得到一个错误。</p>
+<p>Date字段不会被提升到Event类型，因为它们未导出，但是Date上的getter和setter方法被导出了，它们提升到了Event类型。</p>
+<p>意味着我们可以创建一个Event值，并在Event值上直接调用Date的getter和setter方法：</p>
+<pre tabindex="0"><code>package main
+
+import (
+        &#34;fmt&#34;
+        &#34;xxx/xxx/calendar&#34;
+        &#34;log&#34;
+)
+
+func main() {
+        event := calendar.Event{}
+        err := event.SetYear(2023)
+        if err != nil {
+                log.Faltal(err)
+        }
+        err = event.SetMonth(5)
+        if err != nil {
+                log.Faltal(err)
+        }
+        err = event.SetDay(27)
+        if err != nil {
+                log.Faltal(err)
+        }
+        fmt.Println(event.Year())
+        fmt.Println(event.Month())
+        fmt.Println(event.Day())  //这个Date的getter方法被提升到了Event
+}
+</code></pre><p>当然，也可以使用运算符链来调用Date值上的方式：</p>
+<pre tabindex="0"><code>fmt.Println(event.Date.Year())
+fmt.Println(event.Date.Month())
+fmt.Println(event.Date.Day())   //获取Event的Date字段，然后调用其getter方法
+</code></pre><h1 id="封装event的title字段">封装Event的Title字段</h1>
+<p>由于Event struct的Title字段被导出，仍然可以直接访问它。</p>
+<p>这会面临与之前Date字段相同的问题，例如，Title字符串没有长度限制：</p>
+<pre tabindex="0"><code>func main() {
+        event := calendar.Event{}
+        event.Title = &#34;An extremely long title that is impractical to print&#34;
+        fmt.Println(event.Title)
+}
+</code></pre><p>将Title字段封装起来，这样就能校验新的值，将其命名为title，然后增加setter和getter方法，来自 unicode/utf8 包中的RuneCountInString函数被用来确保string中没有过多的字符。</p>
+<pre tabindex="0"><code>package calendar
+
+import (
+        &#34;errors&#34;
+        &#34;unicode/utf8&#34;
+)
+
+type Event struct {
+        title string  //修改为非导出
+        Date
+}
+
+func (e *Event) Title() string {   //getter方法
+        return e.title
+}
+
+func (e *Event) SetTitle(title string) error {  //setter方法
+	if utf.RuneCountInString(title) &gt; 30 {
+                return errors.New(&#34;invalid title&#34;)
+	}
+        e.title = title
+        return nil
+}
+</code></pre><h1 id="提升的方法与外部类型的方法共存">提升的方法与外部类型的方法共存</h1>
+<p>现在已经为title字段添加了getter和setter方法，若title长度超过30个字符，会返回错误。</p>
+<p>Event类型的Title和SetTitle方法与从嵌入的Date类型提升的方法一同存在，导入calendar包的代码可以让所有的方法被视为属于Event类型，而不用考虑它们真正定义在哪个类型上。</p>
+<pre tabindex="0"><code>func main() {
+        event := calendar.Event{}
+        err := event.SetTitle(&#34;Mom&#39;s birthday&#34;)  //定义在Event上
+        if err != nil {
+                log.Fatal(err)
+        }
+        err = event.SetYear(2023)  //从Date提升
+        if err != nil {
+                log.Fatal(err)
+        }
+        err = event.SetMonth(5)  //从Date提升
+        if err != nil {
+                log.Fatal(err)
+        }
+        err = event.SetDay(27)  //从Date提升
+        if err != nil {
+                log.Fatal(err)
+        }
+        fmt.Println(event.Title())  //Event自己定义的
+        fmt.Println(event.Year())   //从Date提升
+        fmt.Println(event.Month())  //从Date提升
+        fmt.Println(event.Day())    //从Date提升
+}
+</code></pre><hr>
+<p>现在能在Event上直接调用Title和SetTitle方法，并调用方法设置年月日就像它们是属于Event一样，它们实际上是在Date上定义的，但我们不需要关心。</p>
+<p>方法提升允许使用其他类型的方法就像使用自己的一样，可以用这个来组合类型，该类型组合了多种其他类型的方法，这可以帮助保持代码整洁，且不牺牲便利性。</p>
 </article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
-<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/9.%E5%AE%9A%E4%B9%89%E7%B1%BB%E5%9E%8B/"><span class="iconfont icon-article"></span>9.定义类型</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/11.%E6%8E%A5%E5%8F%A3/"><span class="iconfont icon-article"></span>11.接口</a></p><p><a class="link" href="/posts/9.%E5%AE%9A%E4%B9%89%E7%B1%BB%E5%9E%8B/"><span class="iconfont icon-article"></span>9.定义类型</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
     window.disqus_config = function () {
     
