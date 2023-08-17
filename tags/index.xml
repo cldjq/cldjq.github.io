@@ -5,10 +5,23 @@
     <description>Recent content in Tags on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Mon, 14 Aug 2023 17:48:56 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 17 Aug 2023 18:08:56 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/tags/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>12.从失败中恢复</title>
+      <link>https://tinklespring.com/posts/12.%E4%BB%8E%E5%A4%B1%E8%B4%A5%E4%B8%AD%E6%81%A2%E5%A4%8D/</link>
+      <pubDate>Thu, 17 Aug 2023 18:08:56 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/12.%E4%BB%8E%E5%A4%B1%E8%B4%A5%E4%B8%AD%E6%81%A2%E5%A4%8D/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;每个程序都会遇到错误，有时处理错误可以像报告错误并退出程序一样简单，但其他错误可能需要额外的操作，比如需要关闭打开的文件或网络链接，或者以其他方式清理，这样程序不会混乱。本篇将展示如何延迟清理操作，以便在出现错误时也能执行这些操作；还将展示如何在适当的情况下使程序出现panic，以及如何在事后恢复。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;从文件中读取数字重新访问&#34;&gt;从文件中读取数字，重新访问&lt;/h1&gt;
+</description>
+    </item>
     
     <item>
       <title>11.接口</title>
@@ -20,7 +33,512 @@
 &lt;p&gt;有时并不关心一个值的特定类型，只需知道它能做特定的事情，能够在其上调用特定的接口。这就是Go接口的目标：允许定义能够保存任何类型的变量和函数参数，前提是定义了特定的方法。&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h1 id=&#34;具有相同方法的两种不同类型&#34;&gt;具有相同方法的两种不同类型&lt;/h1&gt;
-</description>
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package gadget
+
+import &amp;#34;fmt&amp;#34;
+
+type TapePlayer struct {
+	Batteries string
+}
+
+func (t TapePlayer) Play(song string) {
+	fmt.Println(&amp;#34;Playing&amp;#34;, song)
+}
+func (t TapePlayer) Stop() {
+	fmt.Println(&amp;#34;Stopped!&amp;#34;)
+}
+
+type TapeRecorder struct {
+	Microphones int
+}
+
+func (t TapeRecorder) Play(song, string) { //有个与TapePlayer相同的Play方法
+	fmt.Println(&amp;#34;Playing&amp;#34;, song)
+}
+func (t TapeRecorder) Record() {
+	fmt.Println(&amp;#34;Recording&amp;#34;)
+}
+func (t TapeRecorder) Stop() { //有个与TapePlayer相同的Stop方法
+	fmt.Println(&amp;#34;Stopped!&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;TapePlayer类型有一个Play方法来模拟播放歌曲，一个Stop方法来停止播放，TapeRecorder类型也有Play和Stop方法，还有一个Record方法。&lt;/p&gt;
+&lt;h1 id=&#34;只能接受一种类型的方法参数&#34;&gt;只能接受一种类型的方法参数&lt;/h1&gt;
+&lt;p&gt;一个使用gadget包的示例：定义一个playList函数，接收一个TapePlayer值和一个在其上播放的一组歌名的切片，函数循环变量切片的每个歌名，并将它传递给TapePlayer的Play方法，当它播放列表后，调用TapePlayer的Stop方法。然后在main中，创建一个TapePlayer和一个歌单切片，并将其传递给playList。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;xxx/xxx/gadget&amp;#34;
+
+func playList(device gadget.TapePlayer, songs []string) {
+	for _, song := range songs { //循环每首歌曲
+                device.Play(song)  //播放当前歌曲
+	}
+        device.Stop()  //播放完成后，停止播放
+}
+
+func main() {
+        player := gadget.TapePlayer{}  //创建一个TapePlayer
+        mixtape := []string{&amp;#34;Jessie&amp;#39;s Girl&amp;#34;, &amp;#34;Whip It&amp;#34;, &amp;#34;9 to 5&amp;#34;}  //创建一个歌名的切片
+        playList(player, mixtape)  //使用TapePlayer播放歌曲
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Playing Jessie&amp;#39;s Girl
+Playing Whip It
+Playing 9 to 5
+Stopped!
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;PlayList函数使用TapePlayer值工作正常，但是希望它可以使用TapeRecorder作为参数，但playList函数需要一个TapePlayer类型，尝试传入其他类型会编译错误：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+         player := gadget.TapeRecorder{}
+         mixtape := []string{&amp;#34;Jessie&amp;#39;s Girl&amp;#34;, &amp;#34;Whip It&amp;#34;, &amp;#34;9 to 5&amp;#34;}
+         playList(player, mixtape)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;playList函数只接受TapePlayer值。&lt;/p&gt;
+&lt;h1 id=&#34;接口&#34;&gt;接口&lt;/h1&gt;
+&lt;p&gt;当在电脑上安装程序时，通常希望程序提供一种交互的方式，希望文字处理器提供键入文字的地方。这一组程序提供的用来交互的控制方法通常称为接口。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;一个接口是特定值预期具有的一组方法。&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;在Go中，一个接口被定义为特定值预期具有的一组方法，可以把接口看作需要类型实现的一组行为。&lt;/p&gt;
+&lt;p&gt;使用 &lt;code&gt;interface&lt;/code&gt; 关键字定义一个接口类型，后面跟着一个花括号，内部含有一组方法，以及方法期望的参数和返回值。&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/11-interface/interface.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;任何拥有接口定义的所有方法的类型被称作&lt;code&gt;满足那个接口&lt;/code&gt;，一个满足接口的类型可以用在任何需要接口的地方。&lt;/p&gt;
+&lt;p&gt;方法名称、参数类型（可能没有）和返回值（可能没有）都需要与接口中定义的一致，除了接口中列出的方法外，类型还可以有更多的方法，但不能缺少接口中的任何方法，否则就不满足那个接口。&lt;/p&gt;
+&lt;p&gt;一个类型可以满足多个接口，一个接口可以有多个类型满足它。&lt;/p&gt;
+&lt;h1 id=&#34;定义满足接口的类型&#34;&gt;定义满足接口的类型&lt;/h1&gt;
+&lt;p&gt;一个名为mypkg的包，定义了一个有三个方法的名为MyInterface的接口，然后定义了一个名字MyType的类型，正好可满足MyInterface。&lt;/p&gt;
+&lt;p&gt;为了满足MyInterface接口需要有三个方法：MethodWithoutParameters方法，接受float64参数的MethodWithParameter方法，返回string类型的MethodWithReturnValue方法。然后声明另外一个类型MyType，为了使MyType满足MyInterface，定义了接口需要的所有方法，另外包含一个并不属于接口的额外的方法。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package mypkg
+
+import &amp;#34;fmt&amp;#34;
+
+type MyInterface interface {  //声明一个接口类型
+        MethodWithoutParameters()  //一个类型满足接口，如果有这个方法
+        MethodWithParameter(float64)
+        MethodWithReturnValue() string
+}
+
+type MyType int  //声明一个类型，让它满足MyInterface
+
+func (m MyType) MethodWithoutParameters() {  //第一个需要的方法
+        fmt.Println(&amp;#34;MethodWithoutParameters called&amp;#34;)
+}
+func (m MyType) MethodWithParameter(f float64) {  //第二个需要的方法
+        fmt.Println(&amp;#34;MethodWithParameter called with&amp;#34;, f)
+}
+func (m MyType) MethodWithReturnValue() string {  //第三个需要的方法
+        return &amp;#34;Hi from MethodWithReturnValue&amp;#34;
+}
+func (my MyType) MethodNotInterface() {  //一个类型即使有额外的不属于接口的方法，仍可以满足接口
+        fmt.Println(&amp;#34;MethodNotInterface called&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;其他语言中可能需要明确，MyType满足MyInterface，但在Go中是自动发生的，若一个类型包含接口中声明的所有方法，那么它可以在任何需要接口的地方使用，而不需要更多声明。&lt;/p&gt;
+&lt;p&gt;测试mypkg：一个接口类型的变量能够保存任何满足接口的类型的值，下面代码声明了一个MyInterface类型的名为value的变量，然后创建一个MyType的值并赋给value，（这样可以，因为Mytype满足MyInterface），然后可以在value上调用接口的任意方法。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+        &amp;#34;fmt&amp;#34;
+        &amp;#34;mypkg&amp;#34;
+)
+
+func main() {
+        var value mypkg.MyInterface  //声明一个接口类型的变量
+        value = mypkg.MyType(5)  //MyType的值满足MyInterface，所以可以将值赋给MyInterface的变量
+        value.MethodWithoutParameters()
+        value.MethodWithParameter(127.3)  //可以调用MyInterface的任何方法
+        fmt.Println(value.MethodWithReturnValue())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;MethodWithoutParameters called
+MethodWithParameter called with 127.3
+Hi from MethodWithReturnValue
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+&lt;p&gt;接口只是一种约定或合同，描述了某种行为（方法），任何类型只要实现了这些方法，就可以说它“满足”了这个接口，这是Go多态性的基础。不需要像其他语言中那样显式说“这个类型实现了这个接口”，如果它有正确的方法，就自动满足接口。&lt;/p&gt;
+&lt;p&gt;&amp;ldquo;类型满足接口&amp;quot;意味着可以写一个函数，它接受定义的接口作为参数，并期望该参数有其包含的方法，而不必关心这个参数的实际类型。&lt;/p&gt;
+&lt;h1 id=&#34;具体类型和接口类型&#34;&gt;具体类型和接口类型&lt;/h1&gt;
+&lt;p&gt;之前定义的所有类型都是具体类型，一个具体类型不仅定义了它的值可以做什么（在其上可以调用哪些方法），也定义了它们是什么：它们定义了保存值的数据的基础类型。&lt;/p&gt;
+&lt;p&gt;接口类型并不描述哪个值，不会说它的基础类型是什么，或者数据如何存储，仅仅描述这个值能做什么（它有哪些方法）。&lt;/p&gt;
+&lt;h1 id=&#34;分配满足接口的任何类型&#34;&gt;分配满足接口的任何类型&lt;/h1&gt;
+&lt;p&gt;当有一个接口类型的变量时，它可以保存满足此接口的任何类型的值。&lt;/p&gt;
+&lt;p&gt;有Whistle和Horn类型，都有MakeSound方法，可以创建一个NoiseMaker接口来代替声明了MakeSound方法的任何类型。若定义了NoiseMaker类型的toy变量，可以将Whistle和Horn值赋给它（或者之后定义的任何类型，只要它定义了MakeSound方法）。&lt;/p&gt;
+&lt;p&gt;可以调用任何赋给toy变量的值的MakeSound方法，虽然并不知道toy保存的值的具体类型是什么，但我们知道它能做什么：发出声音。若它的类型没有MakeSound方法，那么不满足NoiseMaker接口，将无法赋变量它。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Whistle string
+
+func (w Whistle) MakeSound() {  //有MakeSound方法
+	fmt.Println(&amp;#34;Tweet!&amp;#34;)
+}
+
+type Horn string
+
+func (h Horn) MakeSound() {  //同样有MakeSound方法
+	fmt.Println(&amp;#34;Honk!&amp;#34;)
+}
+
+type NoiseMaker interface {  //代表任何含有MakeSound方法的类型
+	MakeSound()
+}
+
+func main() {
+	var toy NoiseMaker
+	toy = Whistle(&amp;#34;Toyco Canary&amp;#34;)  //将一个满足NoiseMaker的类型的值赋给变量
+	toy.MakeSound()
+	toy = Horn(&amp;#34;Toyco Blaster&amp;#34;)  //将另一个满足NoiseMaker的类型的值赋给变量
+	toy.MakeSound()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;也可以将函数的参数定义为接口类型（毕竟函数参数也就是变量）。若声明一个play函数来接受NoiseMaker类型，可以传入任何包含了MakeSound方法的值来播放。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func play(n NoiseMaker) {
+        n.MakeSound()
+}
+
+func main() {
+        play(Whistle(&amp;#34;Toyco Canary&amp;#34;))
+        play(Horn(&amp;#34;Toyco Blaster&amp;#34;))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;只能调用接口中定义的方法&#34;&gt;只能调用接口中定义的方法&lt;/h1&gt;
+&lt;p&gt;一旦给一个接口类型的变量（或方法的参数）赋值，就只能调用接口定义的方法。&lt;/p&gt;
+&lt;p&gt;示例：&lt;br&gt;
+加入创建了Robot类型，除了有一个MakeSound方法外，还有一个Walk方法，在play函数中增加对Walk的调用，并将Robot的值传入play。但是代码运行失败，因为NoiseMaker值没有Walk方法。&lt;/p&gt;
+&lt;p&gt;为什么会这样？Robot值的确有Walk方法，我们传入play函数的并不是Robot值，而是NoiseMaker。假如传入Whistle或者Horn呢？它们没有包含Walk方法。&lt;/p&gt;
+&lt;p&gt;当有接口类型的变量时，唯一能确定的方法是接口中的方法，并且这些是Go允许调用的方法。有一种能够获取值的具体类型的方法，这样就可以调用更多特定的方法了。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Whistle string
+
+func (w Whistle) MakeSound() {
+	fmt.Println(&amp;#34;Tweet!&amp;#34;)
+}
+
+type Horn string
+
+func (h Horn) MakeSound() {
+	fmt.Println(&amp;#34;Honk!&amp;#34;)
+}
+
+type Robot string //声明一个新的Robot类型
+
+func (r Robot) MakeSound() { //Robot满足NoiseMaker接口
+	fmt.Println(&amp;#34;Beep Boop&amp;#34;)
+}
+
+func (r Robot) Walk() { //一个额外的方法
+	fmt.Println(&amp;#34;Powering legs&amp;#34;)
+}
+
+type NoiseMaker interface {
+	MakeSound()
+}
+
+func play(n NoiseMaker) {
+	n.MakeSound() //正确，NoiseMaker接口的一部分
+	n.Walk()      //错误，并非NoiseMaker的一部分
+}
+
+func main() {
+	play(Robot(&amp;#34;Botco Ambler&amp;#34;))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;n.Walk undefined (type NoiseMaker has no field or method Walk)
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用接口修复playlist函数&#34;&gt;使用接口修复playList函数&lt;/h1&gt;
+&lt;p&gt;使用一个接口来允许playList函数使用两种具体类型（TapePlayer和TapeRecorder）的Play和Stop方法。&lt;/p&gt;
+&lt;p&gt;在main包中，声明了一个Player接口（也可以在gadget包中定义，但是接口定义在调用的包中会更灵活），指定接口需要有一个string参数的Play方法和一个无参的Stop方法，这意味着TapePlayer和TapeRecorder类型会满足Player接口。&lt;/p&gt;
+&lt;p&gt;更新playList函数来接受满足Player的任何值，而不是特定类型的TapePlayer，也更新player变量的类型，有个TapePlayer改为Player，允许将TapePlayer和TapeRecorder类型赋给player，然后将两种类型的值都传递给playList。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;xxx/xxx/gadget&amp;#34;
+
+type Player interface {  //定义一个接口类型
+        Play(string)  //要求一个接受string参数的Play方法
+        Stop()  //要求一个Stop方法
+}
+
+func playList(device Player, songs []string) {  //接受任何其他的类型，而不只是TapePlayer
+	for _, song := range songs {
+                device.Play(song)
+	}
+        device.Stop()
+}
+
+func main() {
+        mixtape := []string{&amp;#34;Jessie&amp;#39;s Girl&amp;#34;, &amp;#34;Whip It&amp;#34;, &amp;#34;9 to 5&amp;#34;}  //创建一个歌名的切片
+        var player Player = gadget.TapePlayer{}  //修改变量的类型来保存任何Player
+        playList(player, mixtape)  //给playList传入TapePlayer
+        player = gadget.TapeRecorder{}
+        playList(player, mixtape)   //给playList传入TapeRecorder
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;若一个类型声明了指针接收器方法，那么就只能将那个类型的指针传递给接口变量。&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Switch类型的toggle方法需要使用指针类型的接收器，这样才能修改接收器。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;pacakge main
+
+import &amp;#34;fmt&amp;#34;
+
+type Switch string
+
+func (s *Switch) toggle() {
+        if *s == &amp;#34;on&amp;#34; {
+                *s = &amp;#34;off&amp;#34;
+	} else {
+                *s = &amp;#34;on&amp;#34;
+	}
+        fmt.Println(*s)
+}
+
+type Toggleable interface {
+        toggle()
+}
+
+func main() {
+        s := Switch(&amp;#34;off&amp;#34;)
+        var t Toggleable = s
+        t.toggle()
+        t.toggle()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是当把Switch的值赋给Toggleable的时候导致错误：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Switch does not implement Toggleable (toggle method has pointer receive)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go判断值是否满足一个接口的时候，指针方法并没有包含直接的值，但是它们包含指针，所以要将一个指向Switch的指针赋值给Toggleable变量，来代替一个直接Switch值：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var t Toggleable = &amp;amp;s  //赋给一个指针
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;类型断言&#34;&gt;类型断言&lt;/h1&gt;
+&lt;p&gt;定义了一个新的TryOut函数来测试TapePlayer和TapeRecorder类型的多种方法，TryOut有一个单独的Player接口类型的参数，这样可以传入TapePlayer类型和TapeRecorder类型。&lt;/p&gt;
+&lt;p&gt;在TryOut中，调用Player接口中的Play和Stop方法，同样也调用不在Player接口中的Record方法，它定义在TapeRecorder类型中，仅仅将TapeRecorder值传入TryOut。但是，这样不对，若把一个具体类型的值赋给了接口类型的变量（包括函数参数），然后就只能在其上调用接口的方法，不管具体类型还具有何种其他方法。在TryOut函数中，没有TapeRecorder值（具体类型），只有一个Player值（接口类型），并且Player接口并没有Record方法。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Player interface {
+        Play(string)
+        Stop()
+}
+
+func TryOut(player Player) {
+        player.Play(&amp;#34;Test Track&amp;#34;)
+        player.Stop()
+        player.Record()  //不属于Player接口
+}
+
+func main() {
+        TryOut(gadget.TapeRecorder{})  //给函数传入TapeRecorder，满足Player
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;player.Record undefined (type Player has no field or method Record)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们需要一个方法来取回具体类型（确实含有Record方法）的值。&lt;/p&gt;
+&lt;p&gt;若使用类型转换将Player类型的值转换为TapeRecorder类型的值，但是类型转换并不适用于接口类型，所以会产生错误。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func TryOut(player Player) {
+        player.Play(&amp;#34;Test Track&amp;#34;)
+        player.Stop()
+        recorder := gadget.TapeRecorder(player)  //类型转换无法工作
+        recorder.Record()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;cannot convert player (type Player) to type gadget.TapeRecorder: need type assertion
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当将一个具体类型的值赋给一个接口类型的变量时，&lt;code&gt;类型断言&lt;/code&gt;让你能够取回具体类型。&lt;/p&gt;
+&lt;p&gt;这像是一种形式的类型转换。它的语法像函数调用和类型转换的结合体。在一个接口值之后，输入一个点，后面接着一对括号括起来的具体类型（或者是想要断言的值的具体类型）。&lt;/p&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/11-interface/%e7%b1%bb%e5%9e%8b%e6%96%ad%e8%a8%80.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;简单说类型断言就像说某物像“我知道这个变量使用接口类型NoiseMaker，但我很确信这个NoiseMaker实际上是Robot。”&lt;/p&gt;
+&lt;p&gt;一旦使用类型断言来取回具体类型的值，可以调用那个类型上的方法，但这方法并不属于接口。&lt;/p&gt;
+&lt;p&gt;代码将Robot赋值给了NoiseMaker接口值，可以调用NoiseMaker上的MakeSound方法，因为它是接口的一部分。但是为了调用Walk方法，需要使用类型断言来取回Robot值，一旦获取了Robot（而不是一个NoiseMaker），就能调用它上面的Walk方法。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Robot string
+
+func (r Robot) MakeSound() {
+        fmt.Println(&amp;#34;Beep Boop&amp;#34;)
+}
+
+func (r Robot) Walk() {
+        fmt.Println(&amp;#34;Powering legs&amp;#34;)
+}
+
+type NoiseMaker interface {
+        MakeSound()
+}
+
+func main() {
+        var noiseMaker NoiseMaker = Robot(&amp;#34;Botco Ambler&amp;#34;)  //定义一个接口类型的变量，并且将满足接口的类型值赋给它
+        noiseMaker.MakeSound()  //调用接口中的方法
+        var robot Robot = noiseMaker.(Robot)  //使用类型断言取回具体类型
+        robot.Walk()  //调用在具体类型（而不是接口）上定义的方法
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Beep Boop
+Powering legs
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;类型断言失败&#34;&gt;类型断言失败&lt;/h1&gt;
+&lt;p&gt;之前TryOut函数不能在Player值上调用Record方法，因为不是Player接口的一部分；我们传入一个TapeRecorder给TryOut，被赋值给一个Player类型的参数，能够调用Player值的Play和Stop方法，因为都是Player接口的一部分。然后使用一个类型断言来将Player转换回一个TapeRecorder，并调用其上的Record方法。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Player interface {
+        Play(string)
+        Stop()
+}
+
+func TryOut(player Player) {
+        player.Play(&amp;#34;Test Track&amp;#34;)
+        Player.Stop()
+        recorder := player.(gadget.TapeRecorder) //保存TapeRecorder值，使用类型断言来获得一个TapeRecorder值
+        recorder.Record()  //调用仅仅定义在具体类型上的方法
+}
+
+func main() {
+        TryOut(gadget.TapeRecorder{})
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Playing Test Track
+Stopped!
+Recording
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;对于TapeRecorder，看起来很正常，考虑到类型断言说TryOut的参数实际上是一个TapeRecorder，如果给TryOut传入TapePlayer会如何呢？&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+        TryOut(gadget.TapeRecorder{})
+        TryOut(gadget.TapePlayer{})  //传入一个TapePlayer
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当运行时，得到一个运行时异常，尝试断言TapePlayer是一个TapeRecorder无法工作。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;panic: interface conversion: main.Player is gadget.TapePlayer, not gadget.TapeRecorder
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;当类型断言失败时避免异常&#34;&gt;当类型断言失败时避免异常&lt;/h1&gt;
+&lt;p&gt;如果类型断言被用于仅有一个返回值的情况，并且原始的类型不与断言的类型相同，程序会在运行时（不在编译时）出现异常：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var player Player = gadget.TapePlayer{}
+recorder := player.(gadget.TapeRecorder)  //断言原类型是TapeRecorder，但它实际上是TapePlayer
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;panic: interface conversion: main.Player is gadget.TapePlayer, not gadget.TapeRecorder
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果类型断言被用于期待多个返回值的情况，能有第二个可选的返回值来表明断言是否成功。（并且断言并不会在不成功时出现异常。）第二个值是一个bool，并且当原类型和断言类型相同时，返回true，否则返回false。可以对第二个返回值做任何操作，但按惯例，通常被赋给一个名为ok的变量。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var player Player = gadget.TapePlayer{}
+recorder, ok := player.(gadget.TapeRecorder)  //将第二个返回值赋给ok变量
+if ok {
+        recorder.Record()  //如果原始类型是TapeRecorder，调用值上的Record
+} else {
+        fmt.Println(&amp;#34;Player was not a TapeRecorder&amp;#34;)  //否则报告断言失败
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;具体类型是TapePlayer，而不是TapeRecorder，所以断言失败，ok返回是false，if语句的else执行，一个运行时异常被避免。&lt;/p&gt;
+&lt;p&gt;当使用类型断言时，如果不能完全确定接口的原类型是什么，应该使用可选ok值来处理与期望的类型不同的情况，避免一个运行时异常。&lt;/p&gt;
+&lt;h1 id=&#34;使用类型断言测试tapeplayer和taperecorder&#34;&gt;使用类型断言测试TapePlayer和TapeRecorder&lt;/h1&gt;
+&lt;p&gt;接下来修复TryOut函数以适应TapePlayer和TapeRecorder值，与忽略类型断言的第二个返回值不同，我们将它赋值给一个ok变量，如果类型断言成功，ok变量会为true（标识recorder变量保存了一个TapeRecorder值，准备调用Record方法），否则为false（标识调用Record不安全）。将Record方法的调用包裹在if语句中来确保它仅仅在类型断言成功的情况下才会被调用。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Player interface {
+        Play(string)
+        Stop()
+}
+
+func TryOut(player Player) {
+        player.Play(&amp;#34;Test Track&amp;#34;)
+        player.Stop()
+        recorder, ok := player.(gadget.TapeRecorder)  //将第二个返回值赋给变量
+	if ok {  //仅仅在原值是TapeRecorder的时候调用Record方法
+                recorder.Record()
+	}
+}
+
+func main() {
+        TruOut(gadget.TapeRecorder{})
+        TryOut(gadget.TapePlayer{})
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Playing Test Track  //TapeRecorder被传入
+Stopped!
+Recording  //类型断言成功，Record被调用
+Playing Test Track  //TapePlayer被传入
+Stopped!  //类型断言未成功，Record没有被调用
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;与之前一样，在main方法中，首先传入了TapeRecorder值调用TryOut，TryOut获取传入的Player接口值，并调用Play和Stop方法。Player的值的具体类型是TapeRecorder的断言成功了，然后Record方法在TapeRecorder值上被调用。然后传入TapePlayer调用TryOut，这个调用在之前程序中停止，因为类型断言异常。Play和Stop被调用，类型断言失败，因为Player值保存着TapePlayer而不是TapeRecorder，因为捕获了ok值中的第二个返回值，类型断言不会导致异常，因为仅仅将ok值设置为false，导致if语句中的代码不被执行，也就导致了Record没有被调用。（因为TapePlayer值没有Record方法）&lt;/p&gt;
+&lt;h1 id=&#34;error接口&#34;&gt;error接口&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;一个错误值就是任何含有名为Error的方法的值，此方法返回string&lt;/code&gt;。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type error interface {
+        Error() string
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;声明一个接口的error类型意味着，若具有一个返回string的Error方法，就满足error接口，并且它是error的值。这意味着能定义自己的类型并用在任何需要error值的地方。&lt;/p&gt;
+&lt;p&gt;ComedyError类型，有返回string的Error方法，满足error接口，就能将它赋值给error类型的变量：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type ComedyError string  //定义一个以string为基础类型的类型
+func (c ComedyError) Error() string {  //满足error接口
+        return string(c)  //Error方法需要返回一个string，所以做个类型转换
+}
+
+func main() {
+        var err error  //声明一个error类型的变量
+        err = ComedyError(&amp;#34;What&amp;#39;s a programmer&amp;#39;s favorite beer? Logger!&amp;#34;)  //ComedyError满足error接口，所能把它赋值给变量
+        fmt.Println(err)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果需要一个error值，也需要追踪除了错误信息字符串之外更多的信息，可以创建自己的满足error接口的类型并保存需要的信息。&lt;/p&gt;
+&lt;p&gt;例：有一个程序监控一些设备保证它们不会过热。
+这个OverheatError类型可能游泳，有个确保满足error的Error方法，它使用float64作为基础类型，允许追踪过载的温度。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type OverheatError float64  //定义一个基础类型是float64的类型
+func (o OverheatError) Error() string {  //满足error接口
+        return fmt.Sprintf(&amp;#34;OverheatError by %0.2f degrees!&amp;#34;, o)  //在错误信息中使用温度
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;有个使用OverheatError的checkTemperature函数，接收系统实际温度和被认为是安全的温度作为参数，指定返回一个error类型的值，而不是OverheatError，但因为它满足error接口，若actual温度超过了safe温度，checkTemperature返回一个新的记录了超出量的OverheatError：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func checkTemperature(actual float64, safe float64) error {  //指定函数返回原生error值
+        excess := actual - safe
+        if excess &amp;gt; 0 {  //如果actual温度高于safe温度
+                return OverheatError(excess)  //就返回一个记录了超出量的OverheatError
+        }
+        return nil
+}
+
+func main() {
+        var err error = checkTemperature(121.379, 100.0)
+        if err != nil {
+                log.Fatal(err)
+        }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+&lt;p&gt;为什么可以在不同的包中使用error接口而不用导入？以小写字母开头？&lt;/p&gt;
+&lt;p&gt;error类型像int或string一样是一个“预定义标识符”，不属于任何包，是“全局块”的一部分，能在任何地方使用，无需考虑当前包信息。&lt;/p&gt;
+&lt;h1 id=&#34;stringer接口&#34;&gt;Stringer接口&lt;/h1&gt;
+&lt;p&gt;fmt包定义了fmt.Stringer接口：允许任何类型决定在输出时如何展示，让其他类型满足Stringer接口很简单，只需要定义一个返回string类型的方法。&lt;/p&gt;
+&lt;p&gt;定义：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Stringer interface {
+        String() string
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;比如，我们建立了一个CoffeePot类型来满足Stringer：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type CoffeePot string
+
+func (c CoffeePot) String() string {  //满足Stringer接口
+        return string(c) + &amp;#34; coffee pot&amp;#34;  //方法需要返回一个string
+}
+
+func main() {
+        coffeePot := CoffeePot(&amp;#34;LuxBrew&amp;#34;)
+        fmt.Println(coffeePot.String())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;许多在fmt包中的函数都会判断传入的参数是否满足stringer接口，若满足就调用String方法，这些函数包括Print、Println和Printf等，CoffeePot满足了Stringer，可以把CoffeePot值直接传入这些函数，并且CoffeePot的String方法的返回值会在输出时使用：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;coffeePot ：= CoffeePot(&amp;#34;LuxBrew&amp;#34;)  //创建一个CoffeePot值
+fmt.Print(coffeePot, &amp;#34;\n&amp;#34;)
+fmt.Println(coffeePot)
+fmt.Printf(&amp;#34;%s&amp;#34;, coffeePot)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;LuxBrew coffee pot  //String方法的返回值在输出中使用
+LuxBrew coffee pot
+LuxBrew coffee pot
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;空接口&#34;&gt;空接口&lt;/h1&gt;
+&lt;p&gt;我们接触的大多数函数，只能使用指定的类型来调用，但是fmt.Println这样的fmt函数却能接受任何类型，这是怎么做到的？&lt;/p&gt;
+&lt;p&gt;来看下go doc： &lt;code&gt;go doc fmt Println&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;这是一个可变参数的函数，意味着它可以接受任何个数的参数；接口声明定义了方法，类型必须实现这个方法才能满足接口。若定义一个不需要任何方法的接口，它会被任何类型满足。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Interface{}&lt;/code&gt;类型称为空接口，用来接受任何类型的值，不需要实现任何方法来满足空接口，所有的类型都满足空接口。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Anything interface {}
+
+func AcceptAnything(thing interface{}) {
+}
+
+func main() {
+        AcceptAnything(123.123)
+        AcceptAnything(&amp;#34;A string&amp;#34;)
+        AcceptAnything(true)
+        AcceptAnything(Whistle(&amp;#34;xxxxxx&amp;#34;))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;先不要对所有的函数使用空接口，若有一个空接口类型的值，无法做任何操作。&lt;/p&gt;
+&lt;p&gt;不要尝试在空接口值上调用任何函数，如果有一个接口类型的值，只能调用接口上的方法。空接口没有任何方法，意味着没法调用空接口类型值的任何方法。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func AcceptAnything(thing interface{}) {
+        fmt.Println(thing)
+        thing.MakeSound()  //尝试在空接口值上调用方法
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;thing.MakeSound undefined (type interface {} is interface with no mehtods)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;为了在空接口类型的值上调用方法，需要使用类型断言来获得具体类型的值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func AcceptAnything(thing interface{}) {
+        fmt.Println(thing)
+        whistle, ok := thing.(Whistle)  //使用类型断言来获得Whistle
+	if ok {
+                whistle.MakeSound()  //调用Whistle上的方法
+	}
+}
+
+func main() {
+        AcceptAnything(3.1415)
+        AcceptAnything(Whistle(&amp;#34;Toyco Canary&amp;#34;))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;最好写一个接收特定具体类型的函数：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func AcceptWhistle(whistle Whistle) {  //接收Whistle
+        fmt.Println(whistle)
+        whistle.MakeSound()  //调用方法，不需要类型转换
+}
+&lt;/code&gt;&lt;/pre&gt;</description>
     </item>
     
     <item>
@@ -3185,406 +3703,6 @@ func double(number *int) {   //接受一个指针而不是一个int值
         *number *= 2    //更新指针处的值
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在double函数中，需要更新number参数的类型来获取 *int 而不是 int ，然后修改函数代码来更新number指针处的值，而不是直接更新变量，在main函数中，只需更新对double的调用来传递一个指针，而不是一个直接的值。 当运行更新后的代码时，指向amount变量的指针将被传递给double函数，double函数将获取该指针处的值并使其加倍，从而更改amount变量中的值。&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>2.条件与循环</title>
-      <link>https://tinklespring.com/posts/2.%E6%9D%A1%E4%BB%B6%E4%B8%8E%E5%BE%AA%E7%8E%AF/</link>
-      <pubDate>Wed, 31 May 2023 11:33:55 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/2.%E6%9D%A1%E4%BB%B6%E4%B8%8E%E5%BE%AA%E7%8E%AF/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;接下来，go的条件与循环～&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;调用方法&#34;&gt;调用方法&lt;/h1&gt;
-&lt;p&gt;定义方法：与给定类型的值相关联的函数。&lt;/p&gt;
-&lt;p&gt;示例：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;time&amp;#34;
-)
-
-func main() {
-	var now time.Time = time.Now()
-	var year int = now.Year()
-	fmt.Println(year)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;time 包有一个表示日期（年、月、日）和时间（小时、分钟、秒等）的Time类型。每一个&lt;code&gt;time.Time&lt;/code&gt;值都有一个返回年份的Year方法。&lt;br&gt;
-time.Now 函数返回当前日期和时间的新Time值，将其存储在now变量中，然后对now引用的值调用Year方法。&lt;br&gt;
-&lt;code&gt;方法是特定类型的值关联的函数&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;strings 包有一个Replacer类型，可以在字符串中搜索子字符串，并且在每次该子字符串出现的地方用另一个字符串替换它：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;strings&amp;#34;
-)
-
-func main() {
-	broken := &amp;#34;G# r#cks!&amp;#34;
-	replacer := strings.NewReplacer(&amp;#34;#&amp;#34;, &amp;#34;o&amp;#34;)
-	fixed := replacer.Replace(broken)
-	fmt.Println(fixed)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;strings.NewReplacer 函数接受要替换的字符串（&amp;quot;#&amp;quot;）和要替换为的字符串(&amp;ldquo;o&amp;rdquo;) 的参数，并返回给 strings.Replacer。当我们将一个字符串传递给 Replacer 值的 Replace 方法时，将返回一个完成了替换的字符串。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;点表示右边的东西属于左边&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;函数属于一个包，方法属于一个单独的值，这个值出现在点的左边。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;now.Year()
-replacer.Replace(broken)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上边 &lt;code&gt;now&lt;/code&gt; 为 值，&lt;code&gt;Year&lt;/code&gt; 为 方法名&lt;br&gt;
-&lt;code&gt;replacer&lt;/code&gt; 为 值， &lt;code&gt;Replace&lt;/code&gt; 为方法名&lt;/p&gt;
-&lt;h1 id=&#34;评分&#34;&gt;评分&lt;/h1&gt;
-&lt;p&gt;写一个程序：输入百分比分数，60% 分数及格，不足则不及格，输入的百分比大于或等于60，程序需要给出响应。&lt;/p&gt;
-&lt;h4 id=&#34;获取分数&#34;&gt;获取分数&lt;/h4&gt;
-&lt;p&gt;输入百分比分数，按回车键，把输入的数字存在一个变量中。
-当有一个值时，通常会分配一个变量，但不打算使用时，可以使用空白标识符。为空白标识符分配一个值实际上会丢弃它。在赋值语句中输入一个下划线 &lt;code&gt;_&lt;/code&gt; ，通常在这里输入的是变量名。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;os&amp;#34;
-)
-
-func main() {
-	fmt.Print(&amp;#34;Enter a grade: &amp;#34;)
-	reader := bufio.NewReader(os.Stdin)
-	input, _ := reader.ReadString(&amp;#39;\n&amp;#39;)
-	fmt.Println(input)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;处理错误&#34;&gt;处理错误&lt;/h1&gt;
-&lt;p&gt;若从 ReadString 方法中得到一个错误返回，空白标识符只会导致错误忽略，程序依然继续运行，可能会使用无效的数据。&lt;br&gt;
-log 包有一个 Fatal 函数，可以同时为我们完成两步：将一条消息记录到终端并停止程序运行。（在上下文中，Fatal 是报告一个错误，并杀死你的程序。）&lt;br&gt;
-去掉空白标识符用一个 err 变量替换，可以记录错误，然后将使用 Fatal 函数来记录错误并停止程序运行。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;os&amp;#34;
-)
-
-func main() {
-	fmt.Print(&amp;#34;Enter a grade: &amp;#34;)
-	reader := bufio.NewReader(os.Stdin)
-	input, err := reader.ReadString(&amp;#39;\n&amp;#39;)
-	log.Fatal(err)
-	fmt.Println(input)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;条件&#34;&gt;条件&lt;/h1&gt;
-&lt;p&gt;若从键盘读取输入时遇到问题，将其设置为报告错误并停止运行，但是一切正常也停止运行。&lt;br&gt;
-ReadString 这样的函数和方法返回一个错误值nil，基本上意味着什么都没有，如果 err 为 nil ，表示没有错误，我们的程序被设置为只简单报告nil错误，正确做法是，当err变量的值不是nil时才退出程序。&lt;/p&gt;
-&lt;p&gt;可以使用条件语句，只有在满足某个条件时，才导致代码块（一个或多个由花括号&lt;code&gt;{}&lt;/code&gt;包围的语句）被执行的语句。&lt;/p&gt;
-&lt;p&gt;计算表达式，若结果为 true，则执行条件块体中的代码，若为false ，则跳过条件块。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if true {
-      fmt.Println(&amp;#34;xxxx&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if 1 &amp;lt; 2 {
-     fmt.Println(&amp;#34;xxxx&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;go支持条件语句中的多个分支：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if grade == 100 {
-           fmt.Println(&amp;#34;Perfect!&amp;#34;)
-} else if grade &amp;gt;= 60 {
-           fmt.Println(&amp;#34;Pass!&amp;#34;)
-} else {
-           fmt.Println(&amp;#34;Fail!&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;条件语句依赖布尔表达式（计算结果为true或false）来决定是否执行包含的代码。&lt;/p&gt;
-&lt;p&gt;当在条件为假时执行，可以使用 &lt;code&gt;!&lt;/code&gt; 布尔求反运算符。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if !true {
-    fmt.Println(&amp;#34;xxx&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;希望两个条件都为真时运行，使用&lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; （“与”）运算符，两者之一为真时运行，使用&lt;code&gt;||&lt;/code&gt;（“或”）运算符。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if true &amp;amp;&amp;amp; true {
-    fmt.Println(&amp;#34;xxxxx&amp;#34;)
-}
-
-if false || true {
-    fmt.Println(&amp;#34;xxxxx&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;go语言不要求 if 语句的条件用圆括号括起来。&lt;/p&gt;
-&lt;h1 id=&#34;有条件地记录致命错误&#34;&gt;有条件地记录致命错误&lt;/h1&gt;
-&lt;p&gt;若 err 变量中的值为 nil ，表示从键盘读取成功。更新代码记录错误，在err不是 nil 时退出。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;os&amp;#34;
-)
-
-func main() {
-	fmt.Print(&amp;#34;Enter a grade: &amp;#34;)
-	reader := bufio.NewReader(os.Stdin)
-	input, err := reader.ReadString(&amp;#39;\n&amp;#39;)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(input)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;重新运行程序，可以看到可以正常运行，若读取用户输入有错误，也可以看到这些错误。&lt;/p&gt;
-&lt;h1 id=&#34;避免遮盖名字&#34;&gt;避免遮盖名字&lt;/h1&gt;
-&lt;p&gt;避免使用缩写，但是命名 error变量不对，会遮盖一个名为 error 的类型名称。&lt;br&gt;
-声明变量时，应确保与任何现有的函数、包、类型或其他变量的名称不同。 若在封闭范围内存在同名的东西，变量将对其进行遮盖，也就是说优先级高，这不是一件好事。&lt;br&gt;
-但是若想访问变量遮盖的类型、函数或包，将得到变量中的值，此时，会导致编译错误。&lt;/p&gt;
-&lt;h1 id=&#34;将字符串转换为数字&#34;&gt;将字符串转换为数字&lt;/h1&gt;
-&lt;p&gt;&lt;code&gt;strings&lt;/code&gt; 包中有个 &lt;code&gt;TrimSpace&lt;/code&gt;函数，删除字符串开头和结尾的所有空白字符（换行符、制表符和常规空格）。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;s := &amp;#34;\t xxx \n&amp;#34;
-fmt.Println(strings.TrimSpace(s))
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;字符串转换为数字，使用 &lt;code&gt;strconv&lt;/code&gt;包中的 &lt;code&gt;ParseFloat&lt;/code&gt;函数转换为 float64值。&lt;br&gt;
-&lt;code&gt;grade, err := strconv.ParseFloat(input, 64)&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;块和变量的作用域&#34;&gt;块和变量的作用域&lt;/h1&gt;
-&lt;p&gt;声明的每个变量都有一个作用域，可以在作用域内的任何地方被访问，但是在作用域之外访问会报错。&lt;br&gt;
-变量的作用域由其声明所在的块和嵌套在该块中任何块组成。&lt;/p&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/2-%e6%9d%a1%e4%bb%b6%e4%b8%8e%e5%be%aa%e7%8e%af/%e5%9d%97%e5%92%8c%e5%8f%98%e9%87%8f%e4%bd%9c%e7%94%a8%e5%9f%9f.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;packageVar 变量的作用域是整个 main 包，可以在包中定义的任何函数内的任何位置访问 packageVar。&lt;/li&gt;
-&lt;li&gt;functionVar 变量作用域是其声明所在的整个函数，包括嵌套在该函数中的if块。&lt;/li&gt;
-&lt;li&gt;conditionalVar 变量作用域仅限于if块，当试图在if块外访问conditionalVar，将报错。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&#34;修改后的程序&#34;&gt;修改后的程序&lt;/h1&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/2-%e6%9d%a1%e4%bb%b6%e4%b8%8e%e5%be%aa%e7%8e%af/%e5%ae%8c%e6%95%b4%e7%a8%8b%e5%ba%8f.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;h1 id=&#34;短变量声明中只有一个变量必须是新的&#34;&gt;短变量声明中只有一个变量必须是新的&lt;/h1&gt;
-&lt;p&gt;不能对一个变量声明两次。&lt;br&gt;
-但是当一个变量名在同一个作用域中被声明两次时，会编译报错。&lt;/p&gt;
-&lt;p&gt;但是，短变量声明中至少有一个变量名是新的，新变量名被视为声明，现有的被视为赋值。&lt;/p&gt;
-&lt;h1 id=&#34;练习&#34;&gt;练习&lt;/h1&gt;
-&lt;p&gt;需求：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;生成一个1到100之间的随机数，将其存储为目标数，供玩家猜测。&lt;/li&gt;
-&lt;li&gt;提示玩家猜测目标数是什么，存储他们的回答。&lt;/li&gt;
-&lt;li&gt;若玩家猜测的数小于目标数，就说“你猜低了”，若大于目标数，就说“你猜高了” 。&lt;/li&gt;
-&lt;li&gt;允许最多猜10次，在每次猜之前，让他们知道还剩多少次。&lt;/li&gt;
-&lt;li&gt;若猜的与目标数相同，就说“你猜对了”，然后不再问新的猜测。&lt;/li&gt;
-&lt;li&gt;若玩家用完了所有轮次也没猜对，就说“sorry，你没猜对，它是：[目标数]”&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&#34;包名与导入路径&#34;&gt;包名与导入路径&lt;/h1&gt;
-&lt;p&gt;math/rand  包有一个 Intn 函数，可以生成一个随机数。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import ()
-    &amp;#34;fmt&amp;#34;
-    &amp;#34;math/rand&amp;#34;
-
-func main() {
-    target := rand.Intn(100) + 1
-    fmt.Println(target)
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;math/rand&lt;/code&gt; 指的是包的导入路径，不是名称，导入路径是一个独特的字符串，用于标识包以及在导入语句中使用的包，一旦导入包，就可以通过包名来引用。&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;导入路径&lt;/th&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;包名&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;fmt&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;fmt&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;log&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;log&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;strings&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;strings&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;archive&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;archive&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;archive/tar&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;tar&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;archive/zip&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;zip&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;math&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;math&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;math/cmplx&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;cmplx&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&amp;ldquo;math/rand&amp;rdquo;&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;rand&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;有些包，导入路径与包名都相同，有些包属于类似的类别，被分组在类似的导入路径前缀。&lt;br&gt;
-go语言不要求包名与其导入路径有任何关系，按惯例，导入路径的最后（或唯一）一段也用作包名，比如“archive” 包名为 archive，若导入路径为 “archive/zip” 则包名为 zip 。&lt;/p&gt;
-&lt;h1 id=&#34;生成随机数&#34;&gt;生成随机数&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;math/rand&amp;#34;
-	&amp;#34;time&amp;#34;
-)
-
-func main() {
-	seconds := time.Now().Unix()
-	rand.Seed(seconds)
-	target := rand.Intn(100) + 1
-	fmt.Println(&amp;#34;I&amp;#39;ve chosen a random number between 1 and 100.&amp;#34;)
-	fmt.Println(&amp;#34;Can you guess it?&amp;#34;)
-	fmt.Println(target)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;从键盘获取整数&#34;&gt;从键盘获取整数&lt;/h1&gt;
-&lt;p&gt;不需要将输入转换为float64，需要将其转换为int（因为只使用整数）。将把从键盘读取的字符串传递给 strconv 包的 Atoi （字符串转整数）函数，不是它的 ParseFloat 函数，Atoi会给一个整数作为其返回值。&lt;/p&gt;
-&lt;h1 id=&#34;将猜测与目标进行比较&#34;&gt;将猜测与目标进行比较&lt;/h1&gt;
-&lt;p&gt;下一步将用户的猜测与随机生成的数字进行比较；&lt;br&gt;
-若值低于目标值，打印信息，说猜低了，否则若猜测值大于目标值，打印信息说猜高了。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;math/rand&amp;#34;
-	&amp;#34;os&amp;#34;
-	&amp;#34;strconv&amp;#34;
-	&amp;#34;strings&amp;#34;
-	&amp;#34;time&amp;#34;
-)
-
-func main() {
-	seconds := time.Now().Unix()
-	rand.Seed(seconds)
-	target := rand.Intn(100) + 1
-	fmt.Println(&amp;#34;I&amp;#39;ve chosen a random number between 1 and 100.&amp;#34;)
-	fmt.Println(&amp;#34;Can you guess it?&amp;#34;)
-	fmt.Println(target)
-
-	reader := bufio.NewReader(os.Stdin)
-
-	fmt.Print(&amp;#34;Make a guess: &amp;#34;)
-	input, err := reader.ReadString(&amp;#39;\n&amp;#39;)
-	if err != nil {
-		log.Fatal(err)
-	}
-	input = strings.TrimSpace(input)
-	guess, err := strconv.Atoi(input)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if guess &amp;lt; target {
-		fmt.Println(&amp;#34;your guess was low&amp;#34;)
-	} else if guess &amp;gt; target {
-		fmt.Println(&amp;#34;your guess was high&amp;#34;)
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;循环&#34;&gt;循环&lt;/h1&gt;
-&lt;p&gt;循环以 for 关键字开头：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;一个初始化（或init）语句，用于初始化一个变量&lt;/li&gt;
-&lt;li&gt;一个条件表达式，用于决定何时中断循环&lt;/li&gt;
-&lt;li&gt;一个标志（post）语句，在循环的每次迭代后运行&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/2-%e6%9d%a1%e4%bb%b6%e4%b8%8e%e5%be%aa%e7%8e%af/%e5%be%aa%e7%8e%af.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;++&lt;/code&gt; 与 &lt;code&gt;--&lt;/code&gt; 经常用于循环的标志（post）语句中，&lt;code&gt;++&lt;/code&gt; 在每次求值时都会加1， &lt;code&gt;--&lt;/code&gt; 则会减1。&lt;/p&gt;
-&lt;p&gt;还包括赋值运算:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;+=&lt;/code&gt; 加上另一个值，然后将结果赋回给该变量&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;-=&lt;/code&gt; 减去另一个值，然后将结果赋回给该变量
-&lt;code&gt;+=&lt;/code&gt; 与 &lt;code&gt;-=&lt;/code&gt; 可以在循环中用于1以外的增量计数。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for x := 1; x &amp;lt;= 5; x += 2 {
-       fmt.Println(x)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;初始化和标志post语句是可选的&#34;&gt;初始化和标志（post）语句是可选的&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;x := 1
-for x &amp;lt;= 3 {
-       fmt.Println(x)
-       x++
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用continue与break跳过循环&#34;&gt;使用“continue”与“break”跳过循环&lt;/h1&gt;
-&lt;p&gt;go 提供了两个控制循环流的两个关键字：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;continue ：立即跳转到循环的下一个迭代，不需要在循环块中运行任何其他代码&lt;/li&gt;
-&lt;li&gt;break：    立即跳出循环，不再执行循环块中的代码，也不再运行循环，执行将移动到循环之后的语句中。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for x := 1, x &amp;lt;= 3; x++ {
-       fmt.Println(&amp;#34;before continue&amp;#34;)
-       continue
-       fmt.Println(&amp;#34;after continue&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;字符串“after continue”将永远不会打印输出。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for x := 1; x &amp;lt;= 3; x++ {
-       fmt.Println(&amp;#34;before break&amp;#34;)
-       break
-       fmt.Println(&amp;#34;after break&amp;#34;)
-}
-fmt.Println(&amp;#34;after loop&amp;#34;)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在循环第一次迭代中，“before break”被打印出，但随后break立即跳出循环，不打印 “after break”，也不再运行循环。&lt;/p&gt;
-&lt;h1 id=&#34;完整代码&#34;&gt;完整代码&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;math/rand&amp;#34;
-	&amp;#34;os&amp;#34;
-	&amp;#34;strconv&amp;#34;
-	&amp;#34;strings&amp;#34;
-	&amp;#34;time&amp;#34;
-)
-
-func main() {
-	seconds := time.Now().Unix() //获取当前日期和时间的整数形式
-	rand.Seed(seconds)           //播种随机数生成器
-	target := rand.Intn(100) + 1 //生成一个介于1-100之间的整数
-	fmt.Println(&amp;#34;I&amp;#39;ve chosen a random number between 1 and 100.&amp;#34;)
-	fmt.Println(&amp;#34;Can you guess it?&amp;#34;)
-
-	reader := bufio.NewReader(os.Stdin) //创建一个buffio.Reader 允许读取键盘输入
-	success := false                    //设置为默认打印失败信息
-	for guesses := 0; guesses &amp;lt; 10; guesses++ {
-		fmt.Println(&amp;#34;you have&amp;#34;, 10-guesses, &amp;#34;guesses left.&amp;#34;)
-		fmt.Print(&amp;#34;Make a guess: &amp;#34;)
-		input, err := reader.ReadString(&amp;#39;\n&amp;#39;) //读取用户输入，直到按enter键
-		if err != nil {
-			log.Fatal(err)
-		} //若出现错误则打印信息并退出
-		input = strings.TrimSpace(input)  //删除换行符
-		guess, err := strconv.Atoi(input) //将输入字符转换为整数
-		if err != nil {
-			log.Fatal(err)
-		} //若出现错误则打印信息并退出
-
-		if guess &amp;lt; target {
-			fmt.Println(&amp;#34;your guess was low&amp;#34;)
-		} else if guess &amp;gt; target {
-			fmt.Println(&amp;#34;your guess was high&amp;#34;)
-		} else {
-			success = true //阻止显示失败信息
-			fmt.Println(&amp;#34;good job! you guessed it!&amp;#34;)
-			break //退出循环
-		}
-	}
-
-	if !success { //如果 “success” 是false，告诉玩家结果
-		fmt.Println(&amp;#34;sorry,you didn&amp;#39;t guess number.It was:&amp;#34;, target)
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在循环之后，添加了一个if块来打印失败消息，if块只有在条件的计算结果为true时运行，我们希望success为false时执行打印，所以添加布尔求反运算符&lt;code&gt;!&lt;/code&gt;。&lt;/p&gt;
 </description>
     </item>
     

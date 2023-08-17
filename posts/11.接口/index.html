@@ -19,9 +19,514 @@
 <p>有时并不关心一个值的特定类型，只需知道它能做特定的事情，能够在其上调用特定的接口。这就是Go接口的目标：允许定义能够保存任何类型的变量和函数参数，前提是定义了特定的方法。</p>
 </blockquote>
 <h1 id="具有相同方法的两种不同类型">具有相同方法的两种不同类型</h1>
-</article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
+<pre tabindex="0"><code>package gadget
+
+import &#34;fmt&#34;
+
+type TapePlayer struct {
+	Batteries string
+}
+
+func (t TapePlayer) Play(song string) {
+	fmt.Println(&#34;Playing&#34;, song)
+}
+func (t TapePlayer) Stop() {
+	fmt.Println(&#34;Stopped!&#34;)
+}
+
+type TapeRecorder struct {
+	Microphones int
+}
+
+func (t TapeRecorder) Play(song, string) { //有个与TapePlayer相同的Play方法
+	fmt.Println(&#34;Playing&#34;, song)
+}
+func (t TapeRecorder) Record() {
+	fmt.Println(&#34;Recording&#34;)
+}
+func (t TapeRecorder) Stop() { //有个与TapePlayer相同的Stop方法
+	fmt.Println(&#34;Stopped!&#34;)
+}
+</code></pre><p>TapePlayer类型有一个Play方法来模拟播放歌曲，一个Stop方法来停止播放，TapeRecorder类型也有Play和Stop方法，还有一个Record方法。</p>
+<h1 id="只能接受一种类型的方法参数">只能接受一种类型的方法参数</h1>
+<p>一个使用gadget包的示例：定义一个playList函数，接收一个TapePlayer值和一个在其上播放的一组歌名的切片，函数循环变量切片的每个歌名，并将它传递给TapePlayer的Play方法，当它播放列表后，调用TapePlayer的Stop方法。然后在main中，创建一个TapePlayer和一个歌单切片，并将其传递给playList。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;xxx/xxx/gadget&#34;
+
+func playList(device gadget.TapePlayer, songs []string) {
+	for _, song := range songs { //循环每首歌曲
+                device.Play(song)  //播放当前歌曲
+	}
+        device.Stop()  //播放完成后，停止播放
+}
+
+func main() {
+        player := gadget.TapePlayer{}  //创建一个TapePlayer
+        mixtape := []string{&#34;Jessie&#39;s Girl&#34;, &#34;Whip It&#34;, &#34;9 to 5&#34;}  //创建一个歌名的切片
+        playList(player, mixtape)  //使用TapePlayer播放歌曲
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Playing Jessie&#39;s Girl
+Playing Whip It
+Playing 9 to 5
+Stopped!
+</code></pre><p>PlayList函数使用TapePlayer值工作正常，但是希望它可以使用TapeRecorder作为参数，但playList函数需要一个TapePlayer类型，尝试传入其他类型会编译错误：</p>
+<pre tabindex="0"><code>func main() {
+         player := gadget.TapeRecorder{}
+         mixtape := []string{&#34;Jessie&#39;s Girl&#34;, &#34;Whip It&#34;, &#34;9 to 5&#34;}
+         playList(player, mixtape)
+}
+</code></pre><p>playList函数只接受TapePlayer值。</p>
+<h1 id="接口">接口</h1>
+<p>当在电脑上安装程序时，通常希望程序提供一种交互的方式，希望文字处理器提供键入文字的地方。这一组程序提供的用来交互的控制方法通常称为接口。</p>
+<p><code>一个接口是特定值预期具有的一组方法。</code></p>
+<p>在Go中，一个接口被定义为特定值预期具有的一组方法，可以把接口看作需要类型实现的一组行为。</p>
+<p>使用 <code>interface</code> 关键字定义一个接口类型，后面跟着一个花括号，内部含有一组方法，以及方法期望的参数和返回值。<br>
+<img  src="/img/Golang/11-interface/interface.png"
+        alt/></p>
+<p>任何拥有接口定义的所有方法的类型被称作<code>满足那个接口</code>，一个满足接口的类型可以用在任何需要接口的地方。</p>
+<p>方法名称、参数类型（可能没有）和返回值（可能没有）都需要与接口中定义的一致，除了接口中列出的方法外，类型还可以有更多的方法，但不能缺少接口中的任何方法，否则就不满足那个接口。</p>
+<p>一个类型可以满足多个接口，一个接口可以有多个类型满足它。</p>
+<h1 id="定义满足接口的类型">定义满足接口的类型</h1>
+<p>一个名为mypkg的包，定义了一个有三个方法的名为MyInterface的接口，然后定义了一个名字MyType的类型，正好可满足MyInterface。</p>
+<p>为了满足MyInterface接口需要有三个方法：MethodWithoutParameters方法，接受float64参数的MethodWithParameter方法，返回string类型的MethodWithReturnValue方法。然后声明另外一个类型MyType，为了使MyType满足MyInterface，定义了接口需要的所有方法，另外包含一个并不属于接口的额外的方法。</p>
+<pre tabindex="0"><code>package mypkg
+
+import &#34;fmt&#34;
+
+type MyInterface interface {  //声明一个接口类型
+        MethodWithoutParameters()  //一个类型满足接口，如果有这个方法
+        MethodWithParameter(float64)
+        MethodWithReturnValue() string
+}
+
+type MyType int  //声明一个类型，让它满足MyInterface
+
+func (m MyType) MethodWithoutParameters() {  //第一个需要的方法
+        fmt.Println(&#34;MethodWithoutParameters called&#34;)
+}
+func (m MyType) MethodWithParameter(f float64) {  //第二个需要的方法
+        fmt.Println(&#34;MethodWithParameter called with&#34;, f)
+}
+func (m MyType) MethodWithReturnValue() string {  //第三个需要的方法
+        return &#34;Hi from MethodWithReturnValue&#34;
+}
+func (my MyType) MethodNotInterface() {  //一个类型即使有额外的不属于接口的方法，仍可以满足接口
+        fmt.Println(&#34;MethodNotInterface called&#34;)
+}
+</code></pre><p>其他语言中可能需要明确，MyType满足MyInterface，但在Go中是自动发生的，若一个类型包含接口中声明的所有方法，那么它可以在任何需要接口的地方使用，而不需要更多声明。</p>
+<p>测试mypkg：一个接口类型的变量能够保存任何满足接口的类型的值，下面代码声明了一个MyInterface类型的名为value的变量，然后创建一个MyType的值并赋给value，（这样可以，因为Mytype满足MyInterface），然后可以在value上调用接口的任意方法。</p>
+<pre tabindex="0"><code>package main
+
+import (
+        &#34;fmt&#34;
+        &#34;mypkg&#34;
+)
+
+func main() {
+        var value mypkg.MyInterface  //声明一个接口类型的变量
+        value = mypkg.MyType(5)  //MyType的值满足MyInterface，所以可以将值赋给MyInterface的变量
+        value.MethodWithoutParameters()
+        value.MethodWithParameter(127.3)  //可以调用MyInterface的任何方法
+        fmt.Println(value.MethodWithReturnValue())
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>MethodWithoutParameters called
+MethodWithParameter called with 127.3
+Hi from MethodWithReturnValue
+</code></pre><hr>
+<p>接口只是一种约定或合同，描述了某种行为（方法），任何类型只要实现了这些方法，就可以说它“满足”了这个接口，这是Go多态性的基础。不需要像其他语言中那样显式说“这个类型实现了这个接口”，如果它有正确的方法，就自动满足接口。</p>
+<p>&ldquo;类型满足接口&quot;意味着可以写一个函数，它接受定义的接口作为参数，并期望该参数有其包含的方法，而不必关心这个参数的实际类型。</p>
+<h1 id="具体类型和接口类型">具体类型和接口类型</h1>
+<p>之前定义的所有类型都是具体类型，一个具体类型不仅定义了它的值可以做什么（在其上可以调用哪些方法），也定义了它们是什么：它们定义了保存值的数据的基础类型。</p>
+<p>接口类型并不描述哪个值，不会说它的基础类型是什么，或者数据如何存储，仅仅描述这个值能做什么（它有哪些方法）。</p>
+<h1 id="分配满足接口的任何类型">分配满足接口的任何类型</h1>
+<p>当有一个接口类型的变量时，它可以保存满足此接口的任何类型的值。</p>
+<p>有Whistle和Horn类型，都有MakeSound方法，可以创建一个NoiseMaker接口来代替声明了MakeSound方法的任何类型。若定义了NoiseMaker类型的toy变量，可以将Whistle和Horn值赋给它（或者之后定义的任何类型，只要它定义了MakeSound方法）。</p>
+<p>可以调用任何赋给toy变量的值的MakeSound方法，虽然并不知道toy保存的值的具体类型是什么，但我们知道它能做什么：发出声音。若它的类型没有MakeSound方法，那么不满足NoiseMaker接口，将无法赋变量它。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+type Whistle string
+
+func (w Whistle) MakeSound() {  //有MakeSound方法
+	fmt.Println(&#34;Tweet!&#34;)
+}
+
+type Horn string
+
+func (h Horn) MakeSound() {  //同样有MakeSound方法
+	fmt.Println(&#34;Honk!&#34;)
+}
+
+type NoiseMaker interface {  //代表任何含有MakeSound方法的类型
+	MakeSound()
+}
+
+func main() {
+	var toy NoiseMaker
+	toy = Whistle(&#34;Toyco Canary&#34;)  //将一个满足NoiseMaker的类型的值赋给变量
+	toy.MakeSound()
+	toy = Horn(&#34;Toyco Blaster&#34;)  //将另一个满足NoiseMaker的类型的值赋给变量
+	toy.MakeSound()
+}
+</code></pre><p>也可以将函数的参数定义为接口类型（毕竟函数参数也就是变量）。若声明一个play函数来接受NoiseMaker类型，可以传入任何包含了MakeSound方法的值来播放。</p>
+<pre tabindex="0"><code>func play(n NoiseMaker) {
+        n.MakeSound()
+}
+
+func main() {
+        play(Whistle(&#34;Toyco Canary&#34;))
+        play(Horn(&#34;Toyco Blaster&#34;))
+}
+</code></pre><h1 id="只能调用接口中定义的方法">只能调用接口中定义的方法</h1>
+<p>一旦给一个接口类型的变量（或方法的参数）赋值，就只能调用接口定义的方法。</p>
+<p>示例：<br>
+加入创建了Robot类型，除了有一个MakeSound方法外，还有一个Walk方法，在play函数中增加对Walk的调用，并将Robot的值传入play。但是代码运行失败，因为NoiseMaker值没有Walk方法。</p>
+<p>为什么会这样？Robot值的确有Walk方法，我们传入play函数的并不是Robot值，而是NoiseMaker。假如传入Whistle或者Horn呢？它们没有包含Walk方法。</p>
+<p>当有接口类型的变量时，唯一能确定的方法是接口中的方法，并且这些是Go允许调用的方法。有一种能够获取值的具体类型的方法，这样就可以调用更多特定的方法了。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+type Whistle string
+
+func (w Whistle) MakeSound() {
+	fmt.Println(&#34;Tweet!&#34;)
+}
+
+type Horn string
+
+func (h Horn) MakeSound() {
+	fmt.Println(&#34;Honk!&#34;)
+}
+
+type Robot string //声明一个新的Robot类型
+
+func (r Robot) MakeSound() { //Robot满足NoiseMaker接口
+	fmt.Println(&#34;Beep Boop&#34;)
+}
+
+func (r Robot) Walk() { //一个额外的方法
+	fmt.Println(&#34;Powering legs&#34;)
+}
+
+type NoiseMaker interface {
+	MakeSound()
+}
+
+func play(n NoiseMaker) {
+	n.MakeSound() //正确，NoiseMaker接口的一部分
+	n.Walk()      //错误，并非NoiseMaker的一部分
+}
+
+func main() {
+	play(Robot(&#34;Botco Ambler&#34;))
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>n.Walk undefined (type NoiseMaker has no field or method Walk)
+</code></pre><h1 id="使用接口修复playlist函数">使用接口修复playList函数</h1>
+<p>使用一个接口来允许playList函数使用两种具体类型（TapePlayer和TapeRecorder）的Play和Stop方法。</p>
+<p>在main包中，声明了一个Player接口（也可以在gadget包中定义，但是接口定义在调用的包中会更灵活），指定接口需要有一个string参数的Play方法和一个无参的Stop方法，这意味着TapePlayer和TapeRecorder类型会满足Player接口。</p>
+<p>更新playList函数来接受满足Player的任何值，而不是特定类型的TapePlayer，也更新player变量的类型，有个TapePlayer改为Player，允许将TapePlayer和TapeRecorder类型赋给player，然后将两种类型的值都传递给playList。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;xxx/xxx/gadget&#34;
+
+type Player interface {  //定义一个接口类型
+        Play(string)  //要求一个接受string参数的Play方法
+        Stop()  //要求一个Stop方法
+}
+
+func playList(device Player, songs []string) {  //接受任何其他的类型，而不只是TapePlayer
+	for _, song := range songs {
+                device.Play(song)
+	}
+        device.Stop()
+}
+
+func main() {
+        mixtape := []string{&#34;Jessie&#39;s Girl&#34;, &#34;Whip It&#34;, &#34;9 to 5&#34;}  //创建一个歌名的切片
+        var player Player = gadget.TapePlayer{}  //修改变量的类型来保存任何Player
+        playList(player, mixtape)  //给playList传入TapePlayer
+        player = gadget.TapeRecorder{}
+        playList(player, mixtape)   //给playList传入TapeRecorder
+}
+</code></pre><p><code>若一个类型声明了指针接收器方法，那么就只能将那个类型的指针传递给接口变量。</code></p>
+<p>Switch类型的toggle方法需要使用指针类型的接收器，这样才能修改接收器。</p>
+<pre tabindex="0"><code>pacakge main
+
+import &#34;fmt&#34;
+
+type Switch string
+
+func (s *Switch) toggle() {
+        if *s == &#34;on&#34; {
+                *s = &#34;off&#34;
+	} else {
+                *s = &#34;on&#34;
+	}
+        fmt.Println(*s)
+}
+
+type Toggleable interface {
+        toggle()
+}
+
+func main() {
+        s := Switch(&#34;off&#34;)
+        var t Toggleable = s
+        t.toggle()
+        t.toggle()
+}
+</code></pre><p>但是当把Switch的值赋给Toggleable的时候导致错误：</p>
+<pre tabindex="0"><code>Switch does not implement Toggleable (toggle method has pointer receive)
+</code></pre><p>Go判断值是否满足一个接口的时候，指针方法并没有包含直接的值，但是它们包含指针，所以要将一个指向Switch的指针赋值给Toggleable变量，来代替一个直接Switch值：</p>
+<pre tabindex="0"><code>var t Toggleable = &amp;s  //赋给一个指针
+</code></pre><h1 id="类型断言">类型断言</h1>
+<p>定义了一个新的TryOut函数来测试TapePlayer和TapeRecorder类型的多种方法，TryOut有一个单独的Player接口类型的参数，这样可以传入TapePlayer类型和TapeRecorder类型。</p>
+<p>在TryOut中，调用Player接口中的Play和Stop方法，同样也调用不在Player接口中的Record方法，它定义在TapeRecorder类型中，仅仅将TapeRecorder值传入TryOut。但是，这样不对，若把一个具体类型的值赋给了接口类型的变量（包括函数参数），然后就只能在其上调用接口的方法，不管具体类型还具有何种其他方法。在TryOut函数中，没有TapeRecorder值（具体类型），只有一个Player值（接口类型），并且Player接口并没有Record方法。</p>
+<pre tabindex="0"><code>type Player interface {
+        Play(string)
+        Stop()
+}
+
+func TryOut(player Player) {
+        player.Play(&#34;Test Track&#34;)
+        player.Stop()
+        player.Record()  //不属于Player接口
+}
+
+func main() {
+        TryOut(gadget.TapeRecorder{})  //给函数传入TapeRecorder，满足Player
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>player.Record undefined (type Player has no field or method Record)
+</code></pre><p>我们需要一个方法来取回具体类型（确实含有Record方法）的值。</p>
+<p>若使用类型转换将Player类型的值转换为TapeRecorder类型的值，但是类型转换并不适用于接口类型，所以会产生错误。</p>
+<pre tabindex="0"><code>func TryOut(player Player) {
+        player.Play(&#34;Test Track&#34;)
+        player.Stop()
+        recorder := gadget.TapeRecorder(player)  //类型转换无法工作
+        recorder.Record()
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>cannot convert player (type Player) to type gadget.TapeRecorder: need type assertion
+</code></pre><p>当将一个具体类型的值赋给一个接口类型的变量时，<code>类型断言</code>让你能够取回具体类型。</p>
+<p>这像是一种形式的类型转换。它的语法像函数调用和类型转换的结合体。在一个接口值之后，输入一个点，后面接着一对括号括起来的具体类型（或者是想要断言的值的具体类型）。</p>
+<p><img  src="/img/Golang/11-interface/%e7%b1%bb%e5%9e%8b%e6%96%ad%e8%a8%80.png"
+        alt/></p>
+<p>简单说类型断言就像说某物像“我知道这个变量使用接口类型NoiseMaker，但我很确信这个NoiseMaker实际上是Robot。”</p>
+<p>一旦使用类型断言来取回具体类型的值，可以调用那个类型上的方法，但这方法并不属于接口。</p>
+<p>代码将Robot赋值给了NoiseMaker接口值，可以调用NoiseMaker上的MakeSound方法，因为它是接口的一部分。但是为了调用Walk方法，需要使用类型断言来取回Robot值，一旦获取了Robot（而不是一个NoiseMaker），就能调用它上面的Walk方法。</p>
+<pre tabindex="0"><code>type Robot string
+
+func (r Robot) MakeSound() {
+        fmt.Println(&#34;Beep Boop&#34;)
+}
+
+func (r Robot) Walk() {
+        fmt.Println(&#34;Powering legs&#34;)
+}
+
+type NoiseMaker interface {
+        MakeSound()
+}
+
+func main() {
+        var noiseMaker NoiseMaker = Robot(&#34;Botco Ambler&#34;)  //定义一个接口类型的变量，并且将满足接口的类型值赋给它
+        noiseMaker.MakeSound()  //调用接口中的方法
+        var robot Robot = noiseMaker.(Robot)  //使用类型断言取回具体类型
+        robot.Walk()  //调用在具体类型（而不是接口）上定义的方法
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Beep Boop
+Powering legs
+</code></pre><h1 id="类型断言失败">类型断言失败</h1>
+<p>之前TryOut函数不能在Player值上调用Record方法，因为不是Player接口的一部分；我们传入一个TapeRecorder给TryOut，被赋值给一个Player类型的参数，能够调用Player值的Play和Stop方法，因为都是Player接口的一部分。然后使用一个类型断言来将Player转换回一个TapeRecorder，并调用其上的Record方法。</p>
+<pre tabindex="0"><code>type Player interface {
+        Play(string)
+        Stop()
+}
+
+func TryOut(player Player) {
+        player.Play(&#34;Test Track&#34;)
+        Player.Stop()
+        recorder := player.(gadget.TapeRecorder) //保存TapeRecorder值，使用类型断言来获得一个TapeRecorder值
+        recorder.Record()  //调用仅仅定义在具体类型上的方法
+}
+
+func main() {
+        TryOut(gadget.TapeRecorder{})
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Playing Test Track
+Stopped!
+Recording
+</code></pre><p>对于TapeRecorder，看起来很正常，考虑到类型断言说TryOut的参数实际上是一个TapeRecorder，如果给TryOut传入TapePlayer会如何呢？</p>
+<pre tabindex="0"><code>func main() {
+        TryOut(gadget.TapeRecorder{})
+        TryOut(gadget.TapePlayer{})  //传入一个TapePlayer
+}
+</code></pre><p>当运行时，得到一个运行时异常，尝试断言TapePlayer是一个TapeRecorder无法工作。</p>
+<pre tabindex="0"><code>panic: interface conversion: main.Player is gadget.TapePlayer, not gadget.TapeRecorder
+</code></pre><h1 id="当类型断言失败时避免异常">当类型断言失败时避免异常</h1>
+<p>如果类型断言被用于仅有一个返回值的情况，并且原始的类型不与断言的类型相同，程序会在运行时（不在编译时）出现异常：</p>
+<pre tabindex="0"><code>var player Player = gadget.TapePlayer{}
+recorder := player.(gadget.TapeRecorder)  //断言原类型是TapeRecorder，但它实际上是TapePlayer
+</code></pre><pre tabindex="0"><code>panic: interface conversion: main.Player is gadget.TapePlayer, not gadget.TapeRecorder
+</code></pre><p>如果类型断言被用于期待多个返回值的情况，能有第二个可选的返回值来表明断言是否成功。（并且断言并不会在不成功时出现异常。）第二个值是一个bool，并且当原类型和断言类型相同时，返回true，否则返回false。可以对第二个返回值做任何操作，但按惯例，通常被赋给一个名为ok的变量。</p>
+<pre tabindex="0"><code>var player Player = gadget.TapePlayer{}
+recorder, ok := player.(gadget.TapeRecorder)  //将第二个返回值赋给ok变量
+if ok {
+        recorder.Record()  //如果原始类型是TapeRecorder，调用值上的Record
+} else {
+        fmt.Println(&#34;Player was not a TapeRecorder&#34;)  //否则报告断言失败
+}
+</code></pre><p>具体类型是TapePlayer，而不是TapeRecorder，所以断言失败，ok返回是false，if语句的else执行，一个运行时异常被避免。</p>
+<p>当使用类型断言时，如果不能完全确定接口的原类型是什么，应该使用可选ok值来处理与期望的类型不同的情况，避免一个运行时异常。</p>
+<h1 id="使用类型断言测试tapeplayer和taperecorder">使用类型断言测试TapePlayer和TapeRecorder</h1>
+<p>接下来修复TryOut函数以适应TapePlayer和TapeRecorder值，与忽略类型断言的第二个返回值不同，我们将它赋值给一个ok变量，如果类型断言成功，ok变量会为true（标识recorder变量保存了一个TapeRecorder值，准备调用Record方法），否则为false（标识调用Record不安全）。将Record方法的调用包裹在if语句中来确保它仅仅在类型断言成功的情况下才会被调用。</p>
+<pre tabindex="0"><code>type Player interface {
+        Play(string)
+        Stop()
+}
+
+func TryOut(player Player) {
+        player.Play(&#34;Test Track&#34;)
+        player.Stop()
+        recorder, ok := player.(gadget.TapeRecorder)  //将第二个返回值赋给变量
+	if ok {  //仅仅在原值是TapeRecorder的时候调用Record方法
+                recorder.Record()
+	}
+}
+
+func main() {
+        TruOut(gadget.TapeRecorder{})
+        TryOut(gadget.TapePlayer{})
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>Playing Test Track  //TapeRecorder被传入
+Stopped!
+Recording  //类型断言成功，Record被调用
+Playing Test Track  //TapePlayer被传入
+Stopped!  //类型断言未成功，Record没有被调用
+</code></pre><p>与之前一样，在main方法中，首先传入了TapeRecorder值调用TryOut，TryOut获取传入的Player接口值，并调用Play和Stop方法。Player的值的具体类型是TapeRecorder的断言成功了，然后Record方法在TapeRecorder值上被调用。然后传入TapePlayer调用TryOut，这个调用在之前程序中停止，因为类型断言异常。Play和Stop被调用，类型断言失败，因为Player值保存着TapePlayer而不是TapeRecorder，因为捕获了ok值中的第二个返回值，类型断言不会导致异常，因为仅仅将ok值设置为false，导致if语句中的代码不被执行，也就导致了Record没有被调用。（因为TapePlayer值没有Record方法）</p>
+<h1 id="error接口">error接口</h1>
+<p><code>一个错误值就是任何含有名为Error的方法的值，此方法返回string</code>。</p>
+<pre tabindex="0"><code>type error interface {
+        Error() string
+}
+</code></pre><p>声明一个接口的error类型意味着，若具有一个返回string的Error方法，就满足error接口，并且它是error的值。这意味着能定义自己的类型并用在任何需要error值的地方。</p>
+<p>ComedyError类型，有返回string的Error方法，满足error接口，就能将它赋值给error类型的变量：</p>
+<pre tabindex="0"><code>type ComedyError string  //定义一个以string为基础类型的类型
+func (c ComedyError) Error() string {  //满足error接口
+        return string(c)  //Error方法需要返回一个string，所以做个类型转换
+}
+
+func main() {
+        var err error  //声明一个error类型的变量
+        err = ComedyError(&#34;What&#39;s a programmer&#39;s favorite beer? Logger!&#34;)  //ComedyError满足error接口，所能把它赋值给变量
+        fmt.Println(err)
+}
+</code></pre><p>如果需要一个error值，也需要追踪除了错误信息字符串之外更多的信息，可以创建自己的满足error接口的类型并保存需要的信息。</p>
+<p>例：有一个程序监控一些设备保证它们不会过热。
+这个OverheatError类型可能游泳，有个确保满足error的Error方法，它使用float64作为基础类型，允许追踪过载的温度。</p>
+<pre tabindex="0"><code>type OverheatError float64  //定义一个基础类型是float64的类型
+func (o OverheatError) Error() string {  //满足error接口
+        return fmt.Sprintf(&#34;OverheatError by %0.2f degrees!&#34;, o)  //在错误信息中使用温度
+}
+</code></pre><p>有个使用OverheatError的checkTemperature函数，接收系统实际温度和被认为是安全的温度作为参数，指定返回一个error类型的值，而不是OverheatError，但因为它满足error接口，若actual温度超过了safe温度，checkTemperature返回一个新的记录了超出量的OverheatError：</p>
+<pre tabindex="0"><code>func checkTemperature(actual float64, safe float64) error {  //指定函数返回原生error值
+        excess := actual - safe
+        if excess &gt; 0 {  //如果actual温度高于safe温度
+                return OverheatError(excess)  //就返回一个记录了超出量的OverheatError
+        }
+        return nil
+}
+
+func main() {
+        var err error = checkTemperature(121.379, 100.0)
+        if err != nil {
+                log.Fatal(err)
+        }
+}
+</code></pre><hr>
+<p>为什么可以在不同的包中使用error接口而不用导入？以小写字母开头？</p>
+<p>error类型像int或string一样是一个“预定义标识符”，不属于任何包，是“全局块”的一部分，能在任何地方使用，无需考虑当前包信息。</p>
+<h1 id="stringer接口">Stringer接口</h1>
+<p>fmt包定义了fmt.Stringer接口：允许任何类型决定在输出时如何展示，让其他类型满足Stringer接口很简单，只需要定义一个返回string类型的方法。</p>
+<p>定义：</p>
+<pre tabindex="0"><code>type Stringer interface {
+        String() string
+}
+</code></pre><p>比如，我们建立了一个CoffeePot类型来满足Stringer：</p>
+<pre tabindex="0"><code>type CoffeePot string
+
+func (c CoffeePot) String() string {  //满足Stringer接口
+        return string(c) + &#34; coffee pot&#34;  //方法需要返回一个string
+}
+
+func main() {
+        coffeePot := CoffeePot(&#34;LuxBrew&#34;)
+        fmt.Println(coffeePot.String())
+}
+</code></pre><p>许多在fmt包中的函数都会判断传入的参数是否满足stringer接口，若满足就调用String方法，这些函数包括Print、Println和Printf等，CoffeePot满足了Stringer，可以把CoffeePot值直接传入这些函数，并且CoffeePot的String方法的返回值会在输出时使用：</p>
+<pre tabindex="0"><code>coffeePot ：= CoffeePot(&#34;LuxBrew&#34;)  //创建一个CoffeePot值
+fmt.Print(coffeePot, &#34;\n&#34;)
+fmt.Println(coffeePot)
+fmt.Printf(&#34;%s&#34;, coffeePot)
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>LuxBrew coffee pot  //String方法的返回值在输出中使用
+LuxBrew coffee pot
+LuxBrew coffee pot
+</code></pre><h1 id="空接口">空接口</h1>
+<p>我们接触的大多数函数，只能使用指定的类型来调用，但是fmt.Println这样的fmt函数却能接受任何类型，这是怎么做到的？</p>
+<p>来看下go doc： <code>go doc fmt Println</code></p>
+<p>这是一个可变参数的函数，意味着它可以接受任何个数的参数；接口声明定义了方法，类型必须实现这个方法才能满足接口。若定义一个不需要任何方法的接口，它会被任何类型满足。</p>
+<p><code>Interface{}</code>类型称为空接口，用来接受任何类型的值，不需要实现任何方法来满足空接口，所有的类型都满足空接口。</p>
+<pre tabindex="0"><code>type Anything interface {}
+
+func AcceptAnything(thing interface{}) {
+}
+
+func main() {
+        AcceptAnything(123.123)
+        AcceptAnything(&#34;A string&#34;)
+        AcceptAnything(true)
+        AcceptAnything(Whistle(&#34;xxxxxx&#34;))
+}
+</code></pre><p>先不要对所有的函数使用空接口，若有一个空接口类型的值，无法做任何操作。</p>
+<p>不要尝试在空接口值上调用任何函数，如果有一个接口类型的值，只能调用接口上的方法。空接口没有任何方法，意味着没法调用空接口类型值的任何方法。</p>
+<pre tabindex="0"><code>func AcceptAnything(thing interface{}) {
+        fmt.Println(thing)
+        thing.MakeSound()  //尝试在空接口值上调用方法
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>thing.MakeSound undefined (type interface {} is interface with no mehtods)
+</code></pre><p>为了在空接口类型的值上调用方法，需要使用类型断言来获得具体类型的值。</p>
+<pre tabindex="0"><code>func AcceptAnything(thing interface{}) {
+        fmt.Println(thing)
+        whistle, ok := thing.(Whistle)  //使用类型断言来获得Whistle
+	if ok {
+                whistle.MakeSound()  //调用Whistle上的方法
+	}
+}
+
+func main() {
+        AcceptAnything(3.1415)
+        AcceptAnything(Whistle(&#34;Toyco Canary&#34;))
+}
+</code></pre><p>最好写一个接收特定具体类型的函数：</p>
+<pre tabindex="0"><code>func AcceptWhistle(whistle Whistle) {  //接收Whistle
+        fmt.Println(whistle)
+        whistle.MakeSound()  //调用方法，不需要类型转换
+}
+</code></pre></article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
-<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/10.%E4%BF%9D%E5%AF%86%E5%B0%81%E8%A3%85%E5%92%8C%E5%B5%8C%E5%85%A5/"><span class="iconfont icon-article"></span>10.保密：封装和嵌入</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/12.%E4%BB%8E%E5%A4%B1%E8%B4%A5%E4%B8%AD%E6%81%A2%E5%A4%8D/"><span class="iconfont icon-article"></span>12.从失败中恢复</a></p><p><a class="link" href="/posts/10.%E4%BF%9D%E5%AF%86%E5%B0%81%E8%A3%85%E5%92%8C%E5%B5%8C%E5%85%A5/"><span class="iconfont icon-article"></span>10.保密：封装和嵌入</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
     window.disqus_config = function () {
     
