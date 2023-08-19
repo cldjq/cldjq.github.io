@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml"><url>
+    <loc>https://tinklespring.com/posts/13.goroutine%E5%92%8Cchannel/</loc><lastmod>2023-08-19T16:25:28+08:00</lastmod></url><url>
+    <loc>https://tinklespring.com/categories/</loc><lastmod>2023-08-19T16:25:28+08:00</lastmod></url><url>
+    <loc>https://tinklespring.com/categories/golang/</loc><lastmod>2023-08-19T16:25:28+08:00</lastmod></url><url>
+    <loc>https://tinklespring.com/posts/</loc><lastmod>2023-08-19T16:25:28+08:00</lastmod></url><url>
+    <loc>https://tinklespring.com/tags/</loc><lastmod>2023-08-19T16:25:28+08:00</lastmod></url><url>
+    <loc>https://tinklespring.com/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/</loc><lastmod>2023-08-19T16:25:28+08:00</lastmod></url><url>
+    <loc>https://tinklespring.com/</loc><lastmod>2023-08-19T16:25:28+08:00</lastmod></url><url>
     <loc>https://tinklespring.com/posts/12.%E4%BB%8E%E5%A4%B1%E8%B4%A5%E4%B8%AD%E6%81%A2%E5%A4%8D/</loc><lastmod>2023-08-17T18:08:56+08:00</lastmod></url><url>
-    <loc>https://tinklespring.com/categories/</loc><lastmod>2023-08-17T18:08:56+08:00</lastmod></url><url>
-    <loc>https://tinklespring.com/categories/golang/</loc><lastmod>2023-08-17T18:08:56+08:00</lastmod></url><url>
-    <loc>https://tinklespring.com/posts/</loc><lastmod>2023-08-17T18:08:56+08:00</lastmod></url><url>
-    <loc>https://tinklespring.com/tags/</loc><lastmod>2023-08-17T18:08:56+08:00</lastmod></url><url>
-    <loc>https://tinklespring.com/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/</loc><lastmod>2023-08-17T18:08:56+08:00</lastmod></url><url>
-    <loc>https://tinklespring.com/</loc><lastmod>2023-08-17T18:08:56+08:00</lastmod></url><url>
     <loc>https://tinklespring.com/posts/11.%E6%8E%A5%E5%8F%A3/</loc><lastmod>2023-08-14T17:48:56+08:00</lastmod></url><url>
     <loc>https://tinklespring.com/posts/10.%E4%BF%9D%E5%AF%86%E5%B0%81%E8%A3%85%E5%92%8C%E5%B5%8C%E5%85%A5/</loc><lastmod>2023-08-07T16:27:10+08:00</lastmod></url><url>
     <loc>https://tinklespring.com/posts/9.%E5%AE%9A%E4%B9%89%E7%B1%BB%E5%9E%8B/</loc><lastmod>2023-08-05T12:28:25+08:00</lastmod></url><url>

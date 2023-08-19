@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="supported-color-schemes" content="light dark"><title>Proxmox高可用集群&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
-<meta name="twitter:title" content="Proxmox高可用集群" />
+<meta name="supported-color-schemes" content="light dark"><title>13.goroutine和channel&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="13.goroutine和channel" />
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -15,64 +15,13 @@
 <body><section id="header">
     <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
         <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
-    <h1 class="article title">Proxmox高可用集群</h1><p class="article date">Wednesday, May 24, 2023</p></section><article class="article markdown-body"><blockquote>
-<p>接上文proxmox安装～</p>
+    <h1 class="article title">13.goroutine和channel</h1><p class="article date">Saturday, August 19, 2023</p></section><article class="article markdown-body"><blockquote>
+<p>一次只做一件事并不总是完成任务最快的方法。goroutine可以让程序同时处理几个不同的任务，goroutine可以使用channel来协调它们的工作，channel允许goroutine互相发送数据并同步，这样一个goroutine就不会领先与另一个goroutine。</p>
 </blockquote>
-<h4 id="安装集群顺序">安装集群顺序</h4>
-<ol>
-<li>安装proxmox</li>
-<li>创建并加入集群</li>
-<li>创建<code>pveceph</code>分布式存储</li>
-<li>创建高可用</li>
-<li>创建虚拟机并测试</li>
-</ol>
-<h4 id="创建bond网络">创建Bond网络</h4>
-<ol>
-<li>创建bond，&ldquo;slaves&rdquo; 选择需要做bond的网卡名字，以空格区分</li>
-<li>创建Linux Bridge，桥接端口选择bond网卡名字</li>
-<li>若需要虚拟机网络隔离，则需要继续创建 Linux Vlan</li>
-</ol>
-<h4 id="安装pveceph">安装pveceph</h4>
-<ol>
-<li>所有节点执行 <code>pveceph install</code></li>
-<li>任意一个节点执行初始化pveceph存储网络 <code>pveceph init --network 10.255.255.0/24</code></li>
-<li>至少需要三个节点执行，创建ceph监视器 <code>pveceph createmon</code></li>
-<li>创建ceph osd:</li>
-</ol>
-<ul>
-<li>选择物理节点</li>
-<li>ceph &ndash;&gt; osd</li>
-<li>点击创建，每次只能加一个</li>
-<li>多个节点则依次排着添加</li>
-</ul>
-<ol start="5">
-<li>创建 <code>ceph osd crush rule</code></li>
-</ol>
-<pre tabindex="0"><code>ceph osd crush rule create-replicated rule-ssd default  host ssd
-ceph osd crush rule create-replicated rule-hdd default  host hdd
-</code></pre><ol start="6">
-<li>查看：<code>ceph osd crush rule ls</code></li>
-<li>创建ceph pools
-<code>of_PGs</code> 官方建议：少于5个osd，值为128；5-10个，值为512；10-50个，值为4096；</li>
-</ol>
-<blockquote>
-<p>这里没找到具体实际的，设置4096貌似报错了～
-<code>crush rule</code>根据osd类型选择对应的。</p>
-</blockquote>
-<ol start="8">
-<li>创建高可用组</li>
-</ol>
-<ul>
-<li>选择 &lsquo;数据中心&rsquo;</li>
-<li>选择 &lsquo;HA&rsquo; &ndash;&gt; &lsquo;群组&rsquo;</li>
-<li>选择创建，将所需节点添加</li>
-<li>选择 &lsquo;HA&rsquo; &ndash;&gt; &lsquo;资源&rsquo;</li>
-<li>选择添加，将需要的vm加入即可，请求状态为 started</li>
-</ul>
-<p>此时，即可使 vm 成为高可用，当宿主机宕机后，vm会漂移至其他节点。</p>
-</article><section class="article labels"><a class="category" href=/categories/linux/>Linux</a><a class="tag" href=/tags/%E8%99%9A%E6%8B%9F%E5%8C%96/>虚拟化</a></section>
+<h1 id="检索网页">检索网页</h1>
+</article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
-<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/ssh%E5%AF%86%E9%92%A5%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9/"><span class="iconfont icon-article"></span>ssh密钥类型选择</a></p><p><a class="link" href="/posts/k3s%E5%88%9D%E4%BD%93%E9%AA%8C/"><span class="iconfont icon-article"></span>K3s初体验</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/12.%E4%BB%8E%E5%A4%B1%E8%B4%A5%E4%B8%AD%E6%81%A2%E5%A4%8D/"><span class="iconfont icon-article"></span>12.从失败中恢复</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
     window.disqus_config = function () {
     
