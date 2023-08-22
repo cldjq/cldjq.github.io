@@ -5,10 +5,20 @@
     <description>Recent content in Golang on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Sat, 19 Aug 2023 16:25:28 +0800</lastBuildDate>
+    <lastBuildDate>Tue, 22 Aug 2023 18:47:20 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/categories/golang/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>14.其余的东东</title>
+      <link>https://tinklespring.com/posts/14.%E5%85%B6%E4%BD%99%E7%9A%84%E4%B8%9C%E4%B8%9C/</link>
+      <pubDate>Tue, 22 Aug 2023 18:47:20 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/14.%E5%85%B6%E4%BD%99%E7%9A%84%E4%B8%9C%E4%B8%9C/</guid>
+      <description>&lt;h1 id=&#34;if的初始化语句&#34;&gt;if的初始化语句&lt;/h1&gt;
+</description>
+    </item>
     
     <item>
       <title>13.goroutine和channel</title>
@@ -20,6 +30,373 @@
 &lt;p&gt;一次只做一件事并不总是完成任务最快的方法。goroutine可以让程序同时处理几个不同的任务，goroutine可以使用channel来协调它们的工作，channel允许goroutine互相发送数据并同步，这样一个goroutine就不会领先与另一个goroutine。&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h1 id=&#34;检索网页&#34;&gt;检索网页&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;io/ioutil&amp;#34;
+	&amp;#34;log&amp;#34;
+	&amp;#34;net/http&amp;#34;
+)
+
+func main() {
+	responseSize(&amp;#34;https://example.com/&amp;#34;)
+	responseSize(&amp;#34;https://golang.org/&amp;#34;)
+	responseSize(&amp;#34;https://golang.org/doc&amp;#34;)
+}
+
+func responseSize(url string) { //将url作为参数，将获取页面的代码移动到单独的函数
+	fmt.Println(&amp;#34;Getting&amp;#34;, url)    //打印正在检索的url
+	response, err := http.Get(url) //获取给定的url
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(len(body)) //字符切片的大小与页面的大小相同
+
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;多任务&#34;&gt;多任务&lt;/h1&gt;
+&lt;p&gt;通过同时执行多个任务来找到加快程序运行速度的方式。&lt;/p&gt;
+&lt;p&gt;程序对responseSize进行几次调用，每次一个，对responseSize的每次调用都建立到网站的网络连接，等待网站响应，打印响应大小并返回，只有一个调用响应返回时，下一个调用才能开始。&lt;/p&gt;
+&lt;p&gt;如果有一种方式能同时运行所有三个responseSize调用，这个程序只需三分之一的时间即可完成。&lt;/p&gt;
+&lt;h1 id=&#34;使用goroutine的并发性&#34;&gt;使用goroutine的并发性&lt;/h1&gt;
+&lt;p&gt;当responseSize调用http.Get时，程序必须在等待网站的响应，只能干等没有别的事情做。&lt;/p&gt;
+&lt;p&gt;另一个程序可能需要等待用户输入，再另一个可能需要等待数据从文件中读取，很多情况下，程序只能等待。&lt;/p&gt;
+&lt;p&gt;并发性允许程序暂停一个任务并处理其他任务：等待用户输入的程序可能在后台执行其他处理，读取文件时更新进度条，responseSize程序可能在等待第一个请求完成时发出其他网络请求。&lt;/p&gt;
+&lt;p&gt;并行：同时运行任务，一台只有一个处理器的计算机一次只能运行一个任务，但现代计算机都有多个处理器，计算机可能在不同的处理器之间分配并发任务，以便于同时运行。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;goroutine允许并发：暂停一个任务来处理其他任务；在某些情况下，它们允许并行：同时处理多个任务！&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;在Go中，并发称为 &lt;code&gt;goroutine&lt;/code&gt; ，其他语言有类似的概念，叫做线程，但是 goroutine 比线程需要更少的计算机内存，启动和停止时间更少，这意味着可以同时运行更多的goroutine。&lt;/p&gt;
+&lt;p&gt;启动一个goroutine，可以使用&lt;code&gt;go&lt;/code&gt;语句，只是一个普通的函数或方法调用，前面有go关键字：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;go myFunction()  //go关键字+函数调用
+go otherFunction(&amp;#34;arguments&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;注意&lt;/font&gt;，我们说的是另一个goroutine，每个Go程序的main函数都是使用goroutine启动，因此每个Go程序至少运行一个goroutine。&lt;/p&gt;
+&lt;h1 id=&#34;使用goroutine&#34;&gt;使用goroutine&lt;/h1&gt;
+&lt;p&gt;这里有个程序，一次调用一个函数，a函数使用循环打印字符串 a 50次，b函数打印字符串 b 50次，main函数调用a，然后调用b，最后在退出时打印一条消息。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func a() {
+	for i := 0, i &amp;lt; 50; i++ {
+		fmt.Print(&amp;#34;a&amp;#34;)
+	}
+}
+
+func b() {
+	for i := 0, i &amp;lt; 50; i++ {
+		fmt.Print(&amp;#34;b&amp;#34;)
+	}
+}
+
+func main() {
+	a()
+	b()
+	fmt.Println(&amp;#34;end main()&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;就像main函数包含了a函数所有代码，然后是b函数所有代码，最后是自己的代码。要在新的goroutine中启动a和b函数，只需在函数调用前添加go关键字，这能让新的goroutine与main函数同时运行：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	go a()
+	go b()
+	fmt.Println(&amp;#34;end main()&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是运行这个程序，将只能看到来自main函数末尾的Println调用的输出，不会看到来自a或b函数的任何内容。&lt;/p&gt;
+&lt;p&gt;Go程序在main goroutine（调用main函数的goroutine）结束后立即停止运行，即使其他goroutine仍在运行，main函数在a和b函数中的代码运行之前就完成了。&lt;/p&gt;
+&lt;p&gt;需要保持main goroutine运行，知道aheb函数goroutine完成，需要暂停main goroutine一段时间，这样其他goroutine就可以运行。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	go a()
+	go b()
+	time.Sleep(time.Second)  //暂停main goroutine1秒
+	fmt.Println(&amp;#34;end main()&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当程序在两个goroutine之间切换时，两个输出将混合在一起，当main goroutine唤醒时，会调用fmt.Println并退出。&lt;/p&gt;
+&lt;h1 id=&#34;不能直接控制goroutine何时运行&#34;&gt;不能直接控制goroutine何时运行&lt;/h1&gt;
+&lt;p&gt;每次运行程序时，可能会看到 goroutine 以不同的顺序运行，也无法知道上一个程序何时会在两个goroutine之间切换。&lt;/p&gt;
+&lt;p&gt;正常情况下，Go不能保证何时在goroutine之间切换，或者切换多长时间，这允许goroutine以最有效的方式运行，若需要运行顺序，那么需要使用channel来同步它们。&lt;/p&gt;
+&lt;h1 id=&#34;go语句不能使用返回值&#34;&gt;go语句不能使用返回值&lt;/h1&gt;
+&lt;p&gt;切换到goroutine带来了另一个需要解决的问题：不能在go语句中使用函数返回值。假设想要改变responseSize来返回页面大小，而不是直接打印它：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	var size int
+	size = go responseSize(&amp;#34;https://example.com/&amp;#34;)  //此段代码无效
+	fmt.Println(size)  //此段代码无效
+	size = go responseSize(&amp;#34;https://golang.org/&amp;#34;)  //此段代码无效
+	fmt.Println(size)  //此段代码无效
+	size = go responseSize(&amp;#34;https://golang.org/doc/&amp;#34;)  //此段代码无效
+	fmt.Println(size)  //此段代码无效
+	time.Sleep(5 * time.Second)
+}
+
+func responseSize(url string) int {  //添加返回值
+	fmt.Println(&amp;#34;Getting&amp;#34;, url)
+	response, err := http.Get(url)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return len(body)  //返回响应大小，而不是打印它
+
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;会编译错误，编译器阻止尝试从使用go语句调用的函数中获取返回值。这实际上是好事，当将responseSize作为go语句的一部分调用时，会说“在单独的goroutine中运行responseSize，将一直运行此函数中的指令。” responseSize函数不会立即返回值，必须等待网页响应，但是 main goroutine 中的代码会立即期望一个返回值，但目前还没有返回值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;size = go responseSize(&amp;#34;https://example.com/&amp;#34;)  //去运行这个，不会再等了
+fmt.Println(size)  //那么返回什么呢
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在go语句中调用的任何函数都是这样，而不仅仅是像responseSize这样的长时间运行函数，不能指望返回值会及时准备好，因此Go编译器会阻止任何使用它们的尝试。&lt;/p&gt;
+&lt;p&gt;Go不允许使用go语句调用的函数的返回值，因为在尝试使用它之前，不能保证返回值已经准备好。&lt;/p&gt;
+&lt;h3 id=&#34;channel&#34;&gt;channel&lt;/h3&gt;
+&lt;p&gt;但是goroutine之间有一种交流方式：&lt;code&gt;channel&lt;/code&gt;，channel不仅允许将值从一个goroutine发送到另一个goroutine，还确保在接收的goroutine尝试使用该值之前，发送的goroutine已经发送了该值。&lt;/p&gt;
+&lt;p&gt;使用channel的唯一方法是从一个goroutine到另一个goroutine的通信。&lt;/p&gt;
+&lt;p&gt;为了演示channel，需要：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;创建一个channel&lt;/li&gt;
+&lt;li&gt;编写一个函数，该函数接收一个channel作为参数，我们将在一个单独的goroutine中运行这个函数，并使用它通过channel发送值。&lt;/li&gt;
+&lt;li&gt;在初始的goroutine中接收发送的值&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;每个channel只携带特定类型的值，因此可能有一个channle用于int值，另一个channel用于struct类型的值，要声明包含channel的变量，可以使用&lt;code&gt;chan&lt;/code&gt;关键字，然后是channel将携带的值的类型。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var myChannel chan float64
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;要实际创建channel，需要调用内置 &lt;code&gt;make&lt;/code&gt; 函数（与创建映射和切片的函数相同）。传递make要创建的channel的类型（应该与要赋值给它的变量的类型相同）。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var myChannel chan float64  //声明一个变量来保存channel
+myChannel =  make(chan float64)  //实际创建channel
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不是单独声明channel变量，在大多数情况下，使用一个短变量声明更容易：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;myChannel := make(chan float64)  //创建一个channel并立即声明一个变量
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用channel发送和接收值&#34;&gt;使用channel发送和接收值&lt;/h1&gt;
+&lt;p&gt;要在channel上发送值，使用&lt;code&gt;&amp;lt;-&lt;/code&gt;运算符，从发送的值指向发送该值的channel。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;myChannel &amp;lt;- 3.14   //向名为 &amp;#34;myChannel&amp;#34; 的channel发送一个值&amp;#34;3.14&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;还可以使用 &amp;lt;- 接收来自channel的值，但是位置不同：将箭头放在接收channel的左侧，看起来像从channel中取出一个值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;&amp;lt;-myChannel
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;例：&lt;br&gt;
+向greeting添加一个myChannel参数，接受一个包含字符串值的channel，greeting现在不是返回一个字符串值，而是通过myChannel发送一个字符串。&lt;/p&gt;
+&lt;p&gt;在main函数中，使用内置的make函数创建要传递给greeting的channel，然后调用greeting来作为一个新的goroutine，使用单独的goroutine很重要，因为channel应该只用于goroutine之间的通信。然后从传递给greeting的channel中接收一个值，并打印返回字符串。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func greeting(myChannel chan string) { //将channel作为参数
+	myChannel &amp;lt;- &amp;#34;hi&amp;#34;  //通过channel发送给一个值
+}
+
+func main() {
+	myChannel := make(chan string)  //创建一个新的channel
+	go greeting(myChannel)  //将channel传递给在新goroutine中运行的函数
+	fmt.Println(&amp;lt;-myChannel)  //从channel接收值
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不必将从channel接收的值直接传递给Println，可以在任何需要值的上下文中从channel接收（在任何可以使用变量或函数的返回值的地方）。比如可以先将接收到的值赋给一个变量：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;receiveValue := &amp;lt;-myChannel  //也可以将接收的值存储在一个变量中
+fmt.Println(receiveValue)
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;同步goroutine与channel&#34;&gt;同步goroutine与channel&lt;/h1&gt;
+&lt;p&gt;channel确保发送的goroutine在接收channel尝试使用该值前已经发送了该值，channel通过&lt;code&gt;blocking&lt;/code&gt;(阻塞)&amp;mdash;暂停当前goroutine中的所有进一步操作来实现。发送操作阻塞发送goroutine，直到另一个goroutine在同一cahnnel上执行了接收操作，反之亦然，接收操作阻塞接收goroutine，直到另一个goroutine在同一channel上执行了发送操作，这个行为允许goroutine同步它们的动作，协调它们的时间。&lt;/p&gt;
+&lt;p&gt;例：&lt;br&gt;
+创建两个channel并将它们传递给两个新goroutine中的函数，然后main goroutine从这些channel接收值并打印它们。与goroutine反复打印“a”或“b”的程序不同，可以预测这个程序的输出：总是按顺序打印“a”，然后打印“d” “b” “e” “c” “f”。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func abc(channel chan string) {
+	channel &amp;lt;- &amp;#34;a&amp;#34;
+	channel &amp;lt;- &amp;#34;b&amp;#34;
+	channel &amp;lt;- &amp;#34;c&amp;#34;
+}
+
+func def(channel chan string) {
+	channel &amp;lt;- &amp;#34;d&amp;#34;
+	channel &amp;lt;- &amp;#34;e&amp;#34;
+	channel &amp;lt;- &amp;#34;f&amp;#34;
+}
+
+func main() {
+	channel1 := make(chan string)  //创建channel
+	channel2 := make(chan string)  //创建channel
+	go abc(channel1)  //将channel传递给新goroutine中运行的函数
+	go def(channel2)  //将channel传递给新goroutine中运行的函数
+	fmt.Print(&amp;lt;-channel1)  //从channel接收和打印值
+	fmt.Print(&amp;lt;-channel2)
+	fmt.Print(&amp;lt;-channel1)
+	fmt.Print(&amp;lt;-channel2)
+	fmt.Print(&amp;lt;-channel1)
+	fmt.Print(&amp;lt;-channel2)
+	fmt.Println()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;adbecf
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;abc goroutine每次向channel发送一个值时都会阻塞，直到main goroutine接收到它为止，def goroutine也是如此。main goroutine称为abc goroutine和def goroutine的协调器，只有当它准备读取它们发送的值时，才允许它们继续。&lt;/p&gt;
+&lt;p&gt;abc 和 def 函数都在单独的goroutine并发启动，abc 函数尝试将 “a” 发送到 channel1，由于channel1是无缓冲的，abc 会阻塞，直到main goroutine 从该通道上接收数据。main goroutine 使用 fmt.Print(&amp;lt;-channel1) 接收并打印“a”，此时 abc 函数中的阻塞解除，它会尝试将“b”发送到channel1，但同样会阻塞，因为需要一个接收操作。def 函数与 abc 函数类似，它尝试将“d”发送到 channel2，并在main goroutine接收并打印“d”之后继续执行，以此类推，main goroutine会交替从两个通道接收并打印数据，这就是为什么顺序是 “adbecf”。&lt;/p&gt;
+&lt;h1 id=&#34;观察goroutine同步&#34;&gt;观察goroutine同步&lt;/h1&gt;
+&lt;p&gt;abc goroutine 和 def goroutine 通过它们的channel发送它们的值的速度很快，所以看不到发生了什么，下边这个程序可以减慢速度，方便观察阻塞：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func reportNap(name string, delay int) { //休眠goroutine名字、时间
+	for i := 0; i &amp;lt; delay; i++ {
+		fmt.Println(name, &amp;#34;sleeping&amp;#34;)
+		time.Sleep(1 * time.Second)
+	}
+	fmt.Println(name, &amp;#34;wakes up!&amp;#34;)
+}
+
+func send(myChannel chan string) {
+	reportNap(&amp;#34;sending goroutine&amp;#34;, 2)
+	fmt.Println(&amp;#34;***sending value***&amp;#34;)
+	myChannel &amp;lt;- &amp;#34;a&amp;#34; //在main 仍处于休眠状态时阻塞此发送
+	fmt.Println(&amp;#34;***sending value***&amp;#34;)
+	myChannel &amp;lt;- &amp;#34;b&amp;#34;
+}
+
+func main() {
+	myChannel := make(chan string)
+	go send(myChannel)
+	reportNap(&amp;#34;receiving goroutine&amp;#34;, 5)
+	fmt.Println(&amp;lt;-myChannel)
+	fmt.Println(&amp;lt;-myChannel)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;从reportNap函数开始，该函数当前goroutine休眠指定的秒数，goroutine休眠时，每一秒会打印一个通知，说它在休眠。&lt;/p&gt;
+&lt;p&gt;添加一个send函数，将在goroutine中运行，并将两个值发送到一个channel，在发送任何东西之前，首先调用reportNap，这样它的goroutine会休眠2秒。&lt;/p&gt;
+&lt;p&gt;在main goroutine中，创建一个channel并将其传递给send，然后再次调用reportNap，使此goroutine休眠5秒（比send goroutine长3秒），最后在channel上执行两个接收操作。&lt;/p&gt;
+&lt;p&gt;当运行这个程序时，会看到两个goroutine在前2秒都处于休眠状态，然后send goroutine醒来并发送它的值，但它没有做任何进一步的事情，发送操作阻塞了send goroutine，直到main goroutine接收到该值。&lt;/p&gt;
+&lt;p&gt;这不会马上发生，因为main goroutine仍然需要再休眠3秒，当它醒来时，从channel接收值，此时，send goroutine才能解除阻塞，才能发送第二个值。&lt;/p&gt;
+&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;receiving goroutine sleeping  //发送和接收goroutine都休眠了
+sending goroutine sleeping  //发送和接收goroutine都休眠了
+receiving goroutine sleeping  //发送和接收goroutine都休眠了
+sending goroutine sleeping  //发送和接收goroutine都休眠了
+sending goroutine wakes up!  //发送goroutine醒来，并发送一个值
+***sending value***  //发送goroutine醒来，并发送一个值
+receiving goroutine sleeping  //接收goroutine还在休眠
+receiving goroutine sleeping  //接收goroutine还在休眠
+receiving goroutine sleeping
+receiving goroutine wakes up!  //接收goroutine醒来，并接收一个值
+a  //接收goroutine醒来，并接收一个值
+***sending value***  //此时，发送goroutine才能解除阻塞，然后发送第二个值
+b
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+&lt;p&gt;下面是之前的演示代码，进行如下的更改：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func greeting(myChannel chan string) {
+	myChannel &amp;lt;- &amp;#34;hi&amp;#34;
+}
+func main() {
+	myChannel := make(chan string)
+	go greeting(myChannel)
+	fmt.Println(&amp;lt;-myChannel)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;如果这样&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;会失败，因为&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;myChannel &amp;lt;- &amp;ldquo;hi from main&amp;rdquo;&lt;pre&gt;从main函数中发送一个值到channel&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;会得到一个“all goroutine are sleep-deadlock!”的错误，因为main goroutine阻塞了，还在等待另一个goroutine从channel接收，但是另一个goroutine没有做任何接收操作，所以main goroutine保持阻塞状态&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;&lt;del&gt;go&lt;/del&gt; greetine(myChannel)&lt;pre&gt;在调用greeting之前删除go关键字&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;这将导致greeting函数在main goroutine中运行，也会因为死锁错误而失败，原因与上面一样：greeting中的发送操作导致main goroutine阻塞，但是没有其他goroutine执行接收操作，所以会保持阻塞状态&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;&lt;del&gt;myChannel &amp;lt;- &amp;ldquo;hi&amp;rdquo;&lt;/del&gt;&lt;pre&gt;删除向channel发送值的行&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;这也会导致死锁，原因是main goroutine试图接收一个值，但现在没有任何东西可以发送值&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;&lt;del&gt;fmt.Println(&amp;lt;-myChannel)&lt;/del&gt;&lt;pre&gt;删除从channel接收值的行&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;greeting中的发送操作会导致goroutine阻塞，但是由于没有接收操作使main goroutine阻塞，所以main立即完成，程序结束时不产生任何输出&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h1 id=&#34;使用channel修复程序&#34;&gt;使用channel修复程序&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import ( //不使用time.Sleep，删除time包
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;io/ioutil&amp;#34;
+	&amp;#34;log&amp;#34;
+	&amp;#34;net/http&amp;#34;
+)
+
+func responseSize(url string, channel chan int) { //将向responseSize传递一个channel，以便发送页面大小
+	fmt.Println(&amp;#34;Getting&amp;#34;, url)
+	response, err := http.Get(url)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal()
+	}
+	channel &amp;lt;- len(body) //不返回页面大小，通过channel发送
+}
+
+func main() {
+	sizes := make(chan int)                        //创建一个int值channel
+	go responseSize(&amp;#34;https://example.com/&amp;#34;, sizes) //每次调用responseSize时都将channel传递过去
+	go responseSize(&amp;#34;https://golang.org/&amp;#34;, sizes)
+	go responseSize(&amp;#34;https://golang.org/doc&amp;#34;, sizes)
+	fmt.Println(&amp;lt;-sizes) //channel上将有三个发送，所以要做三个接收
+	fmt.Println(&amp;lt;-sizes)
+	fmt.Println(&amp;lt;-sizes)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在main函数中，调用make创建int值的channel，更新对responseSize的每个调用，来添加channel作为参数，最后，在channel上执行三个接收操作，每个对应一个responseSize发送的值。&lt;/p&gt;
+&lt;p&gt;运行这个程序，会看到程序的完成速度与网站响应速度一样快。&lt;/p&gt;
+&lt;p&gt;接下来继续优化，为使代码更干净，可以将要检索的url列表存储在一个切片中，然后使用循环来调用responseSize，并从channel接收值。&lt;/p&gt;
+&lt;p&gt;responseSize无需改变，只需更改main函数，用想要的url创建一个字符串切片，然后对切片进行循环，并使用当前url和channel来调用responseSize，最后执行第二个单独的循环，对切片中的每个url运行一次，并从channel接收和打印一个值。（在单独的循环中做很重要，若在启动responseSize goroutine的同一个循环中接收值，将导致main goroutine阻塞，直到接收完成，将返回一次一个页面的请求。）&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	sizes := make(chan int)
+	urls := []string{ //将url移动到一个切片中
+		&amp;#34;https://example.com/&amp;#34;,
+		&amp;#34;https://golang.org/&amp;#34;,
+		&amp;#34;https://golang.org/doc&amp;#34;,
+	}
+	for _, url := range urls {
+		go responseSize(url, sizes) //对每个url调用responseSize
+	}
+	for i := 0; i &amp;lt; len(urls); i++ { //对每一个responseSize发送，都从channel接收一次
+		fmt.Println(&amp;lt;-sizes)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;更新channel以携带一个struct&#34;&gt;更新channel以携带一个struct&lt;/h1&gt;
+&lt;p&gt;ressponseSize函数还有一个问题，我们不知道输出的顺序，因为没有把页面url与响应大小放在一起，所以不知道它们之间的关系。&lt;/p&gt;
+&lt;p&gt;channel可以像携带基础类型一样携带切片、映射和struct等复合类型，我们可以创建一个struct类型，它将存储一个页面url及其大小，这样就可以通过channel将两者一起发送了。&lt;/p&gt;
+&lt;p&gt;将使用底层的struct类型声明一个新的Page类型，Page将有一个URL字段来记录页面的URL，以及一个Size字段来记录页面大小。&lt;/p&gt;
+&lt;p&gt;将更新responseSize上的channel参数以保存新的Page类型，而不仅仅是int页面大小，让responseSize使用当前URL和页面大小创建一个新的Page值，并将其发送到channel。&lt;/p&gt;
+&lt;p&gt;在main中，将更新channel在调用中保存的类型，当从channel接收一个值时，将是一个Page值，因此将同时打印它的URL和Size字段。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Page struct { //声明一个带有需要的字段的struct类型
+	URL  string
+	Size int
+}
+
+func responseSize(url string, channel chan Page) { //传递给responseSize的channel将携带Page，而不是int
+	fmt.Println(&amp;#34;Getting&amp;#34;, url)
+	response, err := http.Get(url)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal()
+	}
+	channel &amp;lt;- Page{URL: url, Size: len(body)} //返回一个包含当前URL和页面大小的Page
+
+}
+
+func main() {
+	pages := make(chan Page) //更改channel保存的类型
+	urls := []string{
+		&amp;#34;https://example.com/&amp;#34;,
+		&amp;#34;https://golang.org/&amp;#34;,
+		&amp;#34;https://golang.org/doc&amp;#34;,
+	}
+	for _, url := range urls {
+		go responseSize(url, pages) //将channel传递给responseSize
+	}
+	for i := 0; i &amp;lt; len(urls); i++ {
+		page := &amp;lt;-pages                              //接收Page
+		fmt.Println(&amp;#34;%s: %d\n&amp;#34;, page.URL, page.Size) //将URL和大小一起打印
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;现在输出将把页面大小和URl配对，以前，我们的程序必须一次请求一个页面，goroutine让我们在等待网站响应时开始处理下一个请求，大大提高了速度。&lt;/p&gt;
 </description>
     </item>
     
@@ -3799,152 +4176,6 @@ func main() {
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上述程序只有在data.txt中有三行或更少行时才运行，若超过三行则会报错。  因为声明了 numbers 数组来保存3个元素。&lt;/p&gt;
 &lt;p&gt;Go数组的大小是固定的，不能增长或收缩。下一篇将解决这个问题！&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>4.代码集：包</title>
-      <link>https://tinklespring.com/posts/4.%E4%BB%A3%E7%A0%81%E9%9B%86%E5%8C%85/</link>
-      <pubDate>Tue, 11 Jul 2023 15:57:40 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/4.%E4%BB%A3%E7%A0%81%E9%9B%86%E5%8C%85/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;到目前位置，一直将代码放在一个文件里，随着程序变得越来越大、越来越复杂，这会是一个大问题～&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;使用包在程序之间共享代码&#34;&gt;使用包在程序之间共享代码&lt;/h1&gt;
-&lt;p&gt;将共享函数移到新的包中！&lt;/p&gt;
-&lt;p&gt;golang允许定义自己的包，包是一组代码，fmt包格式化输出，math包处理数字，strings包处理字符串，已经在多个程序中使用了来自每一个包的函数。&lt;/p&gt;
-&lt;p&gt;能够在程序之间使用相同的代码是包存在的主要原因之一。&lt;/p&gt;
-&lt;h1 id=&#34;go工作区目录保存包代码&#34;&gt;go工作区目录保存包代码&lt;/h1&gt;
-&lt;p&gt;工作区目录包含三个子目录：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;bin ：保存已编译的二进制可执行程序；&lt;/li&gt;
-&lt;li&gt;pkg ：保存已编译的二进制包文件；&lt;/li&gt;
-&lt;li&gt;src ：保存go的源代码；&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;在src中，每个包的代码都位于它自己单独的子目录中，按照惯例，子目录名应与包名相同。&lt;/p&gt;
-&lt;p&gt;每个包目录应该包含一个或多个源代码文件，文件名不重要，但要以 &lt;code&gt;.go&lt;/code&gt; 结尾。&lt;/p&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/4-%e4%bb%a3%e7%a0%81%e9%9b%86-%e5%8c%85/go%e5%b7%a5%e4%bd%9c%e5%8c%ba%e7%9b%ae%e5%bd%95.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;h1 id=&#34;创建一个新包&#34;&gt;创建一个新包&lt;/h1&gt;
-&lt;p&gt;做一个简单的包：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;go
-└── src
-    └── greeting
-        └── greeting.go
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;与所有go源代码文件一样，这个文件以package行开始，与其他代码不同，这段代码不是main包的一部分，是一个名为greeting的包的一部分。还有两个函数定义，希望这些函数可以在greeting包之外访问，所以需要首字母大写：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package greeting
-
-import &amp;#34;fmt&amp;#34;
-
-func Hello() {
-	fmt.Println(&amp;#34;Hello!&amp;#34;)
-}
-func Hi() {
-	fmt.Println(&amp;#34;Hi!&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;将包导入程序&#34;&gt;将包导入程序&lt;/h1&gt;
-&lt;p&gt;在程序中使用新包：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;go
-└── src
-    ├── greeting
-    │   └── greeting.go
-    └── hi
-        └── main.go
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;与每个go源代码文件一样，这段代码从package开始，但希望这是一个可执行的命令，需要使用main的包名。&lt;/p&gt;
-&lt;p&gt;通常，包名应与所在目录名保持一致，但是main包例外。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;greeting&amp;#34;
-
-func main() {
-	greeting.Hello()
-	greeting.Hi()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;导入greeting包，该目录名与 import 语句中的名称相匹配。&lt;/p&gt;
-&lt;h1 id=&#34;包使用相同的文件布局&#34;&gt;包使用相同的文件布局&lt;/h1&gt;
-&lt;p&gt;与main包一样，都要有三部分结构： package 子句、import 语句、实际代码。&lt;/p&gt;
-&lt;h1 id=&#34;包命名规范&#34;&gt;包命名规范&lt;/h1&gt;
-&lt;p&gt;每次调用包中的函数时都要输入包名，包名遵循以下规则：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;包名应全部为小写；&lt;/li&gt;
-&lt;li&gt;若含义明显，应缩写；&lt;/li&gt;
-&lt;li&gt;尽可能是一个词，若是两个词，不应该用下划线分隔，第二个词也不应该大写；&lt;/li&gt;
-&lt;li&gt;导入的包名避免与本地变量名冲突；&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&#34;包限定符&#34;&gt;包限定符&lt;/h1&gt;
-&lt;p&gt;当访问从不同包导出的函数、变量或其他东西时，需要通过在函数或变量钱输入包名来限定其名称；当访问定义在当前包中的函数或变量时，不应该限定包名。&lt;/p&gt;
-&lt;h1 id=&#34;常量&#34;&gt;常量&lt;/h1&gt;
-&lt;p&gt;许多包导出常量：从不更改的命名值。&lt;/p&gt;
-&lt;p&gt;声明常量看起来像变量声明，具有名称、可选的类型和常量值，不同点：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;使用&lt;code&gt;const&lt;/code&gt;关键字而不是var关键字；&lt;/li&gt;
-&lt;li&gt;必须在声明常量时赋值，不能像变量那样后赋值；&lt;/li&gt;
-&lt;li&gt;变量有短变量声明语法，常量没有；&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;与变量声明一样，可以省略类型，将从分配的值推断：&lt;code&gt;const SquareSides = 4&lt;/code&gt; ;&lt;/p&gt;
-&lt;p&gt;变量的值可以变化，但常量值必须保持不变。&lt;/p&gt;
-&lt;p&gt;与变量和函数一样，名称以大写字母开头的常量是可导出的。&lt;/p&gt;
-&lt;h1 id=&#34;嵌套的包目录和导入路径&#34;&gt;嵌套的包目录和导入路径&lt;/h1&gt;
-&lt;p&gt;可以将类似的包组嵌套在go工作区的一个目录中，然后该目录将成为它包含的所有包的导入路径的一部分。&lt;br&gt;
-&lt;img  src=&#34;https://tinklespring.com/img/Golang/4-%e4%bb%a3%e7%a0%81%e9%9b%86-%e5%8c%85/%e5%b5%8c%e5%a5%97%e5%8c%85%e7%9b%ae%e5%bd%95%e4%b8%8e%e5%af%bc%e5%85%a5%e8%b7%af%e5%be%84.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;h1 id=&#34;使用go-install安装程序可执行文件&#34;&gt;使用&amp;quot;go install&amp;quot;安装程序可执行文件&lt;/h1&gt;
-&lt;p&gt;与go build 不同，go install 以包含代码的目录来命名可执行文件。将存储在工作区中名为 bin 的目录中。&lt;/p&gt;
-&lt;h1 id=&#34;设置gopath&#34;&gt;设置GOPATH&lt;/h1&gt;
-&lt;p&gt;GOPATH 是一个环境变量，go工具会参考它来查找工作区位置。大多数开发者将所有代码都保存在一个工作区中，但也可以使用 GOPATH 将工作区转移到其他目录。&lt;/p&gt;
-&lt;p&gt;若代码存储在默认目录之外的地方，需要设置GOPATH: &lt;code&gt;export GOPATH=&amp;quot;/xxxx/xxx&amp;quot;&lt;/code&gt;.&lt;/p&gt;
-&lt;h1 id=&#34;发布包&#34;&gt;发布包&lt;/h1&gt;
-&lt;p&gt;可以在git等仓库中保存代码，这样其他开发人员就可以在自己的项目中使用它。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;import (
-       &amp;#34;fmt&amp;#34;
-       &amp;#34;github.com/abc/defg&amp;#34;
-       &amp;#34;log&amp;#34;
-)
-
-func main() {
-       fmt.Print(&amp;#34;xxxxxx&amp;#34;)
-       grade, err := defg.GetFloat()
-       if err != nil {
-              log.Fatal(err)
-       }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用go-get下载和安装包&#34;&gt;使用&amp;quot;go get&amp;quot;下载和安装包&lt;/h1&gt;
-&lt;p&gt;使用包所在的URL作为导入路径，可以使用&lt;code&gt;go get&lt;/code&gt;自动下载和安装包：&lt;code&gt;go get github.com/abc/defg&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;go将连接到github，下载存储库并将其保存在go工作区的src目录中。&lt;/p&gt;
-&lt;h1 id=&#34;使用go-doc阅读包文档&#34;&gt;使用&amp;quot;go doc&amp;quot;阅读包文档&lt;/h1&gt;
-&lt;p&gt;可以使用 &lt;code&gt;go doc&lt;/code&gt; 命令来显示关于任何包或函数的文档。&lt;br&gt;
-例如: &lt;code&gt;go doc strconv&lt;/code&gt;   &lt;code&gt;go doc strconv ParsetFloat&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;使用doc注释记录包&#34;&gt;使用doc注释记录包&lt;/h1&gt;
-&lt;p&gt;若希望用户看到有关包或函数的文档，需要自己添加。&lt;/p&gt;
-&lt;p&gt;只需在代码中添加文档注释，直接出现在package子句或函数声明之前的普通go注释将被视为文档注释，将显示在go doc 的输出中。&lt;/p&gt;
-&lt;p&gt;添加文档注释时，需要遵循一些惯例：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;注释应该是完整的句子；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;包注释应以 &lt;code&gt;Package&lt;/code&gt; 开头，后跟包名；
-&lt;code&gt;Package mypackage enable widget management&lt;/code&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;函数注释应以其描述的函数的名称开头；
-&lt;code&gt;MyFunction converts widget to gizmos&lt;/code&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;可以通过缩进在注释中包含代码示例；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;除了代码示例的缩进，不要为了强调或格式化添加额外的标点符号。文档注释将显示为纯文本，并以这种方式进行格式化；&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&#34;在web浏览器中查看文档&#34;&gt;在web浏览器中查看文档&lt;/h1&gt;
-&lt;p&gt;可以在搜索引擎中搜索。&lt;/p&gt;
-&lt;h1 id=&#34;使用godoc提供html文档&#34;&gt;使用&amp;quot;godoc&amp;quot;提供HTML文档&lt;/h1&gt;
-&lt;p&gt;&lt;code&gt;godoc&lt;/code&gt; 工具根据主要的go安装和工作区中的代码生成HTML文档。&lt;/p&gt;
-&lt;p&gt;可以在web服务器模式运行 godoc ：&lt;code&gt;godoc -http=:8880&lt;/code&gt; ，然后可以在浏览器中访问：&lt;code&gt;http://localhost:8880/pkg&lt;/code&gt;。&lt;/p&gt;
-&lt;h1 id=&#34;godoc服务器包含你的包&#34;&gt;&amp;ldquo;godoc&amp;quot;服务器包含你的包&lt;/h1&gt;
-&lt;p&gt;除了来自go标准库的包之外，godoc 还为go工作区中的任何包构建HTML文档，这些包有可能是第三方的包，也可能是自己写的包。&lt;/p&gt;
 </description>
     </item>
     
