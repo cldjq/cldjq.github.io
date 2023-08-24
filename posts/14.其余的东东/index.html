@@ -277,7 +277,7 @@ d 2023-08-23 15:12:36.406175 +0800 CST m=+8.004105594
 </code></pre><p>将缓冲区大小增加到3，这允许sendLetters在不阻塞的情况下发送三个值，在最后一次发送时阻塞，但这是在它的所有1秒Sleep调用完成之后，因此，当主goroutine在5秒后醒来时，它立即接收到在有缓冲channel中等待的三个值，以及导致sendLetters阻塞的值。这让程序只需5秒完成。</p>
 </article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
-<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/13.goroutine%E5%92%8Cchannel/"><span class="iconfont icon-article"></span>13.goroutine和channel</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/15.%E6%B3%9B%E5%9E%8B/"><span class="iconfont icon-article"></span>15.泛型</a></p><p><a class="link" href="/posts/13.goroutine%E5%92%8Cchannel/"><span class="iconfont icon-article"></span>13.goroutine和channel</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
     window.disqus_config = function () {
     

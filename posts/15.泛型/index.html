@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>15.泛型&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="15.泛型" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">15.泛型</h1><p class="article date">Thursday, August 24, 2023</p></section><article class="article markdown-body"><blockquote>
+<p>2022年3月15日，泛型终于在Go1.18发布～</p>
+</blockquote>
+<h1 id="函数的行参和实参">函数的行参和实参</h1>
+<p>假设有个计算两数之和的函数：</p>
+<pre tabindex="0"><code>func Add(a int, b int) int {
+	return a + b
+}
+</code></pre><p>这个函数比较简单，但是无法计算int类型之外的和，如果想计算浮点数或字符串的和怎么办？解决方式之一就是为不同的类型定义不同的函数：</p>
+<pre tabindex="0"><code>func AddFloat32(a float32, b float32) float32 {
+	return a + b
+}
+func AddString(a string, b string) string {
+	return a + b
+}
+</code></pre><p>函数的<code>行参（parameter）</code>和<code>实参（argument）</code>：</p>
+<pre tabindex="0"><code>func Add(a int, b int) int {
+	// 变量a，b是函数的行参；&#34;a int, b int&#34; 这一串被称为行参列表
+	return a + b
+}
+Add(100, 200) //调用函数时，传入的100和200是实参
+</code></pre><p>函数的行参只是类似占位符实际并没有具体值，只有调用函数传入实参之后才有具体的值。</p>
+<p>如果将行参、实参推广一下，给变量的类型也引入和类似行参的概念的话，问题就迎刃而解，给其命名为 <code>类型行参type parameter</code>和<code>类型实参type argument</code>：</p>
+<pre tabindex="0"><code>//假设T是类型行参，在定义函数时其类型不确定，类似占位符
+func Add(a T, b T) T {
+	return a + b
+}
+</code></pre><p>上述伪代码中，T被称为类型行参，不是具体的类型，因为T类型不确定，所以需要像函数行参那样，在调用函数时传入具体类型，这样一个函数就能同时支持多个不同的类型，这里被传入的具体类型称为类型实参。<br>
+再写一段伪代码：</p>
+<pre tabindex="0"><code>//[T=int]中的int是类型实参，代表Add()函数中定义的类型行参T全都被int替换
+Add[T=int](100, 200)
+//传入类型实参int后，Add()函数的定义可近似堪称如下这样：
+func Add(a int, b int) int {
+	return a + b
+}
+</code></pre><p>另一个例子，当想要计算两个字符串之和时，就传入string类型实参：</p>
+<pre tabindex="0"><code>Add[T=string](&#34;hello&#34;, &#34;world&#34;)
+//了行实参string传入后，Add()定义近似如下：
+func Add(a string, b string) string {
+	return a + b
+}
+</code></pre><p>通过引入类型行参和类型实参两个概念，让函数获得了处理多种不同类型数据的能力，这种编程方式称为<code>泛型编程</code>。</p>
+<p>虽然Go的 接口+反射 也能实现这样的动态数据处理，但是反射的问题：</p>
+<ul>
+<li>用起来比较麻烦</li>
+<li>失去了编译时的类型检查，容易写错</li>
+<li>性能差</li>
+</ul>
+<p>泛型的适用场景：<br>
+<code>如果经常要分别为不同的类型编写完全相同逻辑的代码，那么泛型是最佳选择。</code></p>
+<h1 id="go的泛型">Go的泛型</h1>
+<p>Go引入了全新的概念实现泛型编程：</p>
+<ul>
+<li>类型行参（type parameter）</li>
+<li>类型实参（type argument）</li>
+<li>类型行参列表（type parameter list）</li>
+<li>类型约束（type constraint）</li>
+<li>实例化（instantiations）</li>
+<li>泛型类型（generic type）</li>
+<li>泛型接收器（generic receiver）</li>
+<li>泛型函数（generic function）</li>
+<li>&hellip;</li>
+</ul>
+<h1 id="类型行参类型实参类型约束和泛型类型">类型行参、类型实参、类型约束和泛型类型</h1>
+<pre tabindex="0"><code>type Slice[T int|float32|float64] []T
+</code></pre><ul>
+<li><code>T</code>就是 类型行参 ，在定义Slice类型的时候T代表的具体类型并不确定，类似一个占位符</li>
+<li><code>int|float32|float64</code>这部分被称为 类型约束 ，中间的 <code>|</code> 意思是告诉编译器，类型行参 T 只可以接收 int 或 float32 或 float64 这三种类型实参</li>
+<li>中括号里的 <code>T int|float32|float64</code> 这一整串定义所有类型的行参，所以称其为 类型行参列表</li>
+<li>新定义的类型名称为 <code>Slice[T]</code></li>
+</ul>
+<p>这种类型定义的方式中带了类型行参，与普通的类型定义不一样，称这种类型定义中带 类型行参 的类型，叫 <code>泛型类型 generic type</code></p>
+<p>泛型类型不能直接使用，必须传入 类型实参 将其确定为具体的类型后才能使用。传入类型实参确定具体类型的操作被称为 <code>实例化</code></p>
+<pre tabindex="0"><code>//传入类型实参int，泛型类型Slice[T]被实例化为具体的类型 Slice[int]
+var a Slice[int] = []int{1, 2, 3}
+fmt.Printf(&#34;Type Name: %T&#34;, a)   //输出：Type Name: Slice[int]
+
+//传入类型实参float32，将泛型类型Slice[T]实例化为具体的类型 Slice[float32]
+var b Slice[float32] = []float32{1.0, 2.0, 3.0}
+fmt.Printf(&#34;Type Name: %T&#34;, b)  //输出：Type Name: Slice[float32]
+
+//下面错误，a类型为Slice[int]，b类型为Slice[float32]，不同类型之间的变量赋值不允许
+a = b
+
+//下面错误，Slice[T]是泛型类型，不可直接使用必须实例化为具体类型
+var x Slice[T] = []int{1, 2, 3}
+</code></pre><p>map类型示例：</p>
+<pre tabindex="0"><code>// MyMap类型定义了两个类型形参 KEY 和 VALUE。分别为两个形参指定了不同的类型约束
+// 这个泛型类型的名字叫： MyMap[KEY, VALUE]
+type MyMap[KEY int | string, VALUE float32 | float64] map[KEY]VALUE  
+
+// 用类型实参 string 和 flaot64 替换了类型形参 KEY 、 VALUE，泛型类型被实例化为具体的类型：MyMap[string, float64]
+var a MyMap[string, float64] = map[string]float64 {
+    &#34;jack_score&#34;: 9.6,
+    &#34;bob_score&#34;:  8.4,
+}
+</code></pre><ul>
+<li>KEY和VALUE是类型行参</li>
+<li><code>int | string</code>是KEY的类型约束，<code>float32 | float64</code>是VALUE的类型约束</li>
+<li><code>KEY int | string, VALUE float32</code>是类型约束列表</li>
+<li>MyMap[KEY, VALUE] 是泛型类型，类型的名字就叫MyMap[KEY, VALUE]</li>
+<li><code>var a MyMap[string, float64] = map[string]float64</code>中的string和float64是类型实参，分别用于替换 KEY 和 VALUE，实例化出了具体的类型 MyMap[string, float32]</li>
+</ul>
+<h4 id="其他泛型类型">其他泛型类型</h4>
+<p>所有类型定义都可使用类型行参，下面这种结构体及接口定义也可以使用类型行参：</p>
+<pre tabindex="0"><code>//一个泛型类型的结构体，可用 int 或 string 类型实例化
+type MyStruct[T int | string] struct {
+	Name string
+	Data T
+}
+//一个泛型接口
+type IPrintData[T int | float32 | string] interface {
+	Print(data T)
+}
+//一个泛型channel，可用类型实参 int 或 string 实例化
+type MyChan[T int | string] chan T
+</code></pre><h4 id="类型行参相互套用">类型行参相互套用</h4>
+<pre tabindex="0"><code>type WowStruct[T int | float32, S []T] struct {
+    Data     S
+    MaxValue T
+    MinValue T
+}
+</code></pre><p>上述代码有点复杂且难懂，只要记住：<code>任何泛型类型都必须传入类型实参实例化才可以使用</code>。</p>
+<pre tabindex="0"><code>//泛型类型 WowStruct[T, S] 被实例化后的类型名字叫 WowStruct[int, []int]
+var ws WowStruct[int, []int]
+</code></pre><p>上面为T传入了实参int，然后因为S的定义是 []T，所以S的实参是 []int，经过实例化后， WowStruct[T, S] 的定义类型如下：</p>
+<pre tabindex="0"><code>//一个存储int类型切片，以及切片中最大、最小值的结构体
+type WowStruct[int, []int] struct {
+	Data     []int
+	MaxValue int
+	MinValue int
+}
+</code></pre><p>因为S定义是 []T，所以T一旦确定，S实参就不能随意传，如下代码是错误的：</p>
+<pre tabindex="0"><code>//错误，S定义是[]T，这里T传入了实参int，所以S实参应当为 []int 而不是[]float32
+ws := WowStruct[int, []float32]{
+        Data:     []float32{1.0, 2.0, 3.0},
+        MaxValue: 3,
+        MinValue: 1,
+}
+</code></pre><h4 id="语法使用">语法使用</h4>
+<p>1.定义泛型的时候，<strong>基础类型不能只有类型行参</strong>：</p>
+<pre tabindex="0"><code>//错误，类型行参不能单独使用
+type CommonType[T int|string|float32] T
+</code></pre><p>2.类型约束正确写法是，给类型约束包上<code>interface{}</code>：</p>
+<pre tabindex="0"><code>type NewType[T interface{*int}] []T
+type NewType2[T interface{*int|*float64}] []T 
+</code></pre><h4 id="特殊的泛型类型">特殊的泛型类型</h4>
+<pre tabindex="0"><code>type Wow[T int | string] int
+
+var a Wow[int] = 123     // 编译正确
+var b Wow[string] = 123  // 编译正确
+var c Wow[string] = &#34;hello&#34; // 编译错误，因为&#34;hello&#34;不能赋值给底层类型int
+</code></pre><p>虽然使用了类型行参，但因为类型定义是 <code>type Wow[T int | string] int</code>，所以无论传入什么类型实参，实例化后的新类型的底层类型都是int。</p>
+<h4 id="泛型类型的嵌套">泛型类型的嵌套</h4>
+<p>泛型和普通的类型一样，可以互相嵌套定义出更加复杂的新类型。</p>
+<pre tabindex="0"><code>// 先定义个泛型类型 Slice[T]
+type Slice[T int|string|float32|float64] []T
+
+// ✗ 错误。泛型类型Slice[T]的类型约束中不包含uint, uint8
+type UintSlice[T uint|uint8] Slice[T]  
+
+// ✓ 正确。基于泛型类型Slice[T]定义了新的泛型类型 FloatSlice[T] 。FloatSlice[T]只接受float32和float64两种类型
+type FloatSlice[T float32|float64] Slice[T] 
+
+// ✓ 正确。基于泛型类型Slice[T]定义的新泛型类型 IntAndStringSlice[T]
+type IntAndStringSlice[T int|string] Slice[T]  
+// ✓ 正确 基于IntAndStringSlice[T]套娃定义出的新泛型类型
+type IntSlice[T int] IntAndStringSlice[T] 
+
+// 在map中套一个泛型类型Slice[T]
+type WowMap[T int|string] map[string]Slice[T]
+// 在map中套Slice[T]的另一种写法
+type WowMap2[T Slice[int] | Slice[string]] map[string]T
+</code></pre><h4 id="类型约束的两种选择">类型约束的两种选择</h4>
+<pre tabindex="0"><code>type WowStruct[T int|string] struct {
+    Name string
+    Data []T
+}
+
+type WowStruct2[T []int|[]string] struct {
+    Name string
+    Data T
+}
+</code></pre><p>这两种写法与实现的功能差不多，实例化之后结构体相同，但像下面这种情况，这样写会更好：</p>
+<pre tabindex="0"><code>type WowStruct3[T int | string] struct {
+    Data     []T
+    MaxValue T
+    MinValue T
+}
+</code></pre><h4 id="匿名结构体不支持泛型">匿名结构体不支持泛型</h4>
+<pre tabindex="0"><code>testCase := struct {
+        caseName string
+        got      int
+        want     int
+    }{
+        caseName: &#34;test OK&#34;,
+        got:      100,
+        want:     100,
+    }
+</code></pre><p>在定义好匿名结构体后，直接初始化。</p>
+<p><code>匿名结构体不能使用泛型</code></p>
+<h1 id="泛型receiver">泛型receiver</h1>
+<p>定义了新的普通类型后可以给类型添加方法，可以给泛型类型添加方法：</p>
+<pre tabindex="0"><code>type MySlice[T int | float32] []T
+
+func (s MySlice[T]) Sum() T {
+    var sum T
+    for _, value := range s {
+        sum += value
+    }
+    return sum
+}
+</code></pre><ul>
+<li>首先<code>s MySlice[T]</code>，所以直接把类型名称 <code>MySlice[T]</code> 写入了receiver中</li>
+<li>方法的返回参数使用了类型行参T（若有需要，方法的接收参数也可以使用类型行参）</li>
+<li>在方法定义中，也可以使用类型行参T（通过 <code>var sum T</code>定义一个新的变量 sum）</li>
+</ul>
+<p><code>MySlice[T]</code>这个泛型类型如何用呢？泛型类型无论如何都需要首先进行类型实参实例化：</p>
+<pre tabindex="0"><code>var s MySlice[int] = []int{1, 2, 3, 4}
+fmt.Println(s.Sum()) // 输出：10
+
+var s2 MySlice[float32] = []float32{1.0, 2.0, 3.0, 4.0}
+fmt.Println(s2.Sum()) // 输出：10.0
+</code></pre><p>首先用类型实参int实例化了泛型类型<code>MySlice[T]</code>，所以泛型类型定义中的所有 T 都被替换成 int，最终可以把代码看作这样：</p>
+<pre tabindex="0"><code>type MySlice[int] []int // 实例化后的类型名叫 MyIntSlice[int]
+
+// 方法中所有类型形参 T 都被替换为类型实参 int
+func (s MySlice[int]) Sum() int {
+    var sum int 
+    for _, value := range s {
+        sum += value
+    }
+    return sum
+}
+</code></pre><p>通过泛型receiver，泛型实用性得到了扩展，没有泛型之前，想实现通用的数据结构，比如：堆、栈、队列、链表之类，只有两个选择：</p>
+<ul>
+<li>为每种类型写一个实现</li>
+<li>使用 接口+反射</li>
+</ul>
+<p>有了泛型后，就能很简单创建通用数据结构。</p>
+<h4 id="基于泛型的队列">基于泛型的队列</h4>
+<p>队列是一种先入先出的数据结构，和现实中排队一样，数据只能从队尾放入，从队首取出。</p>
+<pre tabindex="0"><code>// 这里类型约束使用了空接口，代表的意思是所有类型都可以用来实例化泛型类型 Queue[T]
+type Queue[T interface{}] struct {
+    elements []T
+}
+
+// 将数据放入队列尾部
+func (q *Queue[T]) Put(value T) {
+    q.elements = append(q.elements, value)
+}
+
+// 从队列头部取出并从头部删除对应数据
+func (q *Queue[T]) Pop() (T, bool) {
+    var value T
+    if len(q.elements) == 0 {
+        return value, true
+    }
+
+    value = q.elements[0]
+    q.elements = q.elements[1:]
+    return value, len(q.elements) == 0
+}
+
+// 队列大小
+func (q Queue[T]) Size() int {
+    return len(q.elements)
+}
+</code></pre><p>Queue[T] 是泛型类型，要使用必须实例化，实例化与使用方式：</p>
+<pre tabindex="0"><code>var q1 Queue[int]  // 可存放int类型数据的队列
+q1.Put(1)
+q1.Put(2)
+q1.Put(3)
+q1.Pop() // 1
+q1.Pop() // 2
+q1.Pop() // 3
+
+var q2 Queue[string]  // 可存放string类型数据的队列
+q2.Put(&#34;A&#34;)
+q2.Put(&#34;B&#34;)
+q2.Put(&#34;C&#34;)
+q2.Pop() // &#34;A&#34;
+q2.Pop() // &#34;B&#34;
+q2.Pop() // &#34;C&#34;
+
+var q3 Queue[struct{Name string}] 
+var q4 Queue[[]int] // 可存放[]int切片的队列
+var q5 Queue[chan int] // 可存放int通道的队列
+var q6 Queue[io.Reader] // 可存放接口的队列
+// ......
+</code></pre><h4 id="动态判断变量类型">动态判断变量类型</h4>
+<p>使用接口时经常会用到类型断言或type switch 来确定接口具体类型，然后对不同类型做不同处理：</p>
+<pre tabindex="0"><code>var i interface{} = 123
+i.(int) // 类型断言
+
+// type switch
+switch i.(type) {
+    case int:
+        // do something
+    case string:
+        // do something
+    default:
+        // do something
+    }
+}
+</code></pre><p>对于 <code>value T</code> 这样通过类型行参定义的变量，不允许判断具体类型然后对不同类型做出不同处理：</p>
+<pre tabindex="0"><code>func (q *Queue[T]) Put(value T) {
+    value.(int) // 错误。泛型类型定义的变量不能使用类型断言
+
+    // 错误。不允许使用type switch 来判断 value 的具体类型
+    switch value.(type) {
+    case int:
+        // do something
+    case string:
+        // do something
+    default:
+        // do something
+    }
+    
+    // ...
+}
+</code></pre><p>虽然type switch和类型断言不能用，但可以通过反射实现：</p>
+<pre tabindex="0"><code>func (receiver Queue[T]) Put(value T) {
+    // Printf() 可输出变量value的类型(底层就是通过反射实现的)
+    fmt.Printf(&#34;%T&#34;, value) 
+
+    // 通过反射可以动态获得变量value的类型从而分情况处理
+    v := reflect.ValueOf(value)
+
+    switch v.Kind() {
+    case reflect.Int:
+        // do something
+    case reflect.String:
+        // do something
+    }
+
+    // ...
+}
+</code></pre><p>为了避免使用反射而选择泛型，结果为了一些功能在泛型中使用反射。当出现这种情况需要重新思考，需求是不是真的要用泛型。</p>
+<h1 id="泛型函数">泛型函数</h1>
+<pre tabindex="0"><code>func Add[T int | float32 | float64](a T, b T) T {
+    return a + b
+}
+</code></pre><p>带类型行参的函数称为<code>泛型函数</code></p>
+<p>与泛型类型一样，泛型函数不能直接调用，要使用泛型函数必须传入类型实参。</p>
+<pre tabindex="0"><code>Add[int](1,2) // 传入类型实参int，计算结果为 3
+Add[float32](1.0, 2.0) // 传入类型实参float32, 计算结果为 3.0
+
+Add[string](&#34;hello&#34;, &#34;world&#34;) // 错误。因为泛型函数Add的类型约束中并不包含string
+</code></pre><p>Go也支持类型实参自动推导，这是编译器帮助推导了类型实参，实际上传入实参步骤还是实际发生的。</p>
+<pre tabindex="0"><code>Add(1, 2)  // 1，2是int类型，编译请自动推导出类型实参T是int
+Add(1.0, 2.0) // 1.0, 2.0 是浮点，编译请自动推导出类型实参T是float32
+</code></pre><h4 id="匿名函数不支持泛型">匿名函数不支持泛型</h4>
+<p>匿名函数：</p>
+<pre tabindex="0"><code>fn := func(a, b int) int {
+    return a + b 
+}  // 定义了一个匿名函数并赋值给 fn 
+
+fmt.Println(fn(1, 2)) // 输出: 3
+</code></pre><p>匿名函数不能自己定义类型行参.</p>
+<pre tabindex="0"><code>// 错误，匿名函数不能自己定义类型实参
+fnGeneric := func[T int | float32](a, b T) T {
+        return a + b
+} 
+
+fmt.Println(fnGeneric(1, 2))
+</code></pre><p>但是匿名函数可以使用已经定义好的类型实参：</p>
+<pre tabindex="0"><code>func MyFunc[T int | float32 | float64](a, b T) {
+
+    // 匿名函数可使用已经定义好的类型形参
+    fn2 := func(i T, j T) T {
+        return i*2 - j*2
+    }
+
+    fn2(a, b)
+}
+</code></pre><h4 id="泛型方法">泛型方法</h4>
+<p>目前Go的方法不支持泛型。</p>
+<pre tabindex="0"><code>type A struct {
+}
+
+// 不支持泛型方法
+func (receiver A) Add[T int | float32 | float64](a T, b T) T {
+    return a + b
+}
+</code></pre><p>但是因为receiver支持泛型：</p>
+<pre tabindex="0"><code>type A[T int | float32 | float64] struct {
+}
+
+// 方法可以使用类型定义中的形参 T 
+func (receiver A[T]) Add(a T, b T) T {
+    return a + b
+}
+
+// 用法：
+var a A[int]
+a.Add(1, 2)
+
+var aa A[float32]
+aa.Add(1.0, 2.0)
+</code></pre><h1 id="小结">小结</h1>
+<p>Go泛型（类型行参）目前可使用在3个地方：</p>
+<ul>
+<li>泛型类型 - 类型定义中带类型行参的类型</li>
+<li>泛型receiver - 泛型类型的receiver</li>
+<li>泛型函数 - 带类型行参的函数</li>
+</ul>
+<p>为实现泛型，Go引入新概念：</p>
+<ul>
+<li>类型行参</li>
+<li>类型行参列表</li>
+<li>类型实参</li>
+<li>类型约束</li>
+<li>实例化 - 泛型类型不能直接使用，必须传入类型实参进行实例化</li>
+</ul>
+<h1 id="变得复杂的接口">变得复杂的接口</h1>
+<p>有时使用泛型时，可能会写很长的类型约束，但是Go支持将类型约束单独拿出来定义到接口中，让代码更好看：</p>
+<pre tabindex="0"><code>type IntUintFloat interface {
+    int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64 | float32 | float64
+}
+
+type Slice[T IntUintFloat] []T
+</code></pre><p>这段代码把类型约束给单独拿出来，写入了接口类型 IntUintFloat 当中。需要指定类型约束的时候直接使用接口 IntUintFloat 即可。</p>
+<p>接口和接口、接口和普通类型之间也是可以通过 <code>|</code> 进行组合：</p>
+<pre tabindex="0"><code>type Int interface {
+    int | int8 | int16 | int32 | int64
+}
+
+type Uint interface {
+    uint | uint8 | uint16 | uint32
+}
+
+type Float interface {
+    float32 | float64
+}
+
+type Slice[T Int | Uint | Float] []T  // 使用 &#39;|&#39; 将多个接口类型组合
+</code></pre><p>在接口里也能直接组合其他接口：</p>
+<pre tabindex="0"><code>type SliceElement interface {
+    Int | Uint | Float | string // 组合了三个接口类型并额外增加了一个 string 类型
+}
+
+type Slice[T SliceElement] []T 
+</code></pre><h4 id="指定底层类型">指定底层类型</h4>
+<p><code>~</code>:</p>
+<pre tabindex="0"><code>type Int interface {
+    ~int | ~int8 | ~int16 | ~int32 | ~int64
+}
+
+type Uint interface {
+    ~uint | ~uint8 | ~uint16 | ~uint32
+}
+type Float interface {
+    ~float32 | ~float64
+}
+
+type Slice[T Int | Uint | Float] []T 
+
+var s Slice[int] // 正确
+
+type MyInt int
+var s2 Slice[MyInt]  // MyInt底层类型是int，所以可以用于实例化
+
+type MyMyInt MyInt
+var s3 Slice[MyMyInt]  // 正确。MyMyInt 虽然基于 MyInt ，但底层类型也是int，所以也能用于实例化
+
+type MyFloat32 float32  // 正确
+var s4 Slice[MyFloat32]
+</code></pre><p>使用 <code>~</code> 的限制：</p>
+<ul>
+<li><code>~</code> 后面类型不能为接口</li>
+<li><code>~</code> 后面类型必须为基本类型</li>
+</ul>
+<pre tabindex="0"><code>type MyInt int
+
+type _ interface {
+    ~[]byte  // 正确
+    ~MyInt   // 错误，~后的类型必须为基本类型
+    ~error   // 错误，~后的类型不能为接口
+}
+</code></pre><h4 id="从方法集到类型集">从方法集到类型集</h4>
+<p>Go1.18后，接口定义：An interface type defines a type set</p>
+<pre tabindex="0"><code>type Float interface {
+    ~float32 | ~float64
+}
+
+type Slice[T Float] []T 
+</code></pre><p>接口类型Float代表了一个 类型集合，所有以 float32 或 float64 为底层类型的类型，都在这一类型集中。</p>
+<p><code>type Slice[T Float] []T</code>中，类型约束真正的意思是：<strong>类型约束</strong>指定了类型行参可接受的类型集合，只有属于这个集合中的类型才能替换行参用于实例化。</p>
+<h4 id="接口实现定义的变化">接口实现定义的变化</h4>
+<p><code>接口实现implement</code>：<br>
+当满足以下条件时，可以说<strong>类型T实现了接口I</strong>：</p>
+<ul>
+<li>T不是接口时：类型T是接口I代表的类型集中的一个成员</li>
+<li>T是接口时，T接口代表的类型集是I代表的类型集的子集</li>
+</ul>
+<h4 id="类型的并集">类型的并集</h4>
+<pre tabindex="0"><code>type Uint interface {  // 类型集 Uint 是 ~uint 和 ~uint8 等类型的并集
+    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
+}
+</code></pre><h4 id="类型的交集">类型的交集</h4>
+<p>如果一个接口有多行类型定义，那么取它们之间的交集。</p>
+<pre tabindex="0"><code>type AllInt interface {
+    ~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint32
+}
+
+type Uint interface {
+    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
+}
+
+type A interface { // 接口A代表的类型集是 AllInt 和 Uint 的交集
+    AllInt
+    Uint
+}
+
+type B interface { // 接口B代表的类型集是 AllInt 和 ~int 的交集
+    AllInt
+    ~int
+}
+</code></pre><ul>
+<li>接口A代表的是AllInt 与 Uint 的 交集，即 ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64</li>
+<li>接口 B 代表的则是 AllInt 和 ~int 的交集，即 ~int</li>
+</ul>
+<p>还有一种交集：</p>
+<pre tabindex="0"><code>type C interface {
+    ~int
+    int
+}
+</code></pre><p>~int 和int 交集只有 int 一种类型。</p>
+<h4 id="空集">空集</h4>
+<pre tabindex="0"><code>type Bad interface {
+    int
+    float32 
+} // 类型 int 和 float32 没有相交的类型，所以接口 Bad 代表的类型集为空
+</code></pre><p>Bad这个接口代表的类型集为一个空集。</p>
+<p><strong>没有一种类型属于空集</strong></p>
+<h4 id="空接口和any">空接口和any</h4>
+<p><code>空接口代表了所有类型的集合</code></p>
+<ul>
+<li>虽然空接口内没有写入任何的类型，但它代表的是所有类型的集合，而非一个 空集</li>
+<li>类型约束中指定 空接口 的意思是指定了一个包含所有类型的类型集，并不是类型约束限定了只能使用 空接口 来做类型形参</li>
+</ul>
+<pre tabindex="0"><code>// 空接口代表所有类型的集合。写入类型约束意味着所有类型都可拿来做类型实参
+type Slice[T interface{}] []T
+
+var s1 Slice[int]    // 正确
+var s2 Slice[map[string]string]  // 正确
+var s3 Slice[chan int]  // 正确
+var s4 Slice[interface{}]  // 正确
+</code></pre><p>Go1.18开始提供了一个空接口 interface{} 等价的新关键词 <code>any</code>：</p>
+<pre tabindex="0"><code>type Slice[T any] []T // 代码等价于 type Slice[T interface{}] []T
+</code></pre><p>Go1.18开始，所有用到空接口的地方都可以直接替换为any：</p>
+<pre tabindex="0"><code>var s []any // 等价于 var s []interface{}
+var m map[string]any // 等价于 var m map[string]interface{}
+
+func MyPrint(value any){
+    fmt.Println(value)
+}
+</code></pre><p>事实上，Go源码中，any 实际上就是 interface{} 的别名:</p>
+<pre tabindex="0"><code>type any = interface{}
+</code></pre><h4 id="comparable-和-ordered">comparable 和 ordered</h4>
+<p>Go内置了一个叫 <code>comparable</code>的接口，代表了所有可用<code>!=</code>和<code>==</code>对比的类型：</p>
+<pre tabindex="0"><code>type MyMap[KEY comparable, VALUE any] map[KEY]VALUE // 正确
+</code></pre><p><code>comparable</code>可比较指的是可以执行<code>!=</code>和<code>==</code>操作的类型，并不是这个类型可以执行大小比较<code>&gt;,&lt;,&lt;=,&gt;=</code>：</p>
+<pre tabindex="0"><code>type OhMyStruct struct {
+    a int
+}
+
+var a, b OhMyStruct
+
+a == b // 正确。结构体可使用 == 进行比较
+a != b // 正确
+
+a &gt; b // 错误。结构体不可比大小
+</code></pre><p>可进行大小比较的类型称为<code>ordered</code> ，Go没有内置它，想用的话，需要自己来定义：</p>
+<pre tabindex="0"><code>// Ordered 代表所有可比大小排序的类型
+type Ordered interface {
+    Integer | Float | ~string
+}
+
+type Integer interface {
+    Signed | Unsigned
+}
+
+type Signed interface {
+    ~int | ~int8 | ~int16 | ~int32 | ~int64
+}
+
+type Unsigned interface {
+    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+}
+
+type Float interface {
+    ~float32 | ~float64
+}
+</code></pre><p>虽然可以直接使用，但是属于实验，不推荐使用。</p>
+<h4 id="接口两种类型">接口两种类型</h4>
+<pre tabindex="0"><code>type ReadWriter interface {
+    ~string | ~[]rune
+
+    Read(p []byte) (n int, err error)
+    Write(p []byte) (n int, err error)
+}
+</code></pre><p>接口类型 ReadWriter 代表了一个类型集合，所有以 string 或 []rune 为底层类型，并且实现了 Read() Write() 这两个方法的类型都在 ReadWriter 代表的类型集当中.</p>
+<p>当定义一个接口变量时，不光要考虑方法的实现，还必须考虑具体底层类型，Go1.18开始将接口分为了两种类型：<strong>基本接口</strong>和<strong>一般接口</strong></p>
+<h4 id="基本接口">基本接口</h4>
+<p>接口定义中如果只有方法，那么这种接口称为 <strong>基本接口</strong></p>
+<p>应用场景：</p>
+<pre tabindex="0"><code>type MyError interface { // 接口中只有方法，所以是基本接口
+    Error() string
+}
+
+// 用法和 Go1.18之前保持一致
+var err MyError = fmt.Errorf(&#34;hello world&#34;)
+</code></pre><p>基本接口因为代表了一个类型集，所以也可以用在类型约束中。</p>
+<pre tabindex="0"><code>// io.Reader 和 io.Writer 都是基本接口，也可以用在类型约束中
+type MySlice[T io.Reader | io.Writer]  []Slice
+</code></pre><h4 id="一般接口">一般接口</h4>
+<p>如果接口内不光有方法，还有类型的话，这种接口被称为<strong>一般接口</strong>：</p>
+<pre tabindex="0"><code>type Uint interface { // 接口 Uint 中有类型，所以是一般接口
+    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
+}
+
+type ReadWriter interface {  // ReadWriter 接口既有方法也有类型，所以是一般接口
+    ~string | ~[]rune
+
+    Read(p []byte) (n int, err error)
+    Write(p []byte) (n int, err error)
+}
+</code></pre><p><strong>一般接口类型不能用来定义变量，只能用于泛型的类型约束中</strong>：</p>
+<pre tabindex="0"><code>type Uint interface {
+    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
+}
+
+var uintInf Uint // 错误。Uint是一般接口，只能用于类型约束，不得用于变量定义
+</code></pre><p>这个限制保证了一般接口的使用被限定在了泛型中，不会影响以前老版本的代码。</p>
+<h4 id="泛型接口">泛型接口</h4>
+<p>所有类型的定义都可以使用类型行参，所以接口定义也可以使用类型行参：</p>
+<pre tabindex="0"><code>type DataProcessor[T any] interface {
+    Process(oriData T) (newData T)
+    Save(data T) error
+}
+
+type DataProcessor2[T any] interface {
+    int | ~struct{ Data interface{} }
+
+    Process(data T) (newData T)
+    Save(data T) error
+}
+</code></pre><p>因为引入了类型行参，所以这两个接口是泛型类型，<strong>泛型类型要使用必须传入类型实参实例化</strong>，所以来尝试实例化一下：</p>
+<pre tabindex="0"><code>DataProcessor[string]
+
+// 实例化之后的接口定义相当于如下所示：
+type DataProcessor[string] interface {
+    Process(oriData string) (newData string)
+    Save(data string) error
+}
+</code></pre><p>实例化之后就好理解了，DataProcessor[string] 因为只有方法，所以它实际上是一个 基本接口 ， 这个接口包含两个能处理string类型的方法，下面这样实现了这两个能处理string类型的方法就算是实现了这个接口：</p>
+<pre tabindex="0"><code>type CSVProcessor struct {
+}
+
+// 注意，方法中 oriData 等的类型是 string
+func (c CSVProcessor) Process(oriData string) (newData string) {
+    ....
+}
+
+func (c CSVProcessor) Save(oriData string) error {
+    ...
+}
+
+// CSVProcessor实现了接口 DataProcessor[string] ，所以可赋值
+var processor DataProcessor[string] = CSVProcessor{}  
+processor.Process(&#34;name,age\nbob,12\njack,30&#34;)
+processor.Save(&#34;name,age\nbob,13\njack,31&#34;)
+
+// 错误。CSVProcessor没有实现接口 DataProcessor[int]
+var processor2 DataProcessor[int] = CSVProcessor{}
+</code></pre><p>用同样的方式实例化 DataProcessor2[T] :</p>
+<pre tabindex="0"><code>DataProcessor2[string]
+
+// 实例化后的接口定义可视为
+type DataProcessor2[T string] interface {
+    int | ~struct{ Data interface{} }
+
+    Process(data string) (newData string)
+    Save(data string) error
+}
+</code></pre><p>DataProcessor2[string] 因为带有类型并集所以它是 一般接口(General interface)，所以实例化之后的这个接口代表的意思是：</p>
+<ul>
+<li>只有实现了 Process(string) string 和 Save(string) error 这两个方法，并且以 int 或 struct{ Data interface{} } 为底层类型的类型才算实现了这个接口.</li>
+<li>一般接口(General interface) 不能用于变量定义只能用于类型约束，所以接口 DataProcessor2[string] 只是定义了一个用于类型约束的类型集</li>
+</ul>
+<pre tabindex="0"><code>// XMLProcessor 虽然实现了接口 DataProcessor2[string] 的两个方法，但是因为它的底层类型是 []byte，所以依旧是未实现 DataProcessor2[string]
+type XMLProcessor []byte
+func (c XMLProcessor) Process(oriData string) (newData string) {
+}
+func (c XMLProcessor) Save(oriData string) error {
+}
+
+// JsonProcessor 实现了接口 DataProcessor2[string] 的两个方法，同时底层类型是 struct{ Data interface{} }。所以实现了接口 DataProcessor2[string]
+type JsonProcessor struct {
+    Data interface{}
+}
+func (c JsonProcessor) Process(oriData string) (newData string) {
+}
+func (c JsonProcessor) Save(oriData string) error {
+}
+
+// 错误。DataProcessor2[string]是一般接口不能用于创建变量
+var processor DataProcessor2[string]
+
+// 正确，实例化之后的 DataProcessor2[string] 可用于泛型的类型约束
+type ProcessorList[T DataProcessor2[string]] []T
+
+// 正确，接口可以并入其他接口
+type StringProcessor interface {
+    DataProcessor2[string]
+
+    PrintString()
+}
+
+// 错误，带方法的一般接口不能作为类型并集的成员
+type StringProcessor interface {
+    DataProcessor2[string] | DataProcessor2[[]byte]
+
+    PrintString()
+}
+</code></pre><h4 id="接口定义的限制">接口定义的限制</h4>
+<p>1.用<code>|</code>连接多个类型的时候，类型之间不能有相交的部分(即必须是不交集):</p>
+<pre tabindex="0"><code>type MyInt int
+
+// 错误，MyInt的底层类型是int,和 ~int 有相交的部分
+type _ interface {
+    ~int | MyInt
+}
+</code></pre><p>但是相交的类型中是接口的话，则不受这一限制：</p>
+<pre tabindex="0"><code>type MyInt int
+
+type _ interface {
+    ~int | interface{ MyInt }  // 正确
+}
+
+type _ interface {
+    interface{ ~int } | MyInt // 也正确
+}
+
+type _ interface {
+    interface{ ~int } | interface{ MyInt }  // 也正确
+}
+</code></pre><p>2.类型的并集中不能有类型形参</p>
+<pre tabindex="0"><code>type MyInf[T ~int | ~string] interface {
+    ~float32 | T  // 错误。T是类型形参
+}
+
+type MyInf2[T ~int | ~string] interface {
+    T  // 错误
+}
+</code></pre><p>3.接口不能直接或间接地并入自己</p>
+<pre tabindex="0"><code>type Bad interface {
+    Bad // 错误，接口不能直接并入自己
+}
+
+type Bad2 interface {
+    Bad1
+}
+type Bad1 interface {
+    Bad2 // 错误，接口Bad1通过Bad2间接并入了自己
+}
+
+type Bad3 interface {
+    ~int | ~string | Bad3 // 错误，通过类型的并集并入了自己
+}
+</code></pre><p>4.接口的并集成员个数大于一的时候不能直接或间接并入 <code>comparable</code> 接口</p>
+<pre tabindex="0"><code>type OK interface {
+    comparable // 正确。只有一个类型的时候可以使用 comparable
+}
+
+type Bad1 interface {
+    []int | comparable // 错误，类型并集不能直接并入 comparable 接口
+}
+
+type CmpInf interface {
+    comparable
+}
+type Bad2 interface {
+    chan int | CmpInf  // 错误，类型并集通过 CmpInf 间接并入了comparable
+}
+type Bad3 interface {
+    chan int | interface{comparable}  // 理所当然，这样也是不行的
+}
+</code></pre><p>5.带方法的接口（<strong>无论是基本接口还是一般接口</strong>），都不能写入接口的并集中：</p>
+<pre tabindex="0"><code>type _ interface {
+    ~int | ~string | error // 错误，error是带方法的接口(一般接口) 不能写入并集中
+}
+
+type DataProcessor[T any] interface {
+    ~string | ~[]byte
+
+    Process(data T) (newData T)
+    Save(data T) error
+}
+
+// 错误，实例化之后的 DataProcessor[string] 是带方法的一般接口，不能写入类型并集
+type _ interface {
+    ~int | ~string | DataProcessor[string] 
+}
+
+type Bad[T any] interface {
+    ~int | ~string | DataProcessor[T]  // 也不行
+}
+</code></pre><h1 id="最后">最后</h1>
+<p>泛型并不取代Go1.18之前用接口+反射实现的动态类型，应用场景：当需要针对不同类型书写同样的逻辑，使用泛型来简化代码是最好的 (比如想写个队列，写个链表、栈、堆之类的数据结构）</p>
+</article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/14.%E5%85%B6%E4%BD%99%E7%9A%84%E4%B8%9C%E4%B8%9C/"><span class="iconfont icon-article"></span>14.其余的东东</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script><script src="/js/hljs.min.6f979583f61e4ec5f0b94f94eab2e130ee628032474d374414dba4e33cc12097a0d01fe65b33378b23f6d3b053b95445.js" integrity="sha384-b5eVg/YeTsXwuU&#43;U6rLhMO5igDJHTTdEFNuk4zzBIJeg0B/mWzM3iyP207BTuVRF"></script><script>hljs.initHighlightingOnLoad();</script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>

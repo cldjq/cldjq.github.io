@@ -5,10 +5,831 @@
     <description>Recent content on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Tue, 22 Aug 2023 18:47:20 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 24 Aug 2023 08:17:30 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>15.泛型</title>
+      <link>https://tinklespring.com/posts/15.%E6%B3%9B%E5%9E%8B/</link>
+      <pubDate>Thu, 24 Aug 2023 08:17:30 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/15.%E6%B3%9B%E5%9E%8B/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;2022年3月15日，泛型终于在Go1.18发布～&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;函数的行参和实参&#34;&gt;函数的行参和实参&lt;/h1&gt;
+&lt;p&gt;假设有个计算两数之和的函数：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func Add(a int, b int) int {
+	return a + b
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这个函数比较简单，但是无法计算int类型之外的和，如果想计算浮点数或字符串的和怎么办？解决方式之一就是为不同的类型定义不同的函数：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func AddFloat32(a float32, b float32) float32 {
+	return a + b
+}
+func AddString(a string, b string) string {
+	return a + b
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;函数的&lt;code&gt;行参（parameter）&lt;/code&gt;和&lt;code&gt;实参（argument）&lt;/code&gt;：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func Add(a int, b int) int {
+	// 变量a，b是函数的行参；&amp;#34;a int, b int&amp;#34; 这一串被称为行参列表
+	return a + b
+}
+Add(100, 200) //调用函数时，传入的100和200是实参
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;函数的行参只是类似占位符实际并没有具体值，只有调用函数传入实参之后才有具体的值。&lt;/p&gt;
+&lt;p&gt;如果将行参、实参推广一下，给变量的类型也引入和类似行参的概念的话，问题就迎刃而解，给其命名为 &lt;code&gt;类型行参type parameter&lt;/code&gt;和&lt;code&gt;类型实参type argument&lt;/code&gt;：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//假设T是类型行参，在定义函数时其类型不确定，类似占位符
+func Add(a T, b T) T {
+	return a + b
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上述伪代码中，T被称为类型行参，不是具体的类型，因为T类型不确定，所以需要像函数行参那样，在调用函数时传入具体类型，这样一个函数就能同时支持多个不同的类型，这里被传入的具体类型称为类型实参。&lt;br&gt;
+再写一段伪代码：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//[T=int]中的int是类型实参，代表Add()函数中定义的类型行参T全都被int替换
+Add[T=int](100, 200)
+//传入类型实参int后，Add()函数的定义可近似堪称如下这样：
+func Add(a int, b int) int {
+	return a + b
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;另一个例子，当想要计算两个字符串之和时，就传入string类型实参：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Add[T=string](&amp;#34;hello&amp;#34;, &amp;#34;world&amp;#34;)
+//了行实参string传入后，Add()定义近似如下：
+func Add(a string, b string) string {
+	return a + b
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;通过引入类型行参和类型实参两个概念，让函数获得了处理多种不同类型数据的能力，这种编程方式称为&lt;code&gt;泛型编程&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;虽然Go的 接口+反射 也能实现这样的动态数据处理，但是反射的问题：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;用起来比较麻烦&lt;/li&gt;
+&lt;li&gt;失去了编译时的类型检查，容易写错&lt;/li&gt;
+&lt;li&gt;性能差&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;泛型的适用场景：&lt;br&gt;
+&lt;code&gt;如果经常要分别为不同的类型编写完全相同逻辑的代码，那么泛型是最佳选择。&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;go的泛型&#34;&gt;Go的泛型&lt;/h1&gt;
+&lt;p&gt;Go引入了全新的概念实现泛型编程：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;类型行参（type parameter）&lt;/li&gt;
+&lt;li&gt;类型实参（type argument）&lt;/li&gt;
+&lt;li&gt;类型行参列表（type parameter list）&lt;/li&gt;
+&lt;li&gt;类型约束（type constraint）&lt;/li&gt;
+&lt;li&gt;实例化（instantiations）&lt;/li&gt;
+&lt;li&gt;泛型类型（generic type）&lt;/li&gt;
+&lt;li&gt;泛型接收器（generic receiver）&lt;/li&gt;
+&lt;li&gt;泛型函数（generic function）&lt;/li&gt;
+&lt;li&gt;&amp;hellip;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;类型行参类型实参类型约束和泛型类型&#34;&gt;类型行参、类型实参、类型约束和泛型类型&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Slice[T int|float32|float64] []T
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;T&lt;/code&gt;就是 类型行参 ，在定义Slice类型的时候T代表的具体类型并不确定，类似一个占位符&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;int|float32|float64&lt;/code&gt;这部分被称为 类型约束 ，中间的 &lt;code&gt;|&lt;/code&gt; 意思是告诉编译器，类型行参 T 只可以接收 int 或 float32 或 float64 这三种类型实参&lt;/li&gt;
+&lt;li&gt;中括号里的 &lt;code&gt;T int|float32|float64&lt;/code&gt; 这一整串定义所有类型的行参，所以称其为 类型行参列表&lt;/li&gt;
+&lt;li&gt;新定义的类型名称为 &lt;code&gt;Slice[T]&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这种类型定义的方式中带了类型行参，与普通的类型定义不一样，称这种类型定义中带 类型行参 的类型，叫 &lt;code&gt;泛型类型 generic type&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;泛型类型不能直接使用，必须传入 类型实参 将其确定为具体的类型后才能使用。传入类型实参确定具体类型的操作被称为 &lt;code&gt;实例化&lt;/code&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//传入类型实参int，泛型类型Slice[T]被实例化为具体的类型 Slice[int]
+var a Slice[int] = []int{1, 2, 3}
+fmt.Printf(&amp;#34;Type Name: %T&amp;#34;, a)   //输出：Type Name: Slice[int]
+
+//传入类型实参float32，将泛型类型Slice[T]实例化为具体的类型 Slice[float32]
+var b Slice[float32] = []float32{1.0, 2.0, 3.0}
+fmt.Printf(&amp;#34;Type Name: %T&amp;#34;, b)  //输出：Type Name: Slice[float32]
+
+//下面错误，a类型为Slice[int]，b类型为Slice[float32]，不同类型之间的变量赋值不允许
+a = b
+
+//下面错误，Slice[T]是泛型类型，不可直接使用必须实例化为具体类型
+var x Slice[T] = []int{1, 2, 3}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;map类型示例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// MyMap类型定义了两个类型形参 KEY 和 VALUE。分别为两个形参指定了不同的类型约束
+// 这个泛型类型的名字叫： MyMap[KEY, VALUE]
+type MyMap[KEY int | string, VALUE float32 | float64] map[KEY]VALUE  
+
+// 用类型实参 string 和 flaot64 替换了类型形参 KEY 、 VALUE，泛型类型被实例化为具体的类型：MyMap[string, float64]
+var a MyMap[string, float64] = map[string]float64 {
+    &amp;#34;jack_score&amp;#34;: 9.6,
+    &amp;#34;bob_score&amp;#34;:  8.4,
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;KEY和VALUE是类型行参&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;int | string&lt;/code&gt;是KEY的类型约束，&lt;code&gt;float32 | float64&lt;/code&gt;是VALUE的类型约束&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;KEY int | string, VALUE float32&lt;/code&gt;是类型约束列表&lt;/li&gt;
+&lt;li&gt;MyMap[KEY, VALUE] 是泛型类型，类型的名字就叫MyMap[KEY, VALUE]&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;var a MyMap[string, float64] = map[string]float64&lt;/code&gt;中的string和float64是类型实参，分别用于替换 KEY 和 VALUE，实例化出了具体的类型 MyMap[string, float32]&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;其他泛型类型&#34;&gt;其他泛型类型&lt;/h4&gt;
+&lt;p&gt;所有类型定义都可使用类型行参，下面这种结构体及接口定义也可以使用类型行参：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//一个泛型类型的结构体，可用 int 或 string 类型实例化
+type MyStruct[T int | string] struct {
+	Name string
+	Data T
+}
+//一个泛型接口
+type IPrintData[T int | float32 | string] interface {
+	Print(data T)
+}
+//一个泛型channel，可用类型实参 int 或 string 实例化
+type MyChan[T int | string] chan T
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;类型行参相互套用&#34;&gt;类型行参相互套用&lt;/h4&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type WowStruct[T int | float32, S []T] struct {
+    Data     S
+    MaxValue T
+    MinValue T
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上述代码有点复杂且难懂，只要记住：&lt;code&gt;任何泛型类型都必须传入类型实参实例化才可以使用&lt;/code&gt;。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//泛型类型 WowStruct[T, S] 被实例化后的类型名字叫 WowStruct[int, []int]
+var ws WowStruct[int, []int]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面为T传入了实参int，然后因为S的定义是 []T，所以S的实参是 []int，经过实例化后， WowStruct[T, S] 的定义类型如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//一个存储int类型切片，以及切片中最大、最小值的结构体
+type WowStruct[int, []int] struct {
+	Data     []int
+	MaxValue int
+	MinValue int
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;因为S定义是 []T，所以T一旦确定，S实参就不能随意传，如下代码是错误的：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//错误，S定义是[]T，这里T传入了实参int，所以S实参应当为 []int 而不是[]float32
+ws := WowStruct[int, []float32]{
+        Data:     []float32{1.0, 2.0, 3.0},
+        MaxValue: 3,
+        MinValue: 1,
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;语法使用&#34;&gt;语法使用&lt;/h4&gt;
+&lt;p&gt;1.定义泛型的时候，&lt;strong&gt;基础类型不能只有类型行参&lt;/strong&gt;：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//错误，类型行参不能单独使用
+type CommonType[T int|string|float32] T
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;2.类型约束正确写法是，给类型约束包上&lt;code&gt;interface{}&lt;/code&gt;：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type NewType[T interface{*int}] []T
+type NewType2[T interface{*int|*float64}] []T 
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;特殊的泛型类型&#34;&gt;特殊的泛型类型&lt;/h4&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Wow[T int | string] int
+
+var a Wow[int] = 123     // 编译正确
+var b Wow[string] = 123  // 编译正确
+var c Wow[string] = &amp;#34;hello&amp;#34; // 编译错误，因为&amp;#34;hello&amp;#34;不能赋值给底层类型int
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;虽然使用了类型行参，但因为类型定义是 &lt;code&gt;type Wow[T int | string] int&lt;/code&gt;，所以无论传入什么类型实参，实例化后的新类型的底层类型都是int。&lt;/p&gt;
+&lt;h4 id=&#34;泛型类型的嵌套&#34;&gt;泛型类型的嵌套&lt;/h4&gt;
+&lt;p&gt;泛型和普通的类型一样，可以互相嵌套定义出更加复杂的新类型。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 先定义个泛型类型 Slice[T]
+type Slice[T int|string|float32|float64] []T
+
+// ✗ 错误。泛型类型Slice[T]的类型约束中不包含uint, uint8
+type UintSlice[T uint|uint8] Slice[T]  
+
+// ✓ 正确。基于泛型类型Slice[T]定义了新的泛型类型 FloatSlice[T] 。FloatSlice[T]只接受float32和float64两种类型
+type FloatSlice[T float32|float64] Slice[T] 
+
+// ✓ 正确。基于泛型类型Slice[T]定义的新泛型类型 IntAndStringSlice[T]
+type IntAndStringSlice[T int|string] Slice[T]  
+// ✓ 正确 基于IntAndStringSlice[T]套娃定义出的新泛型类型
+type IntSlice[T int] IntAndStringSlice[T] 
+
+// 在map中套一个泛型类型Slice[T]
+type WowMap[T int|string] map[string]Slice[T]
+// 在map中套Slice[T]的另一种写法
+type WowMap2[T Slice[int] | Slice[string]] map[string]T
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;类型约束的两种选择&#34;&gt;类型约束的两种选择&lt;/h4&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type WowStruct[T int|string] struct {
+    Name string
+    Data []T
+}
+
+type WowStruct2[T []int|[]string] struct {
+    Name string
+    Data T
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这两种写法与实现的功能差不多，实例化之后结构体相同，但像下面这种情况，这样写会更好：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type WowStruct3[T int | string] struct {
+    Data     []T
+    MaxValue T
+    MinValue T
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;匿名结构体不支持泛型&#34;&gt;匿名结构体不支持泛型&lt;/h4&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;testCase := struct {
+        caseName string
+        got      int
+        want     int
+    }{
+        caseName: &amp;#34;test OK&amp;#34;,
+        got:      100,
+        want:     100,
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在定义好匿名结构体后，直接初始化。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;匿名结构体不能使用泛型&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;泛型receiver&#34;&gt;泛型receiver&lt;/h1&gt;
+&lt;p&gt;定义了新的普通类型后可以给类型添加方法，可以给泛型类型添加方法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MySlice[T int | float32] []T
+
+func (s MySlice[T]) Sum() T {
+    var sum T
+    for _, value := range s {
+        sum += value
+    }
+    return sum
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;首先&lt;code&gt;s MySlice[T]&lt;/code&gt;，所以直接把类型名称 &lt;code&gt;MySlice[T]&lt;/code&gt; 写入了receiver中&lt;/li&gt;
+&lt;li&gt;方法的返回参数使用了类型行参T（若有需要，方法的接收参数也可以使用类型行参）&lt;/li&gt;
+&lt;li&gt;在方法定义中，也可以使用类型行参T（通过 &lt;code&gt;var sum T&lt;/code&gt;定义一个新的变量 sum）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;code&gt;MySlice[T]&lt;/code&gt;这个泛型类型如何用呢？泛型类型无论如何都需要首先进行类型实参实例化：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var s MySlice[int] = []int{1, 2, 3, 4}
+fmt.Println(s.Sum()) // 输出：10
+
+var s2 MySlice[float32] = []float32{1.0, 2.0, 3.0, 4.0}
+fmt.Println(s2.Sum()) // 输出：10.0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;首先用类型实参int实例化了泛型类型&lt;code&gt;MySlice[T]&lt;/code&gt;，所以泛型类型定义中的所有 T 都被替换成 int，最终可以把代码看作这样：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MySlice[int] []int // 实例化后的类型名叫 MyIntSlice[int]
+
+// 方法中所有类型形参 T 都被替换为类型实参 int
+func (s MySlice[int]) Sum() int {
+    var sum int 
+    for _, value := range s {
+        sum += value
+    }
+    return sum
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;通过泛型receiver，泛型实用性得到了扩展，没有泛型之前，想实现通用的数据结构，比如：堆、栈、队列、链表之类，只有两个选择：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;为每种类型写一个实现&lt;/li&gt;
+&lt;li&gt;使用 接口+反射&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;有了泛型后，就能很简单创建通用数据结构。&lt;/p&gt;
+&lt;h4 id=&#34;基于泛型的队列&#34;&gt;基于泛型的队列&lt;/h4&gt;
+&lt;p&gt;队列是一种先入先出的数据结构，和现实中排队一样，数据只能从队尾放入，从队首取出。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 这里类型约束使用了空接口，代表的意思是所有类型都可以用来实例化泛型类型 Queue[T]
+type Queue[T interface{}] struct {
+    elements []T
+}
+
+// 将数据放入队列尾部
+func (q *Queue[T]) Put(value T) {
+    q.elements = append(q.elements, value)
+}
+
+// 从队列头部取出并从头部删除对应数据
+func (q *Queue[T]) Pop() (T, bool) {
+    var value T
+    if len(q.elements) == 0 {
+        return value, true
+    }
+
+    value = q.elements[0]
+    q.elements = q.elements[1:]
+    return value, len(q.elements) == 0
+}
+
+// 队列大小
+func (q Queue[T]) Size() int {
+    return len(q.elements)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Queue[T] 是泛型类型，要使用必须实例化，实例化与使用方式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var q1 Queue[int]  // 可存放int类型数据的队列
+q1.Put(1)
+q1.Put(2)
+q1.Put(3)
+q1.Pop() // 1
+q1.Pop() // 2
+q1.Pop() // 3
+
+var q2 Queue[string]  // 可存放string类型数据的队列
+q2.Put(&amp;#34;A&amp;#34;)
+q2.Put(&amp;#34;B&amp;#34;)
+q2.Put(&amp;#34;C&amp;#34;)
+q2.Pop() // &amp;#34;A&amp;#34;
+q2.Pop() // &amp;#34;B&amp;#34;
+q2.Pop() // &amp;#34;C&amp;#34;
+
+var q3 Queue[struct{Name string}] 
+var q4 Queue[[]int] // 可存放[]int切片的队列
+var q5 Queue[chan int] // 可存放int通道的队列
+var q6 Queue[io.Reader] // 可存放接口的队列
+// ......
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;动态判断变量类型&#34;&gt;动态判断变量类型&lt;/h4&gt;
+&lt;p&gt;使用接口时经常会用到类型断言或type switch 来确定接口具体类型，然后对不同类型做不同处理：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var i interface{} = 123
+i.(int) // 类型断言
+
+// type switch
+switch i.(type) {
+    case int:
+        // do something
+    case string:
+        // do something
+    default:
+        // do something
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;对于 &lt;code&gt;value T&lt;/code&gt; 这样通过类型行参定义的变量，不允许判断具体类型然后对不同类型做出不同处理：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (q *Queue[T]) Put(value T) {
+    value.(int) // 错误。泛型类型定义的变量不能使用类型断言
+
+    // 错误。不允许使用type switch 来判断 value 的具体类型
+    switch value.(type) {
+    case int:
+        // do something
+    case string:
+        // do something
+    default:
+        // do something
+    }
+    
+    // ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;虽然type switch和类型断言不能用，但可以通过反射实现：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (receiver Queue[T]) Put(value T) {
+    // Printf() 可输出变量value的类型(底层就是通过反射实现的)
+    fmt.Printf(&amp;#34;%T&amp;#34;, value) 
+
+    // 通过反射可以动态获得变量value的类型从而分情况处理
+    v := reflect.ValueOf(value)
+
+    switch v.Kind() {
+    case reflect.Int:
+        // do something
+    case reflect.String:
+        // do something
+    }
+
+    // ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;为了避免使用反射而选择泛型，结果为了一些功能在泛型中使用反射。当出现这种情况需要重新思考，需求是不是真的要用泛型。&lt;/p&gt;
+&lt;h1 id=&#34;泛型函数&#34;&gt;泛型函数&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func Add[T int | float32 | float64](a T, b T) T {
+    return a + b
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;带类型行参的函数称为&lt;code&gt;泛型函数&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;与泛型类型一样，泛型函数不能直接调用，要使用泛型函数必须传入类型实参。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Add[int](1,2) // 传入类型实参int，计算结果为 3
+Add[float32](1.0, 2.0) // 传入类型实参float32, 计算结果为 3.0
+
+Add[string](&amp;#34;hello&amp;#34;, &amp;#34;world&amp;#34;) // 错误。因为泛型函数Add的类型约束中并不包含string
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go也支持类型实参自动推导，这是编译器帮助推导了类型实参，实际上传入实参步骤还是实际发生的。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Add(1, 2)  // 1，2是int类型，编译请自动推导出类型实参T是int
+Add(1.0, 2.0) // 1.0, 2.0 是浮点，编译请自动推导出类型实参T是float32
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;匿名函数不支持泛型&#34;&gt;匿名函数不支持泛型&lt;/h4&gt;
+&lt;p&gt;匿名函数：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn := func(a, b int) int {
+    return a + b 
+}  // 定义了一个匿名函数并赋值给 fn 
+
+fmt.Println(fn(1, 2)) // 输出: 3
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;匿名函数不能自己定义类型行参.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 错误，匿名函数不能自己定义类型实参
+fnGeneric := func[T int | float32](a, b T) T {
+        return a + b
+} 
+
+fmt.Println(fnGeneric(1, 2))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是匿名函数可以使用已经定义好的类型实参：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func MyFunc[T int | float32 | float64](a, b T) {
+
+    // 匿名函数可使用已经定义好的类型形参
+    fn2 := func(i T, j T) T {
+        return i*2 - j*2
+    }
+
+    fn2(a, b)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;泛型方法&#34;&gt;泛型方法&lt;/h4&gt;
+&lt;p&gt;目前Go的方法不支持泛型。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type A struct {
+}
+
+// 不支持泛型方法
+func (receiver A) Add[T int | float32 | float64](a T, b T) T {
+    return a + b
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是因为receiver支持泛型：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type A[T int | float32 | float64] struct {
+}
+
+// 方法可以使用类型定义中的形参 T 
+func (receiver A[T]) Add(a T, b T) T {
+    return a + b
+}
+
+// 用法：
+var a A[int]
+a.Add(1, 2)
+
+var aa A[float32]
+aa.Add(1.0, 2.0)
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;小结&#34;&gt;小结&lt;/h1&gt;
+&lt;p&gt;Go泛型（类型行参）目前可使用在3个地方：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;泛型类型 - 类型定义中带类型行参的类型&lt;/li&gt;
+&lt;li&gt;泛型receiver - 泛型类型的receiver&lt;/li&gt;
+&lt;li&gt;泛型函数 - 带类型行参的函数&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;为实现泛型，Go引入新概念：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;类型行参&lt;/li&gt;
+&lt;li&gt;类型行参列表&lt;/li&gt;
+&lt;li&gt;类型实参&lt;/li&gt;
+&lt;li&gt;类型约束&lt;/li&gt;
+&lt;li&gt;实例化 - 泛型类型不能直接使用，必须传入类型实参进行实例化&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;变得复杂的接口&#34;&gt;变得复杂的接口&lt;/h1&gt;
+&lt;p&gt;有时使用泛型时，可能会写很长的类型约束，但是Go支持将类型约束单独拿出来定义到接口中，让代码更好看：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type IntUintFloat interface {
+    int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64 | float32 | float64
+}
+
+type Slice[T IntUintFloat] []T
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这段代码把类型约束给单独拿出来，写入了接口类型 IntUintFloat 当中。需要指定类型约束的时候直接使用接口 IntUintFloat 即可。&lt;/p&gt;
+&lt;p&gt;接口和接口、接口和普通类型之间也是可以通过 &lt;code&gt;|&lt;/code&gt; 进行组合：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Int interface {
+    int | int8 | int16 | int32 | int64
+}
+
+type Uint interface {
+    uint | uint8 | uint16 | uint32
+}
+
+type Float interface {
+    float32 | float64
+}
+
+type Slice[T Int | Uint | Float] []T  // 使用 &amp;#39;|&amp;#39; 将多个接口类型组合
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在接口里也能直接组合其他接口：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type SliceElement interface {
+    Int | Uint | Float | string // 组合了三个接口类型并额外增加了一个 string 类型
+}
+
+type Slice[T SliceElement] []T 
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;指定底层类型&#34;&gt;指定底层类型&lt;/h4&gt;
+&lt;p&gt;&lt;code&gt;~&lt;/code&gt;:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Int interface {
+    ~int | ~int8 | ~int16 | ~int32 | ~int64
+}
+
+type Uint interface {
+    ~uint | ~uint8 | ~uint16 | ~uint32
+}
+type Float interface {
+    ~float32 | ~float64
+}
+
+type Slice[T Int | Uint | Float] []T 
+
+var s Slice[int] // 正确
+
+type MyInt int
+var s2 Slice[MyInt]  // MyInt底层类型是int，所以可以用于实例化
+
+type MyMyInt MyInt
+var s3 Slice[MyMyInt]  // 正确。MyMyInt 虽然基于 MyInt ，但底层类型也是int，所以也能用于实例化
+
+type MyFloat32 float32  // 正确
+var s4 Slice[MyFloat32]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用 &lt;code&gt;~&lt;/code&gt; 的限制：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;~&lt;/code&gt; 后面类型不能为接口&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;~&lt;/code&gt; 后面类型必须为基本类型&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyInt int
+
+type _ interface {
+    ~[]byte  // 正确
+    ~MyInt   // 错误，~后的类型必须为基本类型
+    ~error   // 错误，~后的类型不能为接口
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;从方法集到类型集&#34;&gt;从方法集到类型集&lt;/h4&gt;
+&lt;p&gt;Go1.18后，接口定义：An interface type defines a type set&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Float interface {
+    ~float32 | ~float64
+}
+
+type Slice[T Float] []T 
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;接口类型Float代表了一个 类型集合，所有以 float32 或 float64 为底层类型的类型，都在这一类型集中。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;type Slice[T Float] []T&lt;/code&gt;中，类型约束真正的意思是：&lt;strong&gt;类型约束&lt;/strong&gt;指定了类型行参可接受的类型集合，只有属于这个集合中的类型才能替换行参用于实例化。&lt;/p&gt;
+&lt;h4 id=&#34;接口实现定义的变化&#34;&gt;接口实现定义的变化&lt;/h4&gt;
+&lt;p&gt;&lt;code&gt;接口实现implement&lt;/code&gt;：&lt;br&gt;
+当满足以下条件时，可以说&lt;strong&gt;类型T实现了接口I&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;T不是接口时：类型T是接口I代表的类型集中的一个成员&lt;/li&gt;
+&lt;li&gt;T是接口时，T接口代表的类型集是I代表的类型集的子集&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;类型的并集&#34;&gt;类型的并集&lt;/h4&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Uint interface {  // 类型集 Uint 是 ~uint 和 ~uint8 等类型的并集
+    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;类型的交集&#34;&gt;类型的交集&lt;/h4&gt;
+&lt;p&gt;如果一个接口有多行类型定义，那么取它们之间的交集。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type AllInt interface {
+    ~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint32
+}
+
+type Uint interface {
+    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
+}
+
+type A interface { // 接口A代表的类型集是 AllInt 和 Uint 的交集
+    AllInt
+    Uint
+}
+
+type B interface { // 接口B代表的类型集是 AllInt 和 ~int 的交集
+    AllInt
+    ~int
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;接口A代表的是AllInt 与 Uint 的 交集，即 ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64&lt;/li&gt;
+&lt;li&gt;接口 B 代表的则是 AllInt 和 ~int 的交集，即 ~int&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;还有一种交集：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type C interface {
+    ~int
+    int
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;~int 和int 交集只有 int 一种类型。&lt;/p&gt;
+&lt;h4 id=&#34;空集&#34;&gt;空集&lt;/h4&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Bad interface {
+    int
+    float32 
+} // 类型 int 和 float32 没有相交的类型，所以接口 Bad 代表的类型集为空
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Bad这个接口代表的类型集为一个空集。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;没有一种类型属于空集&lt;/strong&gt;&lt;/p&gt;
+&lt;h4 id=&#34;空接口和any&#34;&gt;空接口和any&lt;/h4&gt;
+&lt;p&gt;&lt;code&gt;空接口代表了所有类型的集合&lt;/code&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;虽然空接口内没有写入任何的类型，但它代表的是所有类型的集合，而非一个 空集&lt;/li&gt;
+&lt;li&gt;类型约束中指定 空接口 的意思是指定了一个包含所有类型的类型集，并不是类型约束限定了只能使用 空接口 来做类型形参&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 空接口代表所有类型的集合。写入类型约束意味着所有类型都可拿来做类型实参
+type Slice[T interface{}] []T
+
+var s1 Slice[int]    // 正确
+var s2 Slice[map[string]string]  // 正确
+var s3 Slice[chan int]  // 正确
+var s4 Slice[interface{}]  // 正确
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go1.18开始提供了一个空接口 interface{} 等价的新关键词 &lt;code&gt;any&lt;/code&gt;：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Slice[T any] []T // 代码等价于 type Slice[T interface{}] []T
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go1.18开始，所有用到空接口的地方都可以直接替换为any：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var s []any // 等价于 var s []interface{}
+var m map[string]any // 等价于 var m map[string]interface{}
+
+func MyPrint(value any){
+    fmt.Println(value)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;事实上，Go源码中，any 实际上就是 interface{} 的别名:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type any = interface{}
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;comparable-和-ordered&#34;&gt;comparable 和 ordered&lt;/h4&gt;
+&lt;p&gt;Go内置了一个叫 &lt;code&gt;comparable&lt;/code&gt;的接口，代表了所有可用&lt;code&gt;!=&lt;/code&gt;和&lt;code&gt;==&lt;/code&gt;对比的类型：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyMap[KEY comparable, VALUE any] map[KEY]VALUE // 正确
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;comparable&lt;/code&gt;可比较指的是可以执行&lt;code&gt;!=&lt;/code&gt;和&lt;code&gt;==&lt;/code&gt;操作的类型，并不是这个类型可以执行大小比较&lt;code&gt;&amp;gt;,&amp;lt;,&amp;lt;=,&amp;gt;=&lt;/code&gt;：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type OhMyStruct struct {
+    a int
+}
+
+var a, b OhMyStruct
+
+a == b // 正确。结构体可使用 == 进行比较
+a != b // 正确
+
+a &amp;gt; b // 错误。结构体不可比大小
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可进行大小比较的类型称为&lt;code&gt;ordered&lt;/code&gt; ，Go没有内置它，想用的话，需要自己来定义：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Ordered 代表所有可比大小排序的类型
+type Ordered interface {
+    Integer | Float | ~string
+}
+
+type Integer interface {
+    Signed | Unsigned
+}
+
+type Signed interface {
+    ~int | ~int8 | ~int16 | ~int32 | ~int64
+}
+
+type Unsigned interface {
+    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+}
+
+type Float interface {
+    ~float32 | ~float64
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;虽然可以直接使用，但是属于实验，不推荐使用。&lt;/p&gt;
+&lt;h4 id=&#34;接口两种类型&#34;&gt;接口两种类型&lt;/h4&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type ReadWriter interface {
+    ~string | ~[]rune
+
+    Read(p []byte) (n int, err error)
+    Write(p []byte) (n int, err error)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;接口类型 ReadWriter 代表了一个类型集合，所有以 string 或 []rune 为底层类型，并且实现了 Read() Write() 这两个方法的类型都在 ReadWriter 代表的类型集当中.&lt;/p&gt;
+&lt;p&gt;当定义一个接口变量时，不光要考虑方法的实现，还必须考虑具体底层类型，Go1.18开始将接口分为了两种类型：&lt;strong&gt;基本接口&lt;/strong&gt;和&lt;strong&gt;一般接口&lt;/strong&gt;&lt;/p&gt;
+&lt;h4 id=&#34;基本接口&#34;&gt;基本接口&lt;/h4&gt;
+&lt;p&gt;接口定义中如果只有方法，那么这种接口称为 &lt;strong&gt;基本接口&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;应用场景：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyError interface { // 接口中只有方法，所以是基本接口
+    Error() string
+}
+
+// 用法和 Go1.18之前保持一致
+var err MyError = fmt.Errorf(&amp;#34;hello world&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;基本接口因为代表了一个类型集，所以也可以用在类型约束中。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// io.Reader 和 io.Writer 都是基本接口，也可以用在类型约束中
+type MySlice[T io.Reader | io.Writer]  []Slice
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;一般接口&#34;&gt;一般接口&lt;/h4&gt;
+&lt;p&gt;如果接口内不光有方法，还有类型的话，这种接口被称为&lt;strong&gt;一般接口&lt;/strong&gt;：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Uint interface { // 接口 Uint 中有类型，所以是一般接口
+    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
+}
+
+type ReadWriter interface {  // ReadWriter 接口既有方法也有类型，所以是一般接口
+    ~string | ~[]rune
+
+    Read(p []byte) (n int, err error)
+    Write(p []byte) (n int, err error)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;一般接口类型不能用来定义变量，只能用于泛型的类型约束中&lt;/strong&gt;：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Uint interface {
+    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
+}
+
+var uintInf Uint // 错误。Uint是一般接口，只能用于类型约束，不得用于变量定义
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这个限制保证了一般接口的使用被限定在了泛型中，不会影响以前老版本的代码。&lt;/p&gt;
+&lt;h4 id=&#34;泛型接口&#34;&gt;泛型接口&lt;/h4&gt;
+&lt;p&gt;所有类型的定义都可以使用类型行参，所以接口定义也可以使用类型行参：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type DataProcessor[T any] interface {
+    Process(oriData T) (newData T)
+    Save(data T) error
+}
+
+type DataProcessor2[T any] interface {
+    int | ~struct{ Data interface{} }
+
+    Process(data T) (newData T)
+    Save(data T) error
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;因为引入了类型行参，所以这两个接口是泛型类型，&lt;strong&gt;泛型类型要使用必须传入类型实参实例化&lt;/strong&gt;，所以来尝试实例化一下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;DataProcessor[string]
+
+// 实例化之后的接口定义相当于如下所示：
+type DataProcessor[string] interface {
+    Process(oriData string) (newData string)
+    Save(data string) error
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;实例化之后就好理解了，DataProcessor[string] 因为只有方法，所以它实际上是一个 基本接口 ， 这个接口包含两个能处理string类型的方法，下面这样实现了这两个能处理string类型的方法就算是实现了这个接口：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type CSVProcessor struct {
+}
+
+// 注意，方法中 oriData 等的类型是 string
+func (c CSVProcessor) Process(oriData string) (newData string) {
+    ....
+}
+
+func (c CSVProcessor) Save(oriData string) error {
+    ...
+}
+
+// CSVProcessor实现了接口 DataProcessor[string] ，所以可赋值
+var processor DataProcessor[string] = CSVProcessor{}  
+processor.Process(&amp;#34;name,age\nbob,12\njack,30&amp;#34;)
+processor.Save(&amp;#34;name,age\nbob,13\njack,31&amp;#34;)
+
+// 错误。CSVProcessor没有实现接口 DataProcessor[int]
+var processor2 DataProcessor[int] = CSVProcessor{}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;用同样的方式实例化 DataProcessor2[T] :&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;DataProcessor2[string]
+
+// 实例化后的接口定义可视为
+type DataProcessor2[T string] interface {
+    int | ~struct{ Data interface{} }
+
+    Process(data string) (newData string)
+    Save(data string) error
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;DataProcessor2[string] 因为带有类型并集所以它是 一般接口(General interface)，所以实例化之后的这个接口代表的意思是：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;只有实现了 Process(string) string 和 Save(string) error 这两个方法，并且以 int 或 struct{ Data interface{} } 为底层类型的类型才算实现了这个接口.&lt;/li&gt;
+&lt;li&gt;一般接口(General interface) 不能用于变量定义只能用于类型约束，所以接口 DataProcessor2[string] 只是定义了一个用于类型约束的类型集&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// XMLProcessor 虽然实现了接口 DataProcessor2[string] 的两个方法，但是因为它的底层类型是 []byte，所以依旧是未实现 DataProcessor2[string]
+type XMLProcessor []byte
+func (c XMLProcessor) Process(oriData string) (newData string) {
+}
+func (c XMLProcessor) Save(oriData string) error {
+}
+
+// JsonProcessor 实现了接口 DataProcessor2[string] 的两个方法，同时底层类型是 struct{ Data interface{} }。所以实现了接口 DataProcessor2[string]
+type JsonProcessor struct {
+    Data interface{}
+}
+func (c JsonProcessor) Process(oriData string) (newData string) {
+}
+func (c JsonProcessor) Save(oriData string) error {
+}
+
+// 错误。DataProcessor2[string]是一般接口不能用于创建变量
+var processor DataProcessor2[string]
+
+// 正确，实例化之后的 DataProcessor2[string] 可用于泛型的类型约束
+type ProcessorList[T DataProcessor2[string]] []T
+
+// 正确，接口可以并入其他接口
+type StringProcessor interface {
+    DataProcessor2[string]
+
+    PrintString()
+}
+
+// 错误，带方法的一般接口不能作为类型并集的成员
+type StringProcessor interface {
+    DataProcessor2[string] | DataProcessor2[[]byte]
+
+    PrintString()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;接口定义的限制&#34;&gt;接口定义的限制&lt;/h4&gt;
+&lt;p&gt;1.用&lt;code&gt;|&lt;/code&gt;连接多个类型的时候，类型之间不能有相交的部分(即必须是不交集):&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyInt int
+
+// 错误，MyInt的底层类型是int,和 ~int 有相交的部分
+type _ interface {
+    ~int | MyInt
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是相交的类型中是接口的话，则不受这一限制：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyInt int
+
+type _ interface {
+    ~int | interface{ MyInt }  // 正确
+}
+
+type _ interface {
+    interface{ ~int } | MyInt // 也正确
+}
+
+type _ interface {
+    interface{ ~int } | interface{ MyInt }  // 也正确
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;2.类型的并集中不能有类型形参&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyInf[T ~int | ~string] interface {
+    ~float32 | T  // 错误。T是类型形参
+}
+
+type MyInf2[T ~int | ~string] interface {
+    T  // 错误
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;3.接口不能直接或间接地并入自己&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Bad interface {
+    Bad // 错误，接口不能直接并入自己
+}
+
+type Bad2 interface {
+    Bad1
+}
+type Bad1 interface {
+    Bad2 // 错误，接口Bad1通过Bad2间接并入了自己
+}
+
+type Bad3 interface {
+    ~int | ~string | Bad3 // 错误，通过类型的并集并入了自己
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;4.接口的并集成员个数大于一的时候不能直接或间接并入 &lt;code&gt;comparable&lt;/code&gt; 接口&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type OK interface {
+    comparable // 正确。只有一个类型的时候可以使用 comparable
+}
+
+type Bad1 interface {
+    []int | comparable // 错误，类型并集不能直接并入 comparable 接口
+}
+
+type CmpInf interface {
+    comparable
+}
+type Bad2 interface {
+    chan int | CmpInf  // 错误，类型并集通过 CmpInf 间接并入了comparable
+}
+type Bad3 interface {
+    chan int | interface{comparable}  // 理所当然，这样也是不行的
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;5.带方法的接口（&lt;strong&gt;无论是基本接口还是一般接口&lt;/strong&gt;），都不能写入接口的并集中：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type _ interface {
+    ~int | ~string | error // 错误，error是带方法的接口(一般接口) 不能写入并集中
+}
+
+type DataProcessor[T any] interface {
+    ~string | ~[]byte
+
+    Process(data T) (newData T)
+    Save(data T) error
+}
+
+// 错误，实例化之后的 DataProcessor[string] 是带方法的一般接口，不能写入类型并集
+type _ interface {
+    ~int | ~string | DataProcessor[string] 
+}
+
+type Bad[T any] interface {
+    ~int | ~string | DataProcessor[T]  // 也不行
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;最后&#34;&gt;最后&lt;/h1&gt;
+&lt;p&gt;泛型并不取代Go1.18之前用接口+反射实现的动态类型，应用场景：当需要针对不同类型书写同样的逻辑，使用泛型来简化代码是最好的 (比如想写个队列，写个链表、栈、堆之类的数据结构）&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>14.其余的东东</title>
@@ -4179,262 +5000,6 @@ func main() {
         fmt.Printf(&amp;#34;Average: %0.2f\n&amp;#34;, average(numbers...))  //向可变参数函数传入切片
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;会把命令行参数转换为float64的切片，然后传递给可变参数的average函数。&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>5.数组</title>
-      <link>https://tinklespring.com/posts/5.%E6%95%B0%E7%BB%84/</link>
-      <pubDate>Sat, 15 Jul 2023 10:11:00 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/5.%E6%95%B0%E7%BB%84/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;go 有两种内置的存储列表的方式，本篇介绍其中一种：数组。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;数组保存值的集合&#34;&gt;数组保存值的集合&lt;/h1&gt;
-&lt;p&gt;数组是所有共享同一类型的值的集合。&lt;/p&gt;
-&lt;p&gt;数组中包含的值称为它的&lt;code&gt;元素&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;可以有一个字符串数组、一个布尔数组或其他类型的数组（甚至数组的数组）。&lt;/p&gt;
-&lt;p&gt;可以将整个数组存储在单个变量中，然后访问数组中所需要的任何元素。&lt;/p&gt;
-&lt;p&gt;数组保存特定数量的元素，不能增长或收缩，要声明保存数组的变量，需要在方括号&lt;code&gt;[]&lt;/code&gt;中指定它所保存的元素数量，后跟数组所保存的元素类型。&lt;/p&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/5-%e6%95%b0%e7%bb%84/%e5%a3%b0%e6%98%8e%e6%95%b0%e7%bb%84.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;p&gt;要设置数组元素的值或稍后检索值，需要一种方法来指定哪个元素，数组中的元素从0开始编号，一个元素的编号称为其&lt;code&gt;索引&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;例如，创建一个由7个字符串组成的数组：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var notes [7]string
-notes[0] = &amp;#34;do&amp;#34;    //给第一个元素赋值
-notes[1] = &amp;#34;re&amp;#34;
-notes[2] = &amp;#34;mi&amp;#34;
-fmt.Println(notes[0])   //打印第一个元素
-fmt.Println(notes[1])   //打印第二个元素
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;创建一个整型数组：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var primes [5]int
-primes[0] = 2
-primes[1] = 3
-fmt.Println(primes[0])
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;time.Time值的数组：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var dates [3]time.Time
-dates[0] = time.Unix(1257894000, 0)
-dates[1] = time.Unix(1447920000, 0)
-dates[2] = time.Unix(1508632200, 0)
-fmt.Println(dates[1])
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出: &lt;code&gt;2015-11-19 08:00:00 +0000 UTC&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;数组中的零值&#34;&gt;数组中的零值&lt;/h1&gt;
-&lt;p&gt;与变量一样，当创建一个数组时，其所包含的所有值都被初始化为该数组所保存类型的零值。默认情况下，一个 int 值数组用0填充。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var primes [5]int
-primes[0] = 2
-fmt.Println(primes[0])   //打印显示赋值的元素
-fmt.Println(primes[2])   //打印未显式赋值的元素
-fmt.Println(primes[4])   //打印未显式赋值的元素
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2
-0
-0
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;字符串的零值是一个空字符串，默认情况下，一个字符串值数组用空字符串填充。&lt;/p&gt;
-&lt;p&gt;零值可以使操作数组元素变得安全，即使没有显式为其赋值。 &lt;br&gt;
-例如：一个整数计数器数组，可以在不首先显式赋值的情况下给它们中任何一个赋值，因为其都是从0开始。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var counters [3]int
-counters[0]++    //将第一个元素从0增加到1
-counters[0]++    //将第一个元素从1增加到2
-counters[2]++    //将第三个元素从0增加到1
-fmt.Println(counters[0], counters[1], counters[2])
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2
-0
-1
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;创建数组时，其所包含的所有值都初始化为数组所保存类型的零值。&lt;/p&gt;
-&lt;h1 id=&#34;数组字面量&#34;&gt;数组字面量&lt;/h1&gt;
-&lt;p&gt;若事先知道数组应该保存哪些值，可以使用数组字面量来初始化数组。数组字面量的开头与数组类型类似，其元素的数量将放在方括号中，后跟元素的类型，再后面跟大括号，里面是每个元素应该具有的初始值列表，元素值用逗号分隔。&lt;/p&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/5-%e6%95%b0%e7%bb%84/%e6%95%b0%e7%bb%84%e5%ad%97%e9%9d%a2%e9%87%8f.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;p&gt;与之前不同，不是逐个为数组元素赋值，而是使用数组字面量初始化整个数组。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;数组字面量&lt;/code&gt;允许使用短变量声明：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
-primes := [5]int{2, 3, 5, 7, 11}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以将数组字面量分散到多行上，但必须在代码中的每个换行字符前使用逗号，若数组字面量的最后一项后面跟着换行符，需要在其后面跟一个逗号。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;text := [3]string{
-       &amp;#34;this is a series of long strings&amp;#34;,
-       &amp;#34;which would be awkward to place&amp;#34;,
-       &amp;#34;together on a single line&amp;#34;,    //末尾的逗号是必须的。
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;fmt包中的函数如何处理数组&#34;&gt;&amp;ldquo;fmt&amp;quot;包中的函数如何处理数组&lt;/h1&gt;
-&lt;p&gt;当只想调试代码时，不必逐个将数组元素传递给fmt包中的Println和其他函数，只需传递整个数组。fmt包有做格式化和打印数组的逻辑。（fmt包还可以处理切片、映射和其他数据结构）&lt;/p&gt;
-&lt;p&gt;Printf和Sprintf函数使用的&amp;rdquo;%#v&amp;quot;动词，将按照go代码中显示的方式格式化值，当用&amp;quot;%#v&amp;quot;格式化时，数组在结果中显示为go数组字面量。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var notes [3]string = [3]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;}
-var primes [5]int = [5]int{2, 3, 5, 7, 11}
-fmt.Printf(&amp;#34;%#v\n&amp;#34;, notes)
-fmt.Printf(&amp;#34;%#v\n&amp;#34;, primes)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[3]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;}
-[5]int{2, 3, 5, 7, 11}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;在循环里访问数组元素&#34;&gt;在循环里访问数组元素&lt;/h1&gt;
-&lt;p&gt;不必显示地编写代码中要访问的数组元素的整数索引。 可以使用整型变量中的值作为数组索引。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
-index := 1
-fmt.Println(index, notes[index])  //打印索引1处的数组元素
-index = 3
-fmt.Println(index, notes[index])  //打印索引3处的数组元素
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这意味着可以使用for循环来处理数组元素之类的操作，循环遍历数组中的索引，并使用循环变量访问当前索引处的元素。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
-for i := 0; i &amp;lt;= 2; i++ {
-       fmt.Println(i, notes[i])
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用len函数检查数组长度&#34;&gt;使用&amp;quot;len&amp;quot;函数检查数组长度&lt;/h1&gt;
-&lt;p&gt;写只访问有效数组索引的循环容易出错，有两种方式。&lt;/p&gt;
-&lt;p&gt;第一种是在访问数组前检查数组中元素的的实际数量，可以使用内置的&lt;code&gt;len&lt;/code&gt;函数来实现，该函数返回数组的长度（其包含的元素个数）。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
-fmt.Println(len(notes))   //打印“notes”数组的长度
-primes := [5]int{2, 3, 5, 7, 11}
-fmt.Println(len(primes))  //打印“primes”数组的长度
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;设置循环以处理整个数组时，可以使用&lt;code&gt;len&lt;/code&gt;确定哪些索引可以安全访问。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
-for i := 0; i &amp;lt; len(notes); i++ {
-       fmt.Println(i, notes[i])
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若len(notes)返回7，可访问的索引最多是6，因为数组索引从0开始。&lt;/p&gt;
-&lt;h1 id=&#34;使用forrange安全遍历数组&#34;&gt;使用&amp;quot;for&amp;hellip;range&amp;quot;安全遍历数组&lt;/h1&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/5-%e6%95%b0%e7%bb%84/forrange.png&#34;
-        alt/&gt;&lt;br&gt;
-在range格式中，提供一个变量，该变量保存每个元素的整数索引，另一个变量保存元素本身的值，以及要循环的数组，循环将为数组中的每个元素运行一次，将元素的索引赋值给第一个变量，将元素的值赋值给第二个变量，然后在循环块中添加代码处理这些值。&lt;/p&gt;
-&lt;p&gt;这种for循环形式没有混乱的初始化、条件和标志（post）表达式，由于元素值是自动分配给变量的，因此不会有意外访问无效数组索引的风险。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
-for index, note := range notes {
-       fmt.Println(index, note)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;对于每个元素，index变量设置为元素的索引，note变量设置为元素的值。&lt;/p&gt;
-&lt;h1 id=&#34;在forrange循环中使用空白标识符&#34;&gt;在&amp;quot;for&amp;hellip;range&amp;quot;循环中使用空白标识符&lt;/h1&gt;
-&lt;p&gt;go 要求使用声明的每个变量，若停止使用&lt;code&gt;for...range&lt;/code&gt;循环中的变量，将编译错误。&lt;/p&gt;
-&lt;p&gt;当调用一个具有多个返回值的函数时，忽略其中一个返回值，将该值赋值给空白标识符&lt;code&gt;_&lt;/code&gt;，这会让go丢弃该值，而不会编译错误。&lt;/p&gt;
-&lt;p&gt;若不需要每个数组元素的索引，可以：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
-for _, note := range notes {
-       fmt.Println(note)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若不需要值变量，也可以使用空白标识符：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
-for index, _ := range notes {
-       fmt.Println(index)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;获得数组中数字的平均值&#34;&gt;获得数组中数字的平均值&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func main() {
-	numbers := [3]float64{71.8, 56.2, 89.5}
-	var sum float64 = 0
-	for _, number := range numbers {
-		sum += number
-	}
-	sampleCount := float64(len(numbers))            //获取类型为int的数组长度，并将其转换为float64
-	fmt.Printf(&amp;#34;Average: %0.2f\n&amp;#34;, sum/sampleCount) //将数组值的总和除以数组长度得到平均值
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;读取文本文件&#34;&gt;读取文本文件&lt;/h1&gt;
-&lt;p&gt;编辑一个data.txt文件，将三个数据写进去：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;71.8
-56.2
-89.5
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;首先编写一个读取文件的程序：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;os&amp;#34;
-)
-
-func main() {
-	file, err := os.Open(&amp;#34;data.txt&amp;#34;) //打开文件进行读取
-	if err != nil {
-		log.Fatal(err)
-	} //若打开文件时出现错误，报告错误并退出
-	scanner := bufio.NewScanner(file) //为文件创建一个新的扫描器
-	for scanner.Scan() {              //从文件中读取一行
-		fmt.Println(scanner.Text()) //打印该行
-	} //循环至文件结尾，scanner.Scan返回false
-	err = file.Close() //关闭文件以释放资源
-	if err != nil {
-		log.Fatal(err)
-	} //若关闭文件时出现错误，报告错误并退出
-	if scanner.Err() != nil {
-		log.Fatal(scanner.Err())
-	} //若扫描文件时出现错误，报告错误并退出
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上述程序如何工作：&lt;br&gt;
-首先向 os.Open 函数传递一个带有要打开文件的名字的字符串，从 os.Open 会返回两个值：指向代表被打开文件的 os.File 值的指针，以及一个错误值。若错误值为 nil ，则表示文件成功打开，其他任何值都表示存在错误（比如文件丢失或不可读）。若错误，则会记录错误信息并退出程序。&lt;/p&gt;
-&lt;p&gt;然后将 os.File 值传递给 bufio.NewScanner 函数，将返回一个从文件中读取的 bufio.Scanner 值。&lt;/p&gt;
-&lt;p&gt;bufio.Scanner 上的 Scan 方法是用来作为 for 循环的一部分。将从文件中读取一行文本，若读取数据成功则返回 true ，否则返回 false 。若将 Scan 用作 for 循环的条件，那么只要有更多的数据需要读取，循环就会继续运行，一旦到达文件的结尾（或出现错误），Scan 将返回 false ，循环退出。&lt;/p&gt;
-&lt;p&gt;在 bufio.Scanner 上调用 Scan 方法后，调用 Text 方法将返回一个包含已经读取数据的字符串，对这个程序，调用 Println 打印每一行。&lt;/p&gt;
-&lt;p&gt;一旦循环退出，就完成了对文本的处理，保持文件打开会消耗操作系统的资源，因此当程序完成对文件操作时要对文件进行关闭。对 os.File 调用 Close 方法将完成对文件的关闭。与 Open 函数一样，Close 方法也返回一个 error 值，除非出现错误，否则该值为 nil ，（与 Open 不同，Close 只返回一个值，除了错误外没有其他值可以返回）。&lt;/p&gt;
-&lt;p&gt;在扫描文件时，bufio.Scanner 也可能遇到错误，调用扫描器上的 Err 方法将返回该错误，在退出之前记录该错误。&lt;/p&gt;
-&lt;h1 id=&#34;将文本数据读入数组&#34;&gt;将文本数据读入数组&lt;/h1&gt;
-&lt;p&gt;需要将data.txt读取的字符串转换为数字并存储在数组中: &lt;br&gt;
-&lt;img  src=&#34;https://tinklespring.com/img/Golang/5-%e6%95%b0%e7%bb%84/%e5%b0%86%e6%96%87%e4%bb%b6%e8%af%bb%e5%85%a5%e6%95%b0%e7%bb%84.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Package datafile allows reading data sample from files.
-package datafile
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;os&amp;#34;
-	&amp;#34;strconv&amp;#34;
-)
-
-// GetFloats reads a float64 from each line of a file.
-func GetFloats(fileName string) ([3]float64, error) {
-	var numbers [3]float64
-	file, err := os.Open(fileName)
-	if err != nil {
-		return numbers, err
-	}
-	i := 0
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		numbers[i], err = strconv.ParseFloat(scanner.Text(), 64)
-		if err != nil {
-			return numbers, err
-		}
-		i++
-	}
-	err = file.Close()
-	if err != nil {
-		return numbers, err
-	}
-	if scanner.Err() != nil {
-		return numbers, scanner.Err()
-	}
-	return numbers, nil
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;希望能读取除了data.txt意外的文件，因此接受打开的文件名作为参数，将函数设置为返回两个值，一个float64值数组和一个错误值。只有当错误值为nil时，才应将第一个返回值视为可用。&lt;/p&gt;
-&lt;p&gt;接下来，声明一个由三个float64值组成的数组，将保存从文件中读取的数字。&lt;/p&gt;
-&lt;p&gt;与之前代码一样，打开文件进行读取，不同之处在于，打开传递给函数的任何文件名，而不是硬编码的 &amp;ldquo;data.txt&amp;rdquo; 字符串，若遇到错误，需要返回一个数组以及错误值，所以只返回numbers数组（尽管还没有为其赋值）。&lt;/p&gt;
-&lt;p&gt;需要知道将每一行赋值给哪个数组元素，因此创建一个变量来跟踪当前索引。&lt;/p&gt;
-&lt;p&gt;设置bufio.Scanner和循环遍历文件行的代码与之前的代码相同，但是循环的代码不同，需要对从文件中读取的字符串调用 strconv.ParseFloat 来将其转换为 float64 ，并将结果赋值给数组。若ParseFloat导致了错误，需要返回该错误，若解析成功，需要对 i 增值，以便下一个数被赋值给下一个数组元素。&lt;/p&gt;
-&lt;p&gt;关闭文件并报告任何错误，若没有错误，将到达 GetFloats 函数末尾，并返回float64值数组以及nil错误。&lt;/p&gt;
-&lt;h1 id=&#34;更新程序读取文本文件&#34;&gt;更新程序读取文本文件&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-       &amp;#34;fmt&amp;#34;
-       &amp;#34;xxx/xxx/datafile&amp;#34;
-       &amp;#34;log&amp;#34;
-)
-
-func main() {
-       numbers, err := datafile.GetFloats(&amp;#34;data.txt&amp;#34;)
-       if err != nil {
-              log.Fatal(err)
-       }
-       var sum float64 = 0
-       for _, number := range numbers {
-              sum += number
-       }
-       sampleCount := float64(len(numbers))
-       fmt.Printf(&amp;#34;Average: %0.2f\n&amp;#34;, sum/sampleCount)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上述程序只有在data.txt中有三行或更少行时才运行，若超过三行则会报错。  因为声明了 numbers 数组来保存3个元素。&lt;/p&gt;
-&lt;p&gt;Go数组的大小是固定的，不能增长或收缩。下一篇将解决这个问题！&lt;/p&gt;
 </description>
     </item>
     
