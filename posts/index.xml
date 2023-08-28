@@ -5,10 +5,93 @@
     <description>Recent content in Posts on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Thu, 24 Aug 2023 08:17:30 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 28 Aug 2023 13:42:33 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/posts/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Const&#43;iota枚举最佳方式</title>
+      <link>https://tinklespring.com/posts/const&#43;iota%E6%9E%9A%E4%B8%BE%E6%9C%80%E4%BD%B3%E6%96%B9%E5%BC%8F/</link>
+      <pubDate>Mon, 28 Aug 2023 13:42:33 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/const&#43;iota%E6%9E%9A%E4%B8%BE%E6%9C%80%E4%BD%B3%E6%96%B9%E5%BC%8F/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;Go中没有直接的枚举类型，但可以通过conts和iota来模拟枚举。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;传统的枚举实现&#34;&gt;传统的枚举实现&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
+	Sunday = 0
+	Monday = 1
+	Tuesday = 2
+	Wednesday = 3
+	Thursday = 4
+	Friday = 5
+	Saturday = 6
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这种方式不直观，可读性差。&lt;/p&gt;
+&lt;h1 id=&#34;使用iota实现枚举&#34;&gt;使用iota实现枚举&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
+	Sunday = iota
+	Monday
+	Tuesday
+	Wednesday
+	Thursday
+	Friday
+	Saturday
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;iota会自动累加生成序列常量，这种方式很直观。&lt;/p&gt;
+&lt;h1 id=&#34;值iota自动填充&#34;&gt;值iota自动填充&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
+	_ = iota
+	Sunday  //1
+	_
+	Tuesday  //3
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;自定义iota起始值&#34;&gt;自定义iota起始值&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
+	StartAt = iota + 1  //1
+	Sunday  //2
+	Monday  //3
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;多个iota定义&#34;&gt;多个iota定义&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
+	A = iota  //0
+	B         //1
+	C = iota  //2
+	D         //3
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
+	A = iota // 0
+	B        // 1
+)
+
+const (
+	C = iota // 0 (因为新的const块，iota重新开始计数)
+	D        // 1
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;位运算模拟位掩码&#34;&gt;位运算模拟位掩码&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
+  Read = 1 &amp;lt;&amp;lt; iota // 1
+  Write            // 2
+  Execute          // 4 
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;iota 初始值是 0，然后它被位移操作符 &amp;laquo; 逐渐左移一位，即 1 &amp;laquo; 0、1 &amp;laquo; 1、1 &amp;laquo; 2 等。这会使得 Read 的值为 1、Write 的值为 2，而 Execute 的值会是 4。&lt;/p&gt;
+&lt;p&gt;具体来说：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Read 对应的二进制是 001，左移 0 位，值为 1。&lt;/li&gt;
+&lt;li&gt;Write 对应的二进制是 010，左移 1 位，值为 2。&lt;/li&gt;
+&lt;li&gt;Execute 对应的二进制是 100，左移 2 位，值为 4。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;字符串类型枚举&#34;&gt;字符串类型枚举&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
+  Unknown = &amp;#34;UNKNOWN&amp;#34;
+  Male = &amp;#34;MALE&amp;#34;
+  Female = &amp;#34;FEMALE&amp;#34;
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go中，iota 用于自动递增生成常量序列的枚举器，只能用于整数类型，如果想对字符串枚举，不能使用 iota。&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>15.泛型</title>
@@ -4604,402 +4687,6 @@ func main() {
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当可用的数据集合是数组和切片时，需要很多额外的代码和处理时间来查找，但使用映射处理起来更简便。&lt;/p&gt;
 &lt;p&gt;当需要查找集合中的值的时候，可以考虑映射！&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>6.切片</title>
-      <link>https://tinklespring.com/posts/6.%E5%88%87%E7%89%87/</link>
-      <pubDate>Tue, 18 Jul 2023 11:42:00 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/6.%E5%88%87%E7%89%87/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;切片是一个可以通过增长来保存额外数据的集合类型。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;切片&#34;&gt;切片&lt;/h1&gt;
-&lt;p&gt;切片实际上是一个go的数据结构，与数组相同的是，切片由多个相同类型的元素构成，不同的是，切片允许在结尾追加更多的元素。&lt;/p&gt;
-&lt;p&gt;声明一个保存切片的变量，使用一对空方括号，后面跟着这个切片所保存的元素类型 : &lt;code&gt;var mySlice []string&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;除了不指定大小，与声明一个数组变量的语法完全相同。&lt;/p&gt;
-&lt;p&gt;与数组变量不同，声明切片变量并不会自动创建一个切片，可以调用内建的&lt;code&gt;make&lt;/code&gt;函数，传递给&lt;code&gt;make&lt;/code&gt;想要创建的切片类型（这个类型与想要赋值的变量的类型相同）和需要创建的切片的长度。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var notes []string   //声明一个切片变量
-notes = make([]string, 7)  //创建7个字符串的切片
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当切片被创建后，切片中的元素的赋值和取值操作语法与数组相同。&lt;/p&gt;
-&lt;p&gt;无需将变量声明和创建切片分成两步，使用一个短变量声明的make会自动推导出变量类型。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;primes := make([]int, 5)
-primes[0] = 2
-primes[1] = 3
-fmt.Println(primes[0])
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;内建的函数&lt;code&gt;len&lt;/code&gt;对切片和数组有相同效果，将一个切片变量传入len，会返回一个整型的长度值。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := make([]string, 7)
-primes := make([]int, 5)
-fmt.Println(len(notes))
-fmt.Println(len(primes))
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;for&lt;/code&gt;与&lt;code&gt;for...range&lt;/code&gt;数组与切片操作也相同。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;letters := []string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;}
-for i := 0; i &amp;lt; len(letters); i++ {
-       fmt.Println(letters[i])
-}
-for _, letter := range letters {
-       fmt.Println(letter)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;切片字面量&#34;&gt;切片字面量&lt;/h1&gt;
-&lt;p&gt;与数组相同，若最初知道切片有哪些值，可以使用切片字面量来通过这些值初始化切片。&lt;/p&gt;
-&lt;p&gt;切片字面量方括号是空的，后跟切片存储的元素的类型，再跟一个花括号的列表，列表中是每个元素的初始值。&lt;br&gt;
-&lt;code&gt;[]int{9, 18, 27}&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;例如：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := []string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
-fmt.Println(notes[3], notes[6], notes[0])
-primes := []int{
-       2,
-       3,
-       5,
-}
-fmt.Println(primes[0], primes[1], primes[2])
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fa ti do
-2 3 5
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;切片运算符&#34;&gt;切片运算符&lt;/h1&gt;
-&lt;p&gt;每个切片都构建在一个底层的数组之上，实际上是底层的数组存储了切片的数据；切片仅仅是数组中的一部分（或者所有）元素的视图。&lt;/p&gt;
-&lt;p&gt;当使用 &lt;code&gt;make&lt;/code&gt; 函数或者切片字面量创建一个切片的时候，底层的数组会自动创建出来（只有通过切片，才能访问它），但也可以创建一个数组，然后再基于数组通过切片运算符创建一个切片。  &lt;code&gt;mySlice := myArray[1:3]&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;切片运算符有两个索引：其中一个标识切片开始的位置，另一个标识切片在此位置之前结束。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;underlyingArray := [5]string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;}
-slicel := underlyingArray[0:3]
-fmt.Println(slicel)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出： &lt;code&gt;[a b c]&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;注意：切片需要在第二个位置之前结束。  比如 underlyingArray[i:j] ，生成的切片从 underlyingArray[i] 到 underlyingArray[j-1]。&lt;/p&gt;
-&lt;p&gt;若想要一个包含了底层数组最后一个元素的切片，需要在运算符中指定越过数组结尾的第二个索引。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;underlyingArray := [5]string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;}
-slice3 := underlyingArray[2:5]
-fmt.Println(slice3)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出： &lt;code&gt;[c d e]&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;切片运算符默认需要两个索引，若忽略第一个索引，第一个元素会被使用。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;underlyingArray := [5]string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;}
-slice4 := underlyingArray[:3]
-fmt.Println(slice4)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;code&gt;[a b c]&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;若忽略了结束的索引，从底层数组的开始索引到数组结尾之间的所有元素都会被包含到结果切片中。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;underlyingArray := [5]string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;}
-slice5 := underlyingArray[1:]
-fmt.Println(slice5)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;code&gt;[b c d e]&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;底层数组&#34;&gt;底层数组&lt;/h1&gt;
-&lt;p&gt;切片并不会自己保存任何数据，仅仅是底层数组元素的视图。当使用切片的时候，仅仅可以操作通过切片可见的部分。&lt;/p&gt;
-&lt;p&gt;甚至可以有多个切片都指向相同的底层数组，每一个切片会是一个指向数组元素的子集的视图，切片甚至可以重叠。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;array3 := [5]string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;}
-slice3 := array3[0:3]
-slice4 := array4[2:5]
-fmt.Println(slice3, slice4)
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;修改底层数组修改切片&#34;&gt;修改底层数组，修改切片&lt;/h1&gt;
-&lt;p&gt;注意：由于切片只是底层数组内容的视图，若修改底层数组，这些变化也会反映到切片。&lt;/p&gt;
-&lt;p&gt;给切片的一个元素赋一个新值，也会修改底层数组相应的元素。&lt;/p&gt;
-&lt;p&gt;若有多个切片指向了同一个底层数组，数组的元素修改会反映给所有的切片。&lt;/p&gt;
-&lt;p&gt;由于这些问题，通常我们会使用 &lt;code&gt;make&lt;/code&gt; 和 &lt;code&gt;切片字面量&lt;/code&gt; 来创建切片，而不是创建一个数组，再用一个切片在上面操作。  使用了 make 和 切片字面量 就不用关心底层数组了。&lt;/p&gt;
-&lt;h1 id=&#34;使用append函数在切片上添加数据&#34;&gt;使用&amp;quot;append&amp;quot;函数在切片上添加数据&lt;/h1&gt;
-&lt;p&gt;go 提供一个内建的函数 &lt;code&gt;append&lt;/code&gt; 来将一个或多个值追加到切片的末尾，它返回一个与原始切片元素完全相同的并且在尾部追加了新元素的新的更大的切片。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;slice := []string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;}
-fmt.Println(slice, len(slice))
-slice = append(slice, &amp;#34;c&amp;#34;)      //在切片末尾追加一个元素
-fmt.Println(slice, len(slice))  //将append返回值赋回相同的切片变量
-slice = append(slice, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;)
-fmt.Println(slice, len(slice))
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[a b] 2
-[a b c] 3
-[a b c d e] 5
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;无需记住需要追加到尾部的新值的索引，仅仅调用append函数并且传入切片和需要追加到末尾的值，就会得到一个新的更长的切片。&lt;/p&gt;
-&lt;p&gt;注意需要确保将append返回的值重新赋给传递给append的那个变量，这是为了避免append返回的切片中的一些不一致行为。&lt;/p&gt;
-&lt;p&gt;切片的底层数组不能增长大小，若数组没有足够的空间来保存新的元素，所有的元素会被拷贝到一个新的更大的数组中，且切片会被更新为引用这个新的数组，但由于这些场景都发生在append函数内部，无法知道返回的切片与传入append函数的切片是否具有相同的底层数组，若保留了两个切片，会导致一些非预期的错误。&lt;/p&gt;
-&lt;p&gt;调用append函数，惯例是将函数的返回值赋给传入的那个切片变量，若只保存一个切片，就无需考虑多个切片是否共享同一个底层数组。&lt;/p&gt;
-&lt;h1 id=&#34;切片和零值&#34;&gt;切片和零值&lt;/h1&gt;
-&lt;p&gt;与数组一样，若访问了一个切片中没有赋值的元素，会得到那个元素类型的零值。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;floatSlice := make([]float64, 10)
-boolSlice := make([]bool, 10)    //创建元素没有赋值的切片
-fmt.Println(floatSlice[9], boolSlice[5])
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出: &lt;code&gt;0 false&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;与数组不同，切片变量有零值：nil，一个没有赋值的切片变量值为 nil。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var intSlice []int
-var stringSlice []string
-fmt.Printf(&amp;#34;intSlice: %#v, stringSlice: %#v\n&amp;#34;, intSlice, stringSlice)   //&amp;#34;%#v&amp;#34;把值格式化为它在go代码中呈现的样子
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在其他语言中，需要在使用切片变量前先测试是否包含切片，但在go中，函数有意被写成对待nil的切片就像它是一个空切片一样。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(len(intSlice))  //把nil切片传递给len函数，返回0，就像传入一个空的切片
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;append函数也会把nil切片看作是一个空的切
-片，若append传入了空的切片，会在切片里增加一个元素并返回只有一个元素的切片。 若传入nil切片，也会得到只有一个元素的切片。实际上并没有一个切片来追加元素，append函数会在幕后创建一个切片。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;intSlice = append(intSlice, 27)   //向append传入一个nil切片
-fmt.Printf(&amp;#34;intSlice: %#v\n&amp;#34;, intSlice)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;stringSlice: []string(27)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;意味着通常无需担心切片是nil还是空的。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var slice []string   //变量值是nil
-if len(slice) == 0 {   //len函数返回0
-       slice = append(slice, &amp;#34;first item&amp;#34;)   //append函数会返回一个元素的切片
-}
-fmt.Printf(&amp;#34;%#v\n&amp;#34;, slce)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[]string{&amp;#34;first item&amp;#34;}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用切片和append读取额外的文件行&#34;&gt;使用切片和&amp;quot;append&amp;quot;读取额外的文件行&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func GetFloats(fileName string) ([]float64, error) {    //返回一个切片
-       var numbers []float64     //该变量默认为nil，append处理nil的行为与处理空切片一样
-       file, err := os.Open(fileName)
-       if err != nil {
-              return numbers, err
-       }
-       scanner := bufio.NewScanner(file)
-       for scanner.Scan() {
-              number, err := strconv.ParseFloat(scanner.Text(), 64)   //将string转换为float64且赋值给一个临时变量
-	      if err != nil {
-                     return numbers, err
-	      }
-              numbers = append(numbers, number)   //追加新的数字给切片
-       }
-       err = file.Close()
-       if err != nil {
-              return numbers, err
-       }
-       if scanner.Err() != nil {
-              return numbers, scanner.Err()
-       }
-       return numbers, nil
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不必修改主程序中任何代码，因为使用&lt;code&gt;:=&lt;/code&gt;短变量声明，来将GetFloats函数的返回值赋给一个变量，numbers变量自动从[3]float64 (数组类型) 切换到 []float64 (切片类型)，并且 for&amp;hellip;range 循环和len函数对于数组和切片的行为是一致的。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;xxx/xxx/datafile&amp;#34;
-)
-
-func main() {
-	numbers, err := datafile.GetFloats(&amp;#34;data.txt&amp;#34;)  //自动获得一个[]float64来代替[3]float64
-	if err != nil {
-		log.Fatal(err)
-	}
-	var sum float64 = 0
-	for _, number := range numbers {
-		sum += number
-	}
-	sampleCount := float64(len(numbers))
-	fmt.Printf(&amp;#34;Average: %0.2f\n&amp;#34;, sum/sampleCount)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;出错时返回nil值切片&#34;&gt;出错时返回nil值切片&lt;/h1&gt;
-&lt;p&gt;进一步优化Getfloats函数，当前，即使出现错误也会返回一个numbers切片，这意味着会返回一个包含无效数据的切片。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;numbers, err := strconv.ParseFloat(scanner.Text(), 64)
-if err != nil {
-return numbers, err  //返回了一个不该被使用的无效数据
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;调用GetFloats的代码应该检查返回的错误值，若不是nil则需要忽略返回的切片。那为啥还要多此一举返回一个包含无效数据的切片？接下来修改GetFloats函数，让函数出错时返回一个nil代替之前的包含无效数据的切片。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func GetFloats(fileName string) ([]float64, error) {
-       var numbers []float64
-       file, err := os.Open(fileName)
-       if err != nil {
-              return nil, err   //返回nil而不是切片，切片在此处的值也是nil，但修改使之更显而易见
-       }
-       scanner := bufio.NewScanner(file)
-       for scanner.Scan() {
-              number, err := strconv.ParseFloat(scanner.Text(), 64)
-	      if err != nil {
-                     return nil, err   //返回nil而不是切片
-	      }
-              numbers = append(numbers, number)
-       }
-       err = file.Close()
-       if err != nil {
-              return nil, err  //返回nil而不是切片
-       }
-       if scanner.Err() != nil {
-              return nil, scanner.Err()  //返回nil而不是切片
-       }
-       return numbers, nil
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;命令行参数&#34;&gt;命令行参数&lt;/h1&gt;
-&lt;p&gt;每当要计算一个新的平均数时，都要修改data.txt，有一种替代方案：用户把值作为命令行参数传递给程序。&lt;/p&gt;
-&lt;p&gt;就像通过传入不同的参数来控制函数的行为一样，在终端传递参数给程序，这叫做&lt;code&gt;命令行接口&lt;/code&gt;。&lt;/p&gt;
-&lt;h1 id=&#34;从osargs切片获取命令行参数&#34;&gt;从&amp;quot;os.Args&amp;quot;切片获取命令行参数&lt;/h1&gt;
-&lt;p&gt;os 包有一个包级别的变量 os.Args , 是一个字符串的切片，代表了当前执行程序的命令行参数。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-       &amp;#34;fmt&amp;#34;
-       &amp;#34;os&amp;#34;
-)
-
-func main() {
-       fmt.Println(os.Args)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;比如将上述代码编译后，运行:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;./xxx a b c d e
-
-输出：
-[./xxx a b c d e]
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;切片运算符可用于其他切片&#34;&gt;切片运算符可用于其他切片&lt;/h1&gt;
-&lt;p&gt;上述 ./xxx 是程序的名字，我们并不想要，解决：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-       &amp;#34;fmt&amp;#34;
-       &amp;#34;os&amp;#34;
-)
-
-func main() {
-       fmt.Println(os.Args[1:])    //获取一个包含os.Args的从第二个元素到最后一个元素的新的切片
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这样就避免了上述问题。&lt;/p&gt;
-&lt;h1 id=&#34;使用命令行参数&#34;&gt;使用命令行参数&lt;/h1&gt;
-&lt;p&gt;在 os.Args 上使用切片运算符来忽略程序名称，并把返回切片赋给一个 arguments 变量，设置一个 sum 变量来保存所有输入数字的和，然后使用 for&amp;hellip;range 循环来处理 arguments 的元素（使用 _ 空白标识符来忽略元素索引）。使用strconv.ParseFloat 来将参数从字符串转换为 float64 ，若出现错误，输出并退出，若无错误，将数字累加到 sum。 当循环处理完所有参数时，用 len(arguments) 来确定样本个数，然后用 sum 除以样本个数得到平均值。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;os&amp;#34;
-	&amp;#34;strconv&amp;#34;
-)
-
-func main() {
-	arguments := os.Args[1:]             //通过os.Args获取一个不包含首元素的字符串切片
-	var sum float64 = 0                  //定义一个保存数字的累加值
-	for _, argument := range arguments { //处理命令行的每一个参数
-		number, err := strconv.ParseFloat(argument, 64) //将字符串转换为float64
-		if err != nil {
-			log.Fatal(err)
-		} //若转换函数出现问题则输出log并退出
-		sum += number //累加数字
-	}
-	sampleCount := float64(len(arguments))          //参数的长度可以用作样本的个数
-	fmt.Printf(&amp;#34;Average: %0.2f\n&amp;#34;, sum/sampleCount) //计算平均值并进行打印
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;可变长参数函数&#34;&gt;可变长参数函数&lt;/h1&gt;
-&lt;p&gt;一些函数调用可以获取任何个数的参数，例如 fmt.Println 或 append 。但不要直接在任何函数中使用，定义的所有函数的参数个数与函数调用的参数个数要严格匹配，否则会导致编译错误。&lt;/p&gt;
-&lt;p&gt;那么 Println 与 append 是如何做到的呢？因为它定义了一个&lt;code&gt;可变长参数函数&lt;/code&gt;，一个可变长参数函数可以以多种参数个数来调用，为了让函数的参数可变长，在函数声明中的最后的（或仅有的）参数类型前使用省略号&lt;code&gt;...&lt;/code&gt; 。&lt;/p&gt;
-&lt;p&gt;语法：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func myFunc(param1 int, param2 ...string) {
-       //function code here
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;可变长参数函数的最后一个参数接收一个切片类型的变长参数&lt;/code&gt;，这个切片可以被函数当作普通切片来处理。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func severalInts(numbers ...int) {
-       fmt.Println(numbers)
-}
-
-func main() {
-       severalInts(1)
-       severalInts(1, 2, 3)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;有一个带有字符串参数的函数，若不提供变长参数，不会返回错误，会收到一个空切片。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func severalStrings(strings ...string) {
-       fmt.Println(strings)
-}
-
-func main() {
-       severalStrings(&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;)
-       severalStrings()   //若没有参数，会收到一个空的切片
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;函数也可以接收一个或多个非可变长参数，即使一个函数调用可以忽略可变长参数，其中的非可变长参数是不可忽略的，若忽略会导致编译失败。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;只有函数定义中的最后一个参数是可变长参数&lt;/code&gt; ，不能放到其他必需参数前。&lt;/p&gt;
-&lt;h1 id=&#34;使用可变长参数函数&#34;&gt;使用可变长参数函数&lt;/h1&gt;
-&lt;p&gt;maximum 函数会接收任意个数的float64参数并会返回其中的最大值，这个函数的所有参数被保存在一个切片类型的参数 numbers 中，初始设置当前最大值为 -Inf ，一个代表了负无穷的特殊值，通过调用math.Inf获得。（可以使用当前最大值0，但这个最大值可能是负数），然后使用 for&amp;hellip;range 来处理 numbers 上的每个值，将其与最大值比较。若大于最大值，将其设置为最大值，处理完所有参数后剩下的最大值就是要返回的。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;math&amp;#34;
-)
-
-func maximum(numbers ...float64) float64 {  //接收任何个数的float64参数
-	max := math.Inf(-1)   //以一个很小的值开始
-	for _, number := range numbers {
-		if number &amp;gt; max {
-			max = number   //找到参数中的最大值
-		}
-	}   //处理变长参数的每一个值
-	return max
-}
-
-func main() {
-	fmt.Println(maximum(71.8, 56.2, 89.5))
-	fmt.Println(maximum(90.7, 89.7, 98.5, 92.3))
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&amp;ldquo;inRange&amp;quot;函数，接收一个最小值，一个最大值和任何个数的float64参数，丢弃在给定最小值和给定最大值范围之外的参数，返回一个在范围之内的参数值的切片。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func inRange(min float64, max float64, numbers ...float64) []float64 {
-	var result []float64   //这个切片会保存范围内的值
-	for _, number := range numbers {
-		if number &amp;gt;= min &amp;amp;&amp;amp; number &amp;lt;= max {
-			result = append(result, number)
-		}
-	}
-	return result
-}
-
-func main() {
-	fmt.Println(inRange(1, 100, -12.5, 3.2, 0, 50, 103.5))   //寻找&amp;gt;=1且&amp;lt;=100的参数
-	fmt.Println(inRange(-10, 10, 4.1, 12, -12, -5.2))   //寻找&amp;gt;=-10且&amp;lt;=10的参数
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用可变长参数函数计算平均值&#34;&gt;使用可变长参数函数计算平均值&lt;/h1&gt;
-&lt;p&gt;来创造一个可以接收任意多个float64类型参数，并返回它们的平均值的可变长参数函数。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func average(numbers ...float64) float64 {  //获取任意个数的float64参数
-	var sum float64 = 0   //定义一个变量来保存参数的总和
-	for _, number := range numbers {
-		sum += number
-	}
-	return sum / float64(len(numbers))
-}
-
-func main() {
-	fmt.Println(average(100, 50))
-	fmt.Println(average(90.7, 89.7, 98.5, 92.3))
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;向可变长参数函数传递一个切片&#34;&gt;向可变长参数函数传递一个切片&lt;/h1&gt;
-&lt;p&gt;将numbers切片传递给average函数。&lt;/p&gt;
-&lt;p&gt;当调用一个可变长参数函数时，在传入的切片变量后增加省略号&lt;code&gt;...&lt;/code&gt;。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func severalInts(numbers ...int) {
-       fmt. Println(numbers)
-}
-func mix(num int, flag bool, strings ...string) {
-       fmt.Println(num, flag, strings)
-}
-func main() {
-       intSlice := []int{1, 2, 3}
-       severalInts(intSlice...)   //使用int切片代替可变参数
-       stringsSlice := []string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;}
-       mix(1, true, stringsSlice...)   //使用string切片代替可变参数
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-       &amp;#34;fmt&amp;#34;
-       &amp;#34;log&amp;#34;
-       &amp;#34;os&amp;#34;
-       &amp;#34;strconv&amp;#34;
-)
-
-func average(numbers ...float64) float64 {
-	var sum float64 = 0
-	for _, number := range numbers {
-		sum += number
-	}
-	return sum / float64(len(numbers))
-}
-
-func main() {
-        arguments := os.Args[1:]
-        var numbers []float64  //该切片保存了将要被计算平均值的数字
-	for _, argument := range arguments {
-               number, err := strconv.ParseFloat(argument, 64)
-	       if err != nil {
-                      log.Fatal(err)
-	       }
-               numbers = append(numbers, number)
-	}
-        fmt.Printf(&amp;#34;Average: %0.2f\n&amp;#34;, average(numbers...))  //向可变参数函数传入切片
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;会把命令行参数转换为float64的切片，然后传递给可变参数的average函数。&lt;/p&gt;
 </description>
     </item>
     
