@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>字符串转换&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="字符串转换" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">字符串转换</h1><p class="article date">Tuesday, August 29, 2023</p></section><article class="article markdown-body"><blockquote>
+<p><code>strconv</code>包在字符串和数值类型转换中非常重要，提供了字符串和基本数值类型之间的相互转换的功能。</p>
+</blockquote>
+<h1 id="基本数值类型转换">基本数值类型转换</h1>
+<p>strconv 可以实现数值和字符串两种类型的相互转换：</p>
+<pre tabindex="0"><code>strconv.Itoa(123) //整型转字符串
+strconv.Atoi(&#34;123&#34;)  //字符串转整型
+</code></pre><p>支持的类型有 int、float、bool等。</p>
+<h1 id="转换语法">转换语法</h1>
+<p>strconv 转换函数命名遵循 &ldquo;源类型&rdquo; To &ldquo;目标类型&rdquo; 的格式：</p>
+<p><code>Itoa</code> :  int 到  string</p>
+<pre tabindex="0"><code>i := 123
+s := strconv.Itoa(i)
+fmt.Printf(&#34;%T %v\n&#34;, s, s)  //string 123
+</code></pre><p><code>Atoi</code> ： string 到 int  (ASCII to integer，将ASCII字符串转换为整数)</p>
+<pre tabindex="0"><code>s := &#34;456&#34;
+i, err := strconv.Atoi(s)
+if err != nil {
+  fmt.Println(err)
+} else {
+  fmt.Printf(&#34;%T %v\n&#34;, i, i) // int 456
+}
+</code></pre><p>指定进制的字符串转整数</p>
+<pre tabindex="0"><code>num, err := strconv.ParseInt(&#34;1101&#34;, 2, 64)  //strconv.ParseInt参数有三个：要转换的字符串，指定的进制，整数的位大小；返回两个值：转换后的整数和一个错误
+if err != nil {
+  fmt.Println(&#34;解析错误&#34;)
+} else {
+  fmt.Println(num)
+}
+// 输出:
+// 13
+</code></pre><p><code>FormatFloat</code> : float 到 string</p>
+<pre tabindex="0"><code>f := 3.1415926
+s := strconv.FormatFloat(f, &#39;f&#39;, 2, 64)  //四个参数：要转换的浮点数值，转换的格式f为常规格式，精度，浮点数的位大小/64意思是float64
+fmt.Printf(&#34;%T %v\n&#34;, s, s) // string 3.14
+</code></pre><p><code>ParseBool</code> : string 到 bool</p>
+<pre tabindex="0"><code>s := &#34;true&#34;
+b, err := strconv.ParseBool(s)
+if err != nil {
+  fmt.Println(err)
+} else {
+  fmt.Printf(&#34;%T %v&#34;, b, b) // bool true
+}
+</code></pre><h1 id="错误处理">错误处理</h1>
+<pre tabindex="0"><code>大多数strconv在失败时会返回一个错误：  
+v, err := strconv.Atoi(&#34;abc&#34;)
+if err != nil {
+  // 处理错误
+}
+</code></pre><h1 id="parse系列函数">Parse系列函数</h1>
+<p>Parse 函数会尝试转换整个字符串，并返回未转换的部分：</p>
+<pre tabindex="0"><code>v, err := strconv.ParseInt(&#34;123abc&#34;, 10, 64)
+</code></pre><p>这里 v 是123，err会指出有余下未转换的部分。</p>
+<h1 id="format系列函数">Format系列函数</h1>
+<p>Format 函数可以精细控制输出格式：</p>
+<pre tabindex="0"><code>strconv.FormatFloat(3.14, &#39;f&#39;, 2, 64) // 小数点后2位
+</code></pre><p>支持如精度、位长等。</p>
+<h1 id="is系列函数">Is系列函数</h1>
+<p>Is 函数用来判断一个字符串是否可以转换为指定类型：</p>
+<pre tabindex="0"><code>strconv.IsDigit(&#39;1&#39;) // true
+strconv.IsNumber(&#34;123&#34;) // true
+</code></pre><h1 id="append系列函数">Append系列函数</h1>
+<p>可以将转换后的值append到现有缓冲区：</p>
+<pre tabindex="0"><code>buf := []byte(&#34;Prefix:&#34;)
+strconv.AppendInt(buf, 123, 10)
+</code></pre><p>避免多次拼接字符串。</p>
+<h1 id="quote-与-unquote">Quote 与 Unquote</h1>
+<p>这俩实现了Go字符串语法与strcov字符串转换之间的转化，用于在字符串周围添加或移除引号，对于处理字符串中的特殊字符、转义序列和字符串字面值很有用。</p>
+<pre tabindex="0"><code>strconv.Unquote(`&#34;Hello&#34;`) // Hello
+</code></pre></article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E4%BF%AE%E7%82%BC/>修炼</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/const&#43;iota%E6%9E%9A%E4%B8%BE%E6%9C%80%E4%BD%B3%E6%96%B9%E5%BC%8F/"><span class="iconfont icon-article"></span>const+iota枚举最佳方式</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script><script src="/js/hljs.min.6f979583f61e4ec5f0b94f94eab2e130ee628032474d374414dba4e33cc12097a0d01fe65b33378b23f6d3b053b95445.js" integrity="sha384-b5eVg/YeTsXwuU&#43;U6rLhMO5igDJHTTdEFNuk4zzBIJeg0B/mWzM3iyP207BTuVRF"></script><script>hljs.initHighlightingOnLoad();</script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>

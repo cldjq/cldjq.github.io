@@ -5,10 +5,88 @@
     <description>Recent content in Golang on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Mon, 28 Aug 2023 13:42:33 +0800</lastBuildDate>
+    <lastBuildDate>Tue, 29 Aug 2023 08:33:57 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/categories/golang/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>字符串转换</title>
+      <link>https://tinklespring.com/posts/%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%BD%AC%E6%8D%A2/</link>
+      <pubDate>Tue, 29 Aug 2023 08:33:57 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%BD%AC%E6%8D%A2/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;&lt;code&gt;strconv&lt;/code&gt;包在字符串和数值类型转换中非常重要，提供了字符串和基本数值类型之间的相互转换的功能。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;基本数值类型转换&#34;&gt;基本数值类型转换&lt;/h1&gt;
+&lt;p&gt;strconv 可以实现数值和字符串两种类型的相互转换：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;strconv.Itoa(123) //整型转字符串
+strconv.Atoi(&amp;#34;123&amp;#34;)  //字符串转整型
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;支持的类型有 int、float、bool等。&lt;/p&gt;
+&lt;h1 id=&#34;转换语法&#34;&gt;转换语法&lt;/h1&gt;
+&lt;p&gt;strconv 转换函数命名遵循 &amp;ldquo;源类型&amp;rdquo; To &amp;ldquo;目标类型&amp;rdquo; 的格式：&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Itoa&lt;/code&gt; :  int 到  string&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;i := 123
+s := strconv.Itoa(i)
+fmt.Printf(&amp;#34;%T %v\n&amp;#34;, s, s)  //string 123
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;Atoi&lt;/code&gt; ： string 到 int  (ASCII to integer，将ASCII字符串转换为整数)&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;s := &amp;#34;456&amp;#34;
+i, err := strconv.Atoi(s)
+if err != nil {
+  fmt.Println(err)
+} else {
+  fmt.Printf(&amp;#34;%T %v\n&amp;#34;, i, i) // int 456
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;指定进制的字符串转整数&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;num, err := strconv.ParseInt(&amp;#34;1101&amp;#34;, 2, 64)  //strconv.ParseInt参数有三个：要转换的字符串，指定的进制，整数的位大小；返回两个值：转换后的整数和一个错误
+if err != nil {
+  fmt.Println(&amp;#34;解析错误&amp;#34;)
+} else {
+  fmt.Println(num)
+}
+// 输出:
+// 13
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;FormatFloat&lt;/code&gt; : float 到 string&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;f := 3.1415926
+s := strconv.FormatFloat(f, &amp;#39;f&amp;#39;, 2, 64)  //四个参数：要转换的浮点数值，转换的格式f为常规格式，精度，浮点数的位大小/64意思是float64
+fmt.Printf(&amp;#34;%T %v\n&amp;#34;, s, s) // string 3.14
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;ParseBool&lt;/code&gt; : string 到 bool&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;s := &amp;#34;true&amp;#34;
+b, err := strconv.ParseBool(s)
+if err != nil {
+  fmt.Println(err)
+} else {
+  fmt.Printf(&amp;#34;%T %v&amp;#34;, b, b) // bool true
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;错误处理&#34;&gt;错误处理&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;大多数strconv在失败时会返回一个错误：  
+v, err := strconv.Atoi(&amp;#34;abc&amp;#34;)
+if err != nil {
+  // 处理错误
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;parse系列函数&#34;&gt;Parse系列函数&lt;/h1&gt;
+&lt;p&gt;Parse 函数会尝试转换整个字符串，并返回未转换的部分：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;v, err := strconv.ParseInt(&amp;#34;123abc&amp;#34;, 10, 64)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这里 v 是123，err会指出有余下未转换的部分。&lt;/p&gt;
+&lt;h1 id=&#34;format系列函数&#34;&gt;Format系列函数&lt;/h1&gt;
+&lt;p&gt;Format 函数可以精细控制输出格式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;strconv.FormatFloat(3.14, &amp;#39;f&amp;#39;, 2, 64) // 小数点后2位
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;支持如精度、位长等。&lt;/p&gt;
+&lt;h1 id=&#34;is系列函数&#34;&gt;Is系列函数&lt;/h1&gt;
+&lt;p&gt;Is 函数用来判断一个字符串是否可以转换为指定类型：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;strconv.IsDigit(&amp;#39;1&amp;#39;) // true
+strconv.IsNumber(&amp;#34;123&amp;#34;) // true
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;append系列函数&#34;&gt;Append系列函数&lt;/h1&gt;
+&lt;p&gt;可以将转换后的值append到现有缓冲区：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;buf := []byte(&amp;#34;Prefix:&amp;#34;)
+strconv.AppendInt(buf, 123, 10)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;避免多次拼接字符串。&lt;/p&gt;
+&lt;h1 id=&#34;quote-与-unquote&#34;&gt;Quote 与 Unquote&lt;/h1&gt;
+&lt;p&gt;这俩实现了Go字符串语法与strcov字符串转换之间的转化，用于在字符串周围添加或移除引号，对于处理字符串中的特殊字符、转义序列和字符串字面值很有用。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;strconv.Unquote(`&amp;#34;Hello&amp;#34;`) // Hello
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
     
     <item>
       <title>const&#43;iota枚举最佳方式</title>
@@ -4329,364 +4407,6 @@ func main() {
 
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不是必须内嵌内部struct，也不是必须使用内部struct，有时给外部struct增加新字段会使代码更干净。&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>7.数据标签：映射</title>
-      <link>https://tinklespring.com/posts/7.%E6%95%B0%E6%8D%AE%E6%A0%87%E7%AD%BE%E6%98%A0%E5%B0%84/</link>
-      <pubDate>Sat, 22 Jul 2023 11:37:02 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/7.%E6%95%B0%E6%8D%AE%E6%A0%87%E7%AD%BE%E6%98%A0%E5%B0%84/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;当需要使用一个特定的值，为了找到它，需要从数组或切片中查看每一个元素，有一种集合，其中的每个值都有一个标签，那么就可以快速找到需要的值，&lt;code&gt;映射&lt;/code&gt;就是做这个工作的。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;从文件中读取名字&#34;&gt;从文件中读取名字&lt;/h1&gt;
-&lt;p&gt;有一个文件 votes.txt ：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Amber Graham
-Brian Martin
-Amber Graham
-Brian Martin
-Amber Graham
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;每一行代表一次投票，需要处理文件的每一行并统计每个名称出现的总次数，获得多票的胜出。&lt;/p&gt;
-&lt;p&gt;首先需要读取votes.txt文件的内容，之前有GetFloats函数来读取文件中的每一行，并转换为一个切片，但只能读取float64值，所以需要增加一个GetStrings函数，把每行作为string值添加到返回的切片中。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package datafile
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;os&amp;#34;
-)
-
-func GetStrings(fileName string) ([]string, error) {
-	var lines []string
-	file, err := os.Open(fileName)
-	if err != nil {
-		return nil, err
-	}
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		lines = append(lines, line)
-	}
-	err = file.Close()
-	if err != nil {
-		return nil, err
-	}
-	if scanner.Err() != nil {
-		return nil, scanner.Err()
-	}
-	return lines, nil
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;xxx/xxx/datafile&amp;#34;
-	&amp;#34;log&amp;#34;
-)
-
-func main() {
-	lines, err: = datafile.GetStrings(&amp;#34;votes.txt&amp;#34;)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(lines)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用困难的切片方法对名字计数&#34;&gt;使用困难的切片方法对名字计数&lt;/h1&gt;
-&lt;p&gt;上述代码从文件中读取名字，如何计算名字出现了多少次？有两种方式，一种是切片，另一种是数据结构映射。&lt;/p&gt;
-&lt;p&gt;关于使用切片的方式：创建两个切片，每个的长度都是元素的总个数，并是指定的顺序，第一个切片用来保存在文件中找到的名字，每个名字只出现一次，命名为 names；第二个切片命名为counts，保存文件中的名字出现的次数，元素 counts[0] 保存 names[0] 出现的次数，以次类推。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-	lines, err := datafile.GetStrings(&amp;#34;votes.txt&amp;#34;)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var names []string   //这个变量保存人名
-	var counts []int     //这个变量保存每个人名出现的次数
-	for _, line := range lines {
-		matched := false
-		for i, name := range names {   //循环处理names切片中的每一个值
-			if name == line {      //若line与当前名称匹配
-				counts[i]++    //增加对应的count值
-				matched = true  //标识找到了匹配的名字
-			}
-		}
-		if matched == false {       //若没有找到匹配名字
-			names = append(names, line)  //添加它作为一个新名字
-			counts = append(counts, 1)   //并增加一个新的计数（这行是第一次出现）
-		}
-	}
-	for i, name := range names {
-		fmt.Printf(&amp;#34;%s: %d\n&amp;#34;, name, counts[i])   //输出names切片中的每一个元素，和对应的counts切片中的元素
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;程序使用一个循环嵌套在另一个循环中的方式来统计名字的次数，外面的循环把文件中的每行以每次一行的方式赋值给line变量。内部循环通过遍历names切片中的每个元素来查找与文件中的当前行匹配的名称。&lt;/p&gt;
-&lt;p&gt;若某人在选票上写一个名字，会导致文件中加载一个字符串，程序会一个一个确认names的元素中是否有等于这个名字。若没有找到匹配项，程序会在names切片末尾追加这个名字，并在counts切片中相应的位置增加1。假如下一行的这个名字已经存在于names切片中，程序会找到位置，在对应位置增加1。&lt;/p&gt;
-&lt;h1 id=&#34;映射&#34;&gt;映射&lt;/h1&gt;
-&lt;p&gt;保存名字使用的是切片，对于文件中的每一行，必须在许多names切片的值中寻找来进行比较，这样会导致性能差。&lt;/p&gt;
-&lt;p&gt;go有一种方法保存数据集合： &lt;code&gt;映射&lt;/code&gt; 。 一个映射是通过&lt;code&gt;键&lt;/code&gt;来访问每一个值的集合，键是一个简单的方式从映射中找出数据。&lt;/p&gt;
-&lt;p&gt;相对于数组和切片只能使用整型数字作为索引，映射可以使用任意类型的键（只要这个类型可以使用 == 来比较），包括数字、字符串和其他。所有的值只能是相同的类型，所有的健也需要是相同的类型，但是键和值的类型不必相同。&lt;/p&gt;
-&lt;p&gt;声明一个保存映射的变量，需要 &lt;code&gt;map&lt;/code&gt; 关键字，后跟一对包含键类型的方括号&lt;code&gt;[]&lt;/code&gt;，然后在方括号后跟提供值的类型。&lt;br&gt;
-&lt;code&gt;var myMap map[string]float64 &lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/7-%e6%98%a0%e5%b0%84/map%e8%af%ad%e6%b3%95.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;p&gt;与切片一样，声明一个映射变量并不会自动创建一个映射，需要调用make函数（与创建切片相同的函数），可以传递给make想要创建的映射类型（与需要赋值到的类型相同）。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var ranks map[string]int    //声明一个映射变量
-ranks = make(map[string]int) //真正创建一个映射
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;短变量声明方式：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ranks := make(map[string]int)   //创建一个映射并声明一个用于保存它的变量
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;映射的赋值与取值语法跟数组和切片类似，但数组和切片仅允许使用整型作为元素索引，映射可以选择几乎所有的类型来作为键。&lt;/p&gt;
-&lt;p&gt;这是一个名为ranks的映射：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ranks[&amp;#34;gold&amp;#34;] = 1
-ranks[&amp;#34;silver&amp;#34;] = 2
-ranks[&amp;#34;bronze&amp;#34;] = 3
-fmt.Println(ranks[&amp;#34;bronze&amp;#34;])
-fmt.Println(ranks[&amp;#34;gole&amp;#34;])
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;一个键和值都使用string的映射：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;elements := make(map[string]string)
-elements[&amp;#34;H&amp;#34;] = &amp;#34;Hydrogen&amp;#34;
-elements[&amp;#34;Li&amp;#34;] = &amp;#34;Lithium&amp;#34;
-fmt.Println(elements[&amp;#34;Li&amp;#34;])
-fmt.Println(elements[&amp;#34;H&amp;#34;])
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用整型作为键，bool类型作为值：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;isPrime := make(map[int]bool)
-isPrime[4] = false
-isPrime[7] = true
-fmt.Println(isPrime[4])
-fmt.Println(isPrime[7])
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;映射字面量&#34;&gt;映射字面量&lt;/h1&gt;
-&lt;p&gt;若预先知道映射的键和值，可以使用字面量来创建映射，映射字面量是以映射类型（以“映射[键类型]值类型”的形式）开始，后面跟花括号，内含想要映射初始就包含的 键/值 对。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;myMap := map[string]float64{&amp;#34;a&amp;#34;: 1.2, &amp;#34;b&amp;#34;: 5.6}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;例：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ranks := map[string]int{&amp;#34;bronze&amp;#34;: 3, &amp;#34;silver&amp;#34;: 2, &amp;#34;gold&amp;#34;: 1}
-fmt.Println(ranks[&amp;#34;gold&amp;#34;])
-fmt.Println(ranks[&amp;#34;bronze&amp;#34;])
-elements := map[string]string{
-        &amp;#34;H&amp;#34;: &amp;#34;Hydrogen&amp;#34;,
-        &amp;#34;Li&amp;#34;: &amp;#34;Lithium&amp;#34;,
-}   //多行映射字面量
-fmt.Println(elements[&amp;#34;H&amp;#34;])
-fmt.Println(elements[&amp;#34;Li&amp;#34;])
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;与切片字面量一样，花括号为空创建一个空的映射：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;emptyMap := map[string]float64{}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;映射中的零值&#34;&gt;映射中的零值&lt;/h1&gt;
-&lt;p&gt;对于数组和切片，若访问一个没有赋值过的键，会得到一个零值，根据值类型 不行，零值不一定是0。比如映射的值类型是string，零值就是空字符串。&lt;/p&gt;
-&lt;p&gt;与数组和切片一样，零值可以更安全地修改映射的值，即使在没有给它赋值的情况下。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;counters := make(map[string]int)
-counters[&amp;#34;a&amp;#34;]++
-counters[&amp;#34;a&amp;#34;]++
-counters[&amp;#34;c&amp;#34;]++
-fmt.Println(counters[&amp;#34;a&amp;#34;], counters[&amp;#34;b&amp;#34;], counters[&amp;#34;c&amp;#34;])
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;映射变量的零值是nil&#34;&gt;映射变量的零值是nil&lt;/h1&gt;
-&lt;p&gt;与切片一样，映射变量的零值是nil，若声明了一个映射变量但未赋值，是nil，意味着没有映射存在来增加键或值。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var nilMap map[int]string
-fmt.Printf(&amp;#34;%#v\n&amp;#34;, nilMap)
-nilMap[3] = &amp;#34;three&amp;#34;   //映射是nil，无法添加新值，会导致panic
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在增加一个新的键值对前，需要使用make或映射字面量来创建一个映射，并赋值给映射变量。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var myMap map[int]string = make(map[int]string)
-myMap[3] = &amp;#34;three&amp;#34;
-fmt.Printf(&amp;#34;%#v\n&amp;#34;, myMap)
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;如何区分已经赋值的值和零值&#34;&gt;如何区分已经赋值的值和零值&lt;/h1&gt;
-&lt;p&gt;虽然零值很有用，但无法判断一个键是被赋值成了零值还是未赋值。&lt;/p&gt;
-&lt;p&gt;有一个例子：错误输出了名为 Carl 的人没有通过，实际上并没有记录他的成绩。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func status(name string) {
-        grades := map[string]float64{&amp;#34;Alma&amp;#34;: 0, &amp;#34;Rohit&amp;#34;: 86.5}
-        grade := grades[name]
-        if grade &amp;lt; 60 {
-                fmt.Printf(&amp;#34;%s is failing!\n&amp;#34;, name)
-        }
-}
-func main() {
-        status(&amp;#34;Alma&amp;#34;)   //一个映射中已经被赋值为0的键
-        status(&amp;#34;Carl&amp;#34;)   //一个映射中未被赋值的键
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Alma is failing!
-Carl is failing!
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;为解决此问题，访问映射键的时候可选地获取第2个布尔类型的值，若这个键已经被赋过值，返回true，否则返回false。通常情况下，开发者会将这个布尔值赋给一个名为&lt;code&gt;ok&lt;/code&gt;的变量。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;counters := map[string]int{&amp;#34;a&amp;#34;: 3, &amp;#34;b&amp;#34;, 0}
-var value int
-var ok bool
-value, ok = counters[&amp;#34;a&amp;#34;]   //访问一个已经被赋值过的值
-fmt.Println(value, ok)      //ok会返回true
-value, ok = counters[&amp;#34;b&amp;#34;]   //访问一个已经被赋值过的值
-fmt.Println(value, ok)      //ok会返回true
-value, ok = counters[&amp;#34;c&amp;#34;]   //访问一个未赋值过的值
-fmt.Println(value, ok)      //ok会返回false
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若仅仅要测试值是否存在，可以通过将其赋值给 &lt;code&gt;_&lt;/code&gt; 空白标识符来忽略值。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;counters := map[string]int{&amp;#34;a&amp;#34;: 3, &amp;#34;b&amp;#34;: 0}
-var ok bool
-_, ok = counters[&amp;#34;b&amp;#34;]   //测试值是否存在，但忽略值
-fmt.Println(ok)
-_, ok = counters[&amp;#34;c&amp;#34;]   //测试值是否存在，但忽略值
-fmt.Println(ok)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;第二个返回值可以用来判断如何处理这个值，是已经赋值了但是正好等于零值，还是从未被赋值过。&lt;/p&gt;
-&lt;p&gt;修改后：在输出不及格前测试请求的名字是否已经被赋值过。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func  status(name string) {
-       grades := map[string]float64{&amp;#34;Alma&amp;#34;: 0, &amp;#34;Rohit&amp;#34;: 86.4}
-       grade, ok := grades[name]
-       if !ok {
-               fmt.Printf(&amp;#34;No grade recorded for %s.\n&amp;#34;, name)
-       } else if grade &amp;lt; 60 {
-               fmt.Printf(&amp;#34;%s is failing!\n&amp;#34;, name)
-       }
-}
-
-func main() {
-       status(&amp;#34;Alma&amp;#34;)
-       status(&amp;#34;Carl&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;练习：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;data := []string{&amp;#34;a&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;e&amp;#34;, &amp;#34;a&amp;#34;, &amp;#34;e&amp;#34;}   //需计算在切片中的每个字母的次数
-counts := make(map[string]int)    //保存计数的映射
-for _, item := range data {
-        counts[item]++     //增加当前字母的次数
-}    //处理每个字符
-letters := []string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;}   //是否这些字符都在映射中存在
-for _, letter := range letters {
-        count, ok := counts[letters]    //获取当前字符的计数以及是否出现的指示
-        if !ok {   //如果字母未找到
-                fmt.Printf(&amp;#34;%s: not found\n&amp;#34;, letter)
-        } else {   //如果字母找到
-                fmt.Printf(&amp;#34;%s: %d\n&amp;#34;, letter, count)
-        }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;a:2
-b:not found
-c:1
-d:not found
-e:2
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用delete函数删除键值对&#34;&gt;使用&amp;quot;delete&amp;quot;函数删除键/值对&lt;/h1&gt;
-&lt;p&gt;在分配了值之后，某个时候希望将其从映射中移除，go提供了内建的&lt;code&gt;delete&lt;/code&gt;函数，只需传递给delete两个参数：希望删除数据的映射和希望删除的键，然后键和其关联的值都会被删除。&lt;/p&gt;
-&lt;p&gt;如下代码，给两个映射的键分配了值，然后将其删除，之后，尝试访问，获取到零值。（对于ranks映射是0，对于isPrime映射是false）。第二个布尔返回值也是false，说明键已经被删除。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var ok bool
-ranks := make(map[string]int)
-var rank int
-ranks[&amp;#34;bronze&amp;#34;] = 3   //给“bronze”键分配值
-rank, ok = ranks[&amp;#34;bronze&amp;#34;]  //由于值存在，ok会返回true
-fmt.Printf(&amp;#34;rank: %d, ok: %v\n&amp;#34;, rank, ok)
-delete(ranks, &amp;#34;bronze&amp;#34;)   //删除键“bronze”和相关的值
-rank, ok = ranks[&amp;#34;bronze&amp;#34;]   //由于值已经被删除了ok返回false
-fmt.Printf(&amp;#34;rank: %d, ok: %v\n&amp;#34;, rank, ok)
-
-isPrime := make(map[int]bool)
-var prime bool
-isPrime[5] = true  //给键5分配值
-prime, ok = isPrime[5]  //由于值存在，ok会返回true
-fmt.Printf(&amp;#34;prime: %v, ok: %v\n&amp;#34;, prime, ok)
-delete(isPrime, 5)   //删除键5和相关的值
-prime, ok = isPrime[5]   //由于值被删除，ok会返回false
-fmt.Printf(&amp;#34;prime: %v, ok: %v\n&amp;#34;, prime, ok)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;rank: 3, ok: true
-rank: 0, ok: false
-prime: true, ok: true
-prime: false, ok: false
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用映射来更新程序&#34;&gt;使用映射来更新程序&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-import (
-        &amp;#34;fmt&amp;#34;
-        &amp;#34;xxx/xxx/datafile&amp;#34;
-        &amp;#34;log&amp;#34;
-)
-func main() {
-        lines, err := datafile.GetStrings(&amp;#34;votes.txt&amp;#34;)
-        if err != nil {
-                log.Fatal(err)
-        }
-        counts := make(map[string]int)   //声明一个以人名为键，次数为值的映射
-        for _, line := range lines {
-                counts[lines]++     //为人名增加计数
-        }
-        fmt.Println(counts)   //输出填充的映射
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;对映射进行forrange循环&#34;&gt;对映射进行&amp;quot;for&amp;hellip;range&amp;quot;循环&lt;/h1&gt;
-&lt;p&gt;为了从映射中格式化每个键和值作为一行，需要使用循环遍历映射中的每一条。&lt;/p&gt;
-&lt;p&gt;与数组和切片的 for&amp;hellip;range 循环一样，与将一个整数索引赋值给第一个变量不同，映射将键赋给了第一个变量。&lt;/p&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/7-%e6%98%a0%e5%b0%84/%e6%98%a0%e5%b0%84for...range%e5%be%aa%e7%8e%af.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;p&gt;for&amp;hellip;range 循环让遍历映射中的键和值更方便，仅用一个变量保存键，再用一个变量保存值，并会自动遍历映射中的每一个条目。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-import &amp;#34;fmt&amp;#34;
-func main() {
-        grades := map[string]float64{&amp;#34;Alma&amp;#34;: 74.2, &amp;#34;Rohit&amp;#34;: 86.5, &amp;#34;Carl&amp;#34;: 59.7}
-        for name, grade := range grades {
-                fmt.Printf(&amp;#34;%s has a grade of %0.1f%%\n&amp;#34;, name, grade)  //打印每一个键和它对应的值
-        }  //循环遍历每一个键/值对
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Carl has a grade of 59.7%
-Alma has a grade of 74.2%
-Rohit has a grade of 86.5%
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若只需要循环所有的键，可以忽略对应的值变量：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(&amp;#34;Class roster:&amp;#34;)
-for name := range grades {
-        fmt.Println(name)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Class roster:
-Alma
-Rohit
-Carl
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若只需要值，可以将键赋 _ 空白标识符：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(&amp;#34;Grades:&amp;#34;)
-for _, grade := range grades {
-        fmt.Println(grade)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Grades:
-59.7
-74.2
-86.5
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这里有个问题，如果将之前的结果存入一个文件，并执行，会发现映射的键和值是按照随机顺序打印，若多次执行，每次的结果顺序是不一样的。&lt;/p&gt;
-&lt;h1 id=&#34;forrange循环以随机顺序处理映射&#34;&gt;&amp;ldquo;for&amp;hellip;range&amp;quot;循环以随机顺序处理映射&lt;/h1&gt;
-&lt;p&gt;for&amp;hellip;range 以随机的顺序遍历映射的键和值，因为映射是一个非有序的键/值对集合。但有时需要按照特定的顺序遍历时，要自己写一些代码了。&lt;/p&gt;
-&lt;p&gt;例子：使名字按照字母表的顺序输出，使用了两个for循环，第一个循环遍历映射里边所有的键，忽略值，并把其增加到一个字符串的切片上，然后把切片传递给sort包中的Strings函数来以字母表顺序排序。第二个for循环并不遍历映射，而是遍历变量排序后的名字的切片，输出名字，并从映射中获取与名字对应的值，仍然处理映射中的每一个键和值，但是从已排序好的切片中获取而不是从映射中获取的键。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-        &amp;#34;fmt&amp;#34;
-        &amp;#34;sort&amp;#34;
-)
-
-func main() {
-        grades := map[string]float64{&amp;#34;Alma&amp;#34;: 74.2, &amp;#34;Rohit&amp;#34;: 86.5, &amp;#34;Carl&amp;#34;: 59.7}
-        var names []string
-        for name := range grades {
-                names = append(names, name)
-        }
-        sort.Strings(names)
-        for _, name := range names {
-                fmt.Printf(&amp;#34;%s has a grade of %0.1f%%\n&amp;#34;, name, grades[name])
-        }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;按照以上代码执行，名字是按照字母表顺序排列，不管执行多少次都是如此。&lt;/p&gt;
-&lt;p&gt;若不在乎映射中的数据如何处理，使用for&amp;hellip;range循环就可以，但若是需要顺序，就需要自己写代码处理排序问题。&lt;/p&gt;
-&lt;h1 id=&#34;使用forrange更新程序&#34;&gt;使用for&amp;hellip;range更新程序&lt;/h1&gt;
-&lt;p&gt;将打印整个映射的行用for&amp;hellip;range替换，把键赋给name变量，把映射的值赋值给count变量，然后用printf输出人命和得票数。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-        &amp;#34;fmt&amp;#34;
-        &amp;#34;xxx/xxx/datafile&amp;#34;
-        &amp;#34;log&amp;#34;
-)
-
-func main() {
-        lines, err := datafile.GetStrings(&amp;#34;votes.txt&amp;#34;)
-        if err != nil {
-                log.Fatal(err)       
-        }
-        counts := make(map[string]int)
-        for _, line := range lines {
-                counts[line]++
-        }
-        for name, count := range counts {
-                fmt.Printf(&amp;#34;Votes for %s: %d\n&amp;#34;, name, count)
-        }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当可用的数据集合是数组和切片时，需要很多额外的代码和处理时间来查找，但使用映射处理起来更简便。&lt;/p&gt;
-&lt;p&gt;当需要查找集合中的值的时候，可以考虑映射！&lt;/p&gt;
 </description>
     </item>
     
