@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>Go语言Mutex互斥锁&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Go语言Mutex互斥锁" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">Go语言Mutex互斥锁</h1><p class="article date">Tuesday, September 5, 2023</p></section><article class="article markdown-body"><blockquote>
+<p>在并发编程中，我们常常会遇到多个 goroutine 同时访问共享资源的情况，这可能会导致数据的不一致性。为了解决这个问题，Go 语言提供了互斥锁（Mutex）机制。</p>
+</blockquote>
+<h1 id="mutex定义和使用">Mutex定义和使用</h1>
+<p>Mutex 是 Go 语言中 sync 包提供的一个结构体，它有两个方法：<code>Lock()</code> 和 <code>Unlock()</code>。可以通过创建 Mutex 的实例，然后在访问共享资源之前调用 Lock() 方法，访问结束后调用 Unlock() 方法来保证对共享资源的访问是线程安全的。</p>
+<p><code>Lock()</code>：加锁方法</p>
+<p><code>Unlock()</code>：解锁方法</p>
+<p>例：</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+import &#34;sync&#34;
+import &#34;time&#34;
+
+
+var counter int
+var lock sync.Mutex
+
+func increment() {
+    // 加锁保证累加安全
+    lock.Lock()
+    defer lock.Unlock()
+    counter++
+}
+
+func main() {
+    for i := 0; i &lt; 1000; i++ {
+        go increment()
+    }
+
+    // 等待 increment() 全部执行完毕
+    time.Sleep(time.Second)
+    fmt.Println(counter)
+}
+
+// 打印输出
+1000
+</code></pre><p>在这个例子中，有一个共享的全局变量 counter，并且希望在 increment() 函数中安全地对 counter 进行加一操作。</p>
+<p>为了实现这个目标，我们使用了 Mutex：在增加 counter 之前我们先调用 lock.Lock() 来获取锁，增加 counter 之后我们调用 defer lock.Unlock() 来释放锁。这样我们就确保了每次只有一个 goroutine 可以访问 counter，从而保证了 counter 的正确性。</p>
+<h1 id="mutex工作原理">Mutex工作原理</h1>
+<h3 id="mutex数据结构">Mutex数据结构</h3>
+<p>src/sync/mutex.go: Mutex中的互斥锁定义：</p>
+<pre tabindex="0"><code>// A Mutex is a mutual exclusion lock.
+// The zero value for a Mutex is an unlocked mutex.
+//
+// A Mutex must not be copied after first use.
+//
+// In the terminology of the Go memory model,
+// the n&#39;th call to Unlock “synchronizes before” the m&#39;th call to Lock
+// for any n &lt; m.
+// A successful call to TryLock is equivalent to a call to Lock.
+// A failed call to TryLock does not establish any “synchronizes before”
+// relation at all.
+type Mutex struct {
+    state int32
+    sema  uint32
+}
+</code></pre><p><code>Mutex.state</code> 表示互斥锁的状态，比如是否被锁定等。是32位的整型变量，内部实现时把该变量分成了四份，用于记录Mutex的四种状态：</p>
+<ul>
+<li><code>Locked</code>：表示该 Mutex 是否已被锁定，0 表示没有锁定，1 表示已被锁定。</li>
+<li><code>Woken</code>：表示是否有协程已被唤醒，0 表示没有协程唤醒，1 表示已有协程被唤醒，正在加锁过程中。</li>
+<li><code>Starving</code>：表示该 Mutex 是否处于饥饿状态，0 表示没有饥饿，1 表示饥饿状态，表明有协程阻塞了超过 1ms。</li>
+<li><code>Waiter</code>：表示阻塞等待锁的协程个数，协程解锁时根据此值来判断是否需要释放信号量。</li>
+</ul>
+<p><img  src="/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/1.png"
+        alt/></p>
+<p><code>Mutex.sema</code> 表示信号量，协程阻塞等待该信号量，解锁的协程释放信号量从而唤醒等待的信号量的协程。</p>
+<p>协程之间的抢锁实际上是争夺给 Locked 赋值的权利，能给 Locked 置为 1，则说明抢锁成功。抢不到则阻塞等待 Mutex.sema 信号量，一旦持有锁的协程解锁，那么等待的协程会依次被唤醒。</p>
+<h3 id="mutex如何保证并发安全">Mutex如何保证并发安全</h3>
+<p>Mutex 的工作原理其实很简单：在内部，它维护了一个标志位，表示当前是否有 goroutine 持有这个 Mutex。</p>
+<p>当一个 goroutine 调用 Lock 方法时，如果标志位为 0，即表示当前没有 goroutine 持有这个 Mutex，那么这个 goroutine 就可以获取这个 Mutex，并将标志位设置为 1；如果标志位为 1，表示当前已经有 goroutine 持有这个 Mutex，那么这个 goroutine 就需要等待，直到标志位变为 0。</p>
+<p>当一个 goroutine 调用 Unlock 方法时，它会将标志位设置为 0，表示它已经不再持有这个 Mutex。如果此时有其它的 goroutine 在等待这个 Mutex，那么其中一个 goroutine 就可以获取这个 Mutex，并将标志位设置为 1。</p>
+<p>通过这种方式，Mutex 实现了对共享资源的互斥访问，从而保证了并发安全。</p>
+<p>下面图示分析加锁解锁过程。</p>
+<h3 id="加锁过程">加锁过程</h3>
+<h5 id="简单加锁">简单加锁</h5>
+<p>若当前只有一个协程在加锁，没有其他协程干扰：<br>
+<img  src="/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/2.png"
+        alt/></p>
+<h5 id="加锁被阻塞">加锁被阻塞</h5>
+<p>如果协程加锁时锁已经被其它协程占用了，此时加锁过程如下，Waiter 计数器加 1 ，协程 2 将被阻塞，直到 Locked 值变为 0 后才会被唤醒。<br>
+<img  src="/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/3.png"
+        alt/></p>
+<h3 id="解锁过程">解锁过程</h3>
+<h5 id="简单解锁">简单解锁</h5>
+<p>如果解锁时没有其它线程阻塞，则直接 Locked 置为 0 即可：<br>
+<img  src="/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/4.png"
+        alt/></p>
+<h5 id="解锁并唤醒协程">解锁并唤醒协程</h5>
+<p>如果解锁时有一个或多个协程阻塞，如下图所示，协程 1 解锁过程分为两个步骤：</p>
+<p>1.先把 Locked 置为 0。</p>
+<p>2.然后查看 Waiter &gt; 0，释放一个信号量，唤醒一个阻塞的协程，被唤醒的协程 2 把 Locked 置为 1 ，于是协程 2 获得了锁。<br>
+<img  src="/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/5.png"
+        alt/></p>
+<h3 id="mutex的模式">Mutex的模式</h3>
+<p>前面分析加锁和解锁的过程只关注了 Waiter 和 Locked 位的变化，下面我们一起分析 Starving 位的作用。</p>
+<p>为了充分理解 Starving 位 的作用，我们需要先了解什么是自旋？</p>
+<p><strong>自旋过程</strong><br>
+协程加锁时，如果当前的 Locked = 1，则说明该锁被其它协程持有，尝试加锁的协程并不是马上转入阻塞，而是会持续的探测 Locked 位是否变成了 0，这样的过程被称为自旋。</p>
+<p>自旋的好处：当加锁失败时不必立即转入阻塞，有一定的机会立马获取到锁，这样更充分地利用了CPU，避免频繁的协程切换。</p>
+<p>自旋的问题：如果在自旋的过程中获得锁，那么之前已经被阻塞的协程将无法获得锁。如果加锁的协程非常的多的话，会导致每次新来的协程都通过自旋获得了锁，那么被阻塞的协程将很难有机会获得锁，从而进入“饥饿”状态（长时间得不到运行）。</p>
+<p>每个 Mutex 都有两种模式，称为 Normal 和 Starving 模式。</p>
+<p><strong>Normal模式</strong> <br>
+默认情况下，Mutex 的模式是 Normal。</p>
+<p>作用：在 Normal 模式下，协程如果加锁不成功则不会立即转入阻塞排队，而是判断是否满足自旋的条件，如果满足则会启动自旋的过程，尝试抢锁。</p>
+<p><strong>Starving模式</strong> <br>
+自旋的过程中能抢到锁，则一定意味着同一时刻有协程释放了锁。同时释放锁的时候去判断有阻塞等待的协程，那么还会释放一个信号量来唤醒一个等待协程，被唤醒的协程得到 CPU 后开始运行，这时会发现锁已经被抢占了（自旋的协程更快抢占了锁），那么被唤醒的协程只好再次阻塞，不过阻塞前会先判断自上次阻塞到本次阻塞经过了多长的时间，如果超过了 1 ms，则会将 Mutex 标记为 “饥饿” 模式，然后再阻塞。</p>
+<p>在“饥饿”模式下，则不会启动自旋过程了，这样一旦有协程释放了锁，那么一定会唤醒协程，被唤醒的协程将成功获得锁，同时也会把 Waiter 计数减 1。</p>
+<h3 id="woken状态">Woken状态</h3>
+<p>Woken 状态用于加锁和解锁过程的通信，比如，同一个时刻，两个协程一个在加锁，另一个在解锁。正在加锁的协程可能处于自旋的过程中，此时把 Woken 标记为 1，用于通知解锁协程不必释放信号量了，好比在告知解锁协程：你只管解锁好了，不必释放信号量，因为我马上就会拿到锁了。</p>
+<h3 id="mutex的公平性">Mutex的公平性</h3>
+<p>在许多并发系统中，公平性是一个重要的问题：我们希望每个 goroutine 都能公平地获取到 Mutex。然而，Go 语言的 Mutex 并不保证公平性。</p>
+<p>当一个 goroutine 调用 Lock 方法时，如果当前有其它的 goroutine 已经在等待这个 Mutex，那么这个 goroutine 将被放入等待队列的尾部；但是，如果当前没有其它的 goroutine 在等待这个 Mutex，那么这个 goroutine 就可以直接获取这个 Mutex，无需等待。</p>
+<p>这种设计可以提高系统的整体性能，因为它避免了不必要的上下文切换。但是，它也可能导致某些 goroutine 长时间无法获取到 Mutex。如果你的应用需要公平的 Mutex，你可以使用 sync.Cond 来实现。</p>
+<h1 id="mutex常见问题">Mutex常见问题</h1>
+<h3 id="避免死锁">避免死锁</h3>
+<p>死锁是并发编程中一个常见的问题。如果一个 goroutine 持有一个 Mutex，然后再次尝试获取同一个 Mutex，那么它就会被阻塞，因为 Mutex 已经被它自己持有，只有当它释放 Mutex 后，它才能再次获取。这就是典型的死锁情况。</p>
+<p>为了避免死锁，你需要确保每次获取 Mutex 的操作都有对应的释放操作，并且避免在持有 Mutex 的情况下再次获取同一个 Mutex。</p>
+<h3 id="使用defer释放mutex">使用defer释放Mutex</h3>
+<p>在 Go 语言中，我们通常使用 defer 语句来确保 Mutex 能够在函数退出时被正确释放，即使在函数中发生了 panic。</p>
+<pre tabindex="0"><code>func increment() {
+    lock.Lock()
+    defer lock.Unlock()
+    counter++
+}
+</code></pre><p>在这个例子中，无论 increment 函数是否正常退出，或者在执行过程中发生了 panic，defer 语句都会确保 lock.Unlock() 被执行，从而避免了死锁。</p>
+<h3 id="避免在持有mutex时进行io操作">避免在持有Mutex时进行I/O操作</h3>
+<p>在持有 Mutex 的情况下进行 I/O 操作是非常危险的，因为 I/O 操作可能会花费很长时间，这将导致我们持有 Mutex 的时间过长，从而阻塞其他 goroutine。为了避免这个问题，我们应该在释放 Mutex 后再进行 I/O 操作。</p>
+<h3 id="不能重复解锁">不能重复解锁</h3>
+<p>为什么不能重复解锁呢？为什么 Go 不能设计为可以多次执行 Unlock()也不会触发 panic 呢？</p>
+<p>原因：如果多次执行 Unlock()，那么可能每次都释放一个信号量，释放一个信号量就会唤醒另一个协程，这样会唤醒多个协程，多个协程被唤醒后会继续在 Lock()里抢锁，势必会增加 Lock() 实现的复杂度，也会导致不必要的协程切换。</p>
+</article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E4%BF%AE%E7%82%BC/>修炼</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/%E5%90%8C%E6%AD%A5%E5%BC%82%E6%AD%A5%E9%98%BB%E5%A1%9E%E9%9D%9E%E9%98%BB%E5%A1%9E%E4%BB%A5%E5%8F%8A%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/"><span class="iconfont icon-article"></span>同步、异步、阻塞、非阻塞以及多路复用</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script><script src="/js/hljs.min.6f979583f61e4ec5f0b94f94eab2e130ee628032474d374414dba4e33cc12097a0d01fe65b33378b23f6d3b053b95445.js" integrity="sha384-b5eVg/YeTsXwuU&#43;U6rLhMO5igDJHTTdEFNuk4zzBIJeg0B/mWzM3iyP207BTuVRF"></script><script>hljs.initHighlightingOnLoad();</script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>

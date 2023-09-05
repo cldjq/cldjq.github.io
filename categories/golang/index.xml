@@ -5,10 +5,393 @@
     <description>Recent content in Golang on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Tue, 29 Aug 2023 10:18:09 +0800</lastBuildDate>
+    <lastBuildDate>Tue, 05 Sep 2023 11:16:34 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/categories/golang/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Go语言Mutex互斥锁</title>
+      <link>https://tinklespring.com/posts/go%E8%AF%AD%E8%A8%80mutex%E4%BA%92%E6%96%A5%E9%94%81/</link>
+      <pubDate>Tue, 05 Sep 2023 11:16:34 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/go%E8%AF%AD%E8%A8%80mutex%E4%BA%92%E6%96%A5%E9%94%81/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;在并发编程中，我们常常会遇到多个 goroutine 同时访问共享资源的情况，这可能会导致数据的不一致性。为了解决这个问题，Go 语言提供了互斥锁（Mutex）机制。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;mutex定义和使用&#34;&gt;Mutex定义和使用&lt;/h1&gt;
+&lt;p&gt;Mutex 是 Go 语言中 sync 包提供的一个结构体，它有两个方法：&lt;code&gt;Lock()&lt;/code&gt; 和 &lt;code&gt;Unlock()&lt;/code&gt;。可以通过创建 Mutex 的实例，然后在访问共享资源之前调用 Lock() 方法，访问结束后调用 Unlock() 方法来保证对共享资源的访问是线程安全的。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Lock()&lt;/code&gt;：加锁方法&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Unlock()&lt;/code&gt;：解锁方法&lt;/p&gt;
+&lt;p&gt;例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+import &amp;#34;sync&amp;#34;
+import &amp;#34;time&amp;#34;
+
+
+var counter int
+var lock sync.Mutex
+
+func increment() {
+    // 加锁保证累加安全
+    lock.Lock()
+    defer lock.Unlock()
+    counter++
+}
+
+func main() {
+    for i := 0; i &amp;lt; 1000; i++ {
+        go increment()
+    }
+
+    // 等待 increment() 全部执行完毕
+    time.Sleep(time.Second)
+    fmt.Println(counter)
+}
+
+// 打印输出
+1000
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这个例子中，有一个共享的全局变量 counter，并且希望在 increment() 函数中安全地对 counter 进行加一操作。&lt;/p&gt;
+&lt;p&gt;为了实现这个目标，我们使用了 Mutex：在增加 counter 之前我们先调用 lock.Lock() 来获取锁，增加 counter 之后我们调用 defer lock.Unlock() 来释放锁。这样我们就确保了每次只有一个 goroutine 可以访问 counter，从而保证了 counter 的正确性。&lt;/p&gt;
+&lt;h1 id=&#34;mutex工作原理&#34;&gt;Mutex工作原理&lt;/h1&gt;
+&lt;h3 id=&#34;mutex数据结构&#34;&gt;Mutex数据结构&lt;/h3&gt;
+&lt;p&gt;src/sync/mutex.go: Mutex中的互斥锁定义：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// A Mutex is a mutual exclusion lock.
+// The zero value for a Mutex is an unlocked mutex.
+//
+// A Mutex must not be copied after first use.
+//
+// In the terminology of the Go memory model,
+// the n&amp;#39;th call to Unlock “synchronizes before” the m&amp;#39;th call to Lock
+// for any n &amp;lt; m.
+// A successful call to TryLock is equivalent to a call to Lock.
+// A failed call to TryLock does not establish any “synchronizes before”
+// relation at all.
+type Mutex struct {
+    state int32
+    sema  uint32
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;Mutex.state&lt;/code&gt; 表示互斥锁的状态，比如是否被锁定等。是32位的整型变量，内部实现时把该变量分成了四份，用于记录Mutex的四种状态：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Locked&lt;/code&gt;：表示该 Mutex 是否已被锁定，0 表示没有锁定，1 表示已被锁定。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Woken&lt;/code&gt;：表示是否有协程已被唤醒，0 表示没有协程唤醒，1 表示已有协程被唤醒，正在加锁过程中。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Starving&lt;/code&gt;：表示该 Mutex 是否处于饥饿状态，0 表示没有饥饿，1 表示饥饿状态，表明有协程阻塞了超过 1ms。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Waiter&lt;/code&gt;：表示阻塞等待锁的协程个数，协程解锁时根据此值来判断是否需要释放信号量。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/1.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Mutex.sema&lt;/code&gt; 表示信号量，协程阻塞等待该信号量，解锁的协程释放信号量从而唤醒等待的信号量的协程。&lt;/p&gt;
+&lt;p&gt;协程之间的抢锁实际上是争夺给 Locked 赋值的权利，能给 Locked 置为 1，则说明抢锁成功。抢不到则阻塞等待 Mutex.sema 信号量，一旦持有锁的协程解锁，那么等待的协程会依次被唤醒。&lt;/p&gt;
+&lt;h3 id=&#34;mutex如何保证并发安全&#34;&gt;Mutex如何保证并发安全&lt;/h3&gt;
+&lt;p&gt;Mutex 的工作原理其实很简单：在内部，它维护了一个标志位，表示当前是否有 goroutine 持有这个 Mutex。&lt;/p&gt;
+&lt;p&gt;当一个 goroutine 调用 Lock 方法时，如果标志位为 0，即表示当前没有 goroutine 持有这个 Mutex，那么这个 goroutine 就可以获取这个 Mutex，并将标志位设置为 1；如果标志位为 1，表示当前已经有 goroutine 持有这个 Mutex，那么这个 goroutine 就需要等待，直到标志位变为 0。&lt;/p&gt;
+&lt;p&gt;当一个 goroutine 调用 Unlock 方法时，它会将标志位设置为 0，表示它已经不再持有这个 Mutex。如果此时有其它的 goroutine 在等待这个 Mutex，那么其中一个 goroutine 就可以获取这个 Mutex，并将标志位设置为 1。&lt;/p&gt;
+&lt;p&gt;通过这种方式，Mutex 实现了对共享资源的互斥访问，从而保证了并发安全。&lt;/p&gt;
+&lt;p&gt;下面图示分析加锁解锁过程。&lt;/p&gt;
+&lt;h3 id=&#34;加锁过程&#34;&gt;加锁过程&lt;/h3&gt;
+&lt;h5 id=&#34;简单加锁&#34;&gt;简单加锁&lt;/h5&gt;
+&lt;p&gt;若当前只有一个协程在加锁，没有其他协程干扰：&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/2.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h5 id=&#34;加锁被阻塞&#34;&gt;加锁被阻塞&lt;/h5&gt;
+&lt;p&gt;如果协程加锁时锁已经被其它协程占用了，此时加锁过程如下，Waiter 计数器加 1 ，协程 2 将被阻塞，直到 Locked 值变为 0 后才会被唤醒。&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/3.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h3 id=&#34;解锁过程&#34;&gt;解锁过程&lt;/h3&gt;
+&lt;h5 id=&#34;简单解锁&#34;&gt;简单解锁&lt;/h5&gt;
+&lt;p&gt;如果解锁时没有其它线程阻塞，则直接 Locked 置为 0 即可：&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/4.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h5 id=&#34;解锁并唤醒协程&#34;&gt;解锁并唤醒协程&lt;/h5&gt;
+&lt;p&gt;如果解锁时有一个或多个协程阻塞，如下图所示，协程 1 解锁过程分为两个步骤：&lt;/p&gt;
+&lt;p&gt;1.先把 Locked 置为 0。&lt;/p&gt;
+&lt;p&gt;2.然后查看 Waiter &amp;gt; 0，释放一个信号量，唤醒一个阻塞的协程，被唤醒的协程 2 把 Locked 置为 1 ，于是协程 2 获得了锁。&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/5.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h3 id=&#34;mutex的模式&#34;&gt;Mutex的模式&lt;/h3&gt;
+&lt;p&gt;前面分析加锁和解锁的过程只关注了 Waiter 和 Locked 位的变化，下面我们一起分析 Starving 位的作用。&lt;/p&gt;
+&lt;p&gt;为了充分理解 Starving 位 的作用，我们需要先了解什么是自旋？&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;自旋过程&lt;/strong&gt;&lt;br&gt;
+协程加锁时，如果当前的 Locked = 1，则说明该锁被其它协程持有，尝试加锁的协程并不是马上转入阻塞，而是会持续的探测 Locked 位是否变成了 0，这样的过程被称为自旋。&lt;/p&gt;
+&lt;p&gt;自旋的好处：当加锁失败时不必立即转入阻塞，有一定的机会立马获取到锁，这样更充分地利用了CPU，避免频繁的协程切换。&lt;/p&gt;
+&lt;p&gt;自旋的问题：如果在自旋的过程中获得锁，那么之前已经被阻塞的协程将无法获得锁。如果加锁的协程非常的多的话，会导致每次新来的协程都通过自旋获得了锁，那么被阻塞的协程将很难有机会获得锁，从而进入“饥饿”状态（长时间得不到运行）。&lt;/p&gt;
+&lt;p&gt;每个 Mutex 都有两种模式，称为 Normal 和 Starving 模式。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Normal模式&lt;/strong&gt; &lt;br&gt;
+默认情况下，Mutex 的模式是 Normal。&lt;/p&gt;
+&lt;p&gt;作用：在 Normal 模式下，协程如果加锁不成功则不会立即转入阻塞排队，而是判断是否满足自旋的条件，如果满足则会启动自旋的过程，尝试抢锁。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Starving模式&lt;/strong&gt; &lt;br&gt;
+自旋的过程中能抢到锁，则一定意味着同一时刻有协程释放了锁。同时释放锁的时候去判断有阻塞等待的协程，那么还会释放一个信号量来唤醒一个等待协程，被唤醒的协程得到 CPU 后开始运行，这时会发现锁已经被抢占了（自旋的协程更快抢占了锁），那么被唤醒的协程只好再次阻塞，不过阻塞前会先判断自上次阻塞到本次阻塞经过了多长的时间，如果超过了 1 ms，则会将 Mutex 标记为 “饥饿” 模式，然后再阻塞。&lt;/p&gt;
+&lt;p&gt;在“饥饿”模式下，则不会启动自旋过程了，这样一旦有协程释放了锁，那么一定会唤醒协程，被唤醒的协程将成功获得锁，同时也会把 Waiter 计数减 1。&lt;/p&gt;
+&lt;h3 id=&#34;woken状态&#34;&gt;Woken状态&lt;/h3&gt;
+&lt;p&gt;Woken 状态用于加锁和解锁过程的通信，比如，同一个时刻，两个协程一个在加锁，另一个在解锁。正在加锁的协程可能处于自旋的过程中，此时把 Woken 标记为 1，用于通知解锁协程不必释放信号量了，好比在告知解锁协程：你只管解锁好了，不必释放信号量，因为我马上就会拿到锁了。&lt;/p&gt;
+&lt;h3 id=&#34;mutex的公平性&#34;&gt;Mutex的公平性&lt;/h3&gt;
+&lt;p&gt;在许多并发系统中，公平性是一个重要的问题：我们希望每个 goroutine 都能公平地获取到 Mutex。然而，Go 语言的 Mutex 并不保证公平性。&lt;/p&gt;
+&lt;p&gt;当一个 goroutine 调用 Lock 方法时，如果当前有其它的 goroutine 已经在等待这个 Mutex，那么这个 goroutine 将被放入等待队列的尾部；但是，如果当前没有其它的 goroutine 在等待这个 Mutex，那么这个 goroutine 就可以直接获取这个 Mutex，无需等待。&lt;/p&gt;
+&lt;p&gt;这种设计可以提高系统的整体性能，因为它避免了不必要的上下文切换。但是，它也可能导致某些 goroutine 长时间无法获取到 Mutex。如果你的应用需要公平的 Mutex，你可以使用 sync.Cond 来实现。&lt;/p&gt;
+&lt;h1 id=&#34;mutex常见问题&#34;&gt;Mutex常见问题&lt;/h1&gt;
+&lt;h3 id=&#34;避免死锁&#34;&gt;避免死锁&lt;/h3&gt;
+&lt;p&gt;死锁是并发编程中一个常见的问题。如果一个 goroutine 持有一个 Mutex，然后再次尝试获取同一个 Mutex，那么它就会被阻塞，因为 Mutex 已经被它自己持有，只有当它释放 Mutex 后，它才能再次获取。这就是典型的死锁情况。&lt;/p&gt;
+&lt;p&gt;为了避免死锁，你需要确保每次获取 Mutex 的操作都有对应的释放操作，并且避免在持有 Mutex 的情况下再次获取同一个 Mutex。&lt;/p&gt;
+&lt;h3 id=&#34;使用defer释放mutex&#34;&gt;使用defer释放Mutex&lt;/h3&gt;
+&lt;p&gt;在 Go 语言中，我们通常使用 defer 语句来确保 Mutex 能够在函数退出时被正确释放，即使在函数中发生了 panic。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func increment() {
+    lock.Lock()
+    defer lock.Unlock()
+    counter++
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这个例子中，无论 increment 函数是否正常退出，或者在执行过程中发生了 panic，defer 语句都会确保 lock.Unlock() 被执行，从而避免了死锁。&lt;/p&gt;
+&lt;h3 id=&#34;避免在持有mutex时进行io操作&#34;&gt;避免在持有Mutex时进行I/O操作&lt;/h3&gt;
+&lt;p&gt;在持有 Mutex 的情况下进行 I/O 操作是非常危险的，因为 I/O 操作可能会花费很长时间，这将导致我们持有 Mutex 的时间过长，从而阻塞其他 goroutine。为了避免这个问题，我们应该在释放 Mutex 后再进行 I/O 操作。&lt;/p&gt;
+&lt;h3 id=&#34;不能重复解锁&#34;&gt;不能重复解锁&lt;/h3&gt;
+&lt;p&gt;为什么不能重复解锁呢？为什么 Go 不能设计为可以多次执行 Unlock()也不会触发 panic 呢？&lt;/p&gt;
+&lt;p&gt;原因：如果多次执行 Unlock()，那么可能每次都释放一个信号量，释放一个信号量就会唤醒另一个协程，这样会唤醒多个协程，多个协程被唤醒后会继续在 Lock()里抢锁，势必会增加 Lock() 实现的复杂度，也会导致不必要的协程切换。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>同步、异步、阻塞、非阻塞以及多路复用</title>
+      <link>https://tinklespring.com/posts/%E5%90%8C%E6%AD%A5%E5%BC%82%E6%AD%A5%E9%98%BB%E5%A1%9E%E9%9D%9E%E9%98%BB%E5%A1%9E%E4%BB%A5%E5%8F%8A%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/</link>
+      <pubDate>Tue, 05 Sep 2023 08:39:00 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/%E5%90%8C%E6%AD%A5%E5%BC%82%E6%AD%A5%E9%98%BB%E5%A1%9E%E9%9D%9E%E9%98%BB%E5%A1%9E%E4%BB%A5%E5%8F%8A%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;经常会看到IO模型，同步阻塞，同步非阻塞，异步阻塞，异步非阻塞等等，看起来很晕。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;《UNIX网络编程：卷一》第六章 ，看看IO模型的本质。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Socket与文件描述符的关系&lt;/li&gt;
+&lt;li&gt;进程的五状态模型&lt;/li&gt;
+&lt;li&gt;用户态与内核态的区别&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;socket与文件描述符&#34;&gt;Socket与文件描述符&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;socket：&lt;br&gt;
+socket是一种网络通信的抽象，它允许进程通过网络进行通信。socket提供了一种机制，使进程能够通过网络连接到其他进程，并在网络上进行数据传输。在编程中，socket通常通过操作系统提供的套接字API（比如POSIX套接字或windows套接字）来创建和使用。这些套接字API允许程序员创建套接字、绑定地址、监听连接请求，接收连接、发送和接收数据等。套接字通常用于网络通信，例如TCP和UDP连接，用于构建客户端和服务器应用程序。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;文件描述符：&lt;br&gt;
+文件描述符是操作系统内核用来标识打开文件或其他 I/O 设备的整数。在 Unix-like 操作系统中，文件、套接字、管道等都被抽象为文件描述符。文件描述符的范围通常是 0 到 ulimit -n，其中 0 表示标准输入（stdin），1 表示标准输出（stdout），2 表示标准错误（stderr），而其他文件描述符用于表示打开的文件、套接字等。文件描述符在进程之间可以继承、共享和传递。这允许一个进程在创建子进程时，将已打开的文件或套接字传递给子进程。文件描述符在编程中用于进行 I/O 操作，如读取或写入文件、读取或写入套接字等。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;两者之间的关系：&lt;br&gt;
+在 Unix-like 操作系统中，Socket 也可以被表示为文件描述符。这意味着你可以使用与文件 I/O 相同的系统调用来进行套接字 I/O。例如，你可以使用 read() 和 write() 等系统调用来读取和写入套接字，就像操作文件一样。通过文件描述符，你可以将套接字的输入和输出重定向到文件，也可以将文件的内容写入套接字。这种能力使得在网络编程中可以将套接字与文件操作结合起来，实现数据的读写和处理。&lt;/p&gt;
+&lt;p&gt;Socket 是网络通信的一种抽象，而文件描述符是一种通用的 I/O 抽象，它们可以用于操作文件、套接字和其他 I/O 设备，并且在某些情况下，它们可以交叉使用。&lt;/p&gt;
+&lt;h1 id=&#34;进程的五状态模型&#34;&gt;进程的五状态模型&lt;/h1&gt;
+&lt;p&gt;进程的五状态模型是操作系统中描述进程状态的一种经典模型：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;创建（New）： 进程被创建时处于这个状态。在这个阶段，操作系统正在为进程分配资源，初始化进程的数据结构等。创建状态通常是非常短暂的，一旦进程准备好运行，它就会进入就绪状态。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;就绪（Ready）： 进程已经准备好运行，但由于操作系统调度算法或其他原因，暂时没有执行。在就绪状态下的进程通常等待着分配给它的 CPU 时间片。多个进程可能同时处于就绪状态，等待 CPU 时间。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;运行（Running）： 进程被分配到 CPU 并且正在执行。在运行状态下的进程正在消耗 CPU 时间，执行它的指令。操作系统会根据调度算法决定哪个进程应该在某一时刻运行。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;阻塞（Blocked）： 进程在某种条件下停止执行，通常是因为等待某个事件的发生，比如等待磁盘 I/O 完成、等待用户输入等。当事件发生时，进程将从阻塞状态转换为就绪状态，然后可以继续执行。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;终止（Terminated）： 进程已经执行完毕或被终止。在这个状态下，进程的资源被释放，包括内存、文件描述符等。终止状态通常是进程的最终状态。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这个五状态模型有助于操作系统在多任务环境中管理和调度进程。操作系统的调度器负责在这些状态之间转换进程，以便合理分配 CPU 时间，确保系统的高效性和公平性。此外，操作系统可以通过监控进程的状态来处理异常情况，例如进程崩溃或无响应。不同的操作系统可能会在模型中添加其他状态或细分这些状态以满足其需求，但通常都基于这个基本模型构建。&lt;/p&gt;
+&lt;h1 id=&#34;用户态与内核态&#34;&gt;用户态与内核态&lt;/h1&gt;
+&lt;p&gt;用户态（User Mode）和内核态（Kernel Mode）是操作系统中两种不同的运行级别或权限级别。这两种模式之间的主要区别在于进程对计算机硬件和操作系统资源的访问权限以及对指令的执行能力。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;权限级别：
+用户态：在用户态中，进程的权限受到限制，通常只能访问自己的内存空间和被允许的系统资源。用户态进程不能直接访问硬件设备或执行特权指令。&lt;br&gt;
+内核态：内核态具有更高的权限，允许操作系统内核访问系统的所有资源，包括硬件设备和系统内存。内核态可以执行特权指令，例如修改页表、控制中断等。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;系统调用：
+用户态：当用户态的进程需要执行特权操作（例如文件读写、网络通信、创建新进程等），它必须通过系统调用（System Call）请求内核来执行这些操作。系统调用是用户态和内核态之间的接口。&lt;br&gt;
+内核态：内核态中的操作系统内核可以直接执行这些特权操作，而无需系统调用。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;中断和异常处理：
+用户态：在用户态中，进程通常不能直接响应硬件中断或异常。当硬件发生中断或异常时，操作系统内核会接管控制并处理，然后可能唤醒相关的用户态进程。&lt;br&gt;
+内核态：内核态中的操作系统内核可以直接处理硬件中断和异常，包括时钟中断、硬件故障、设备IO完成等。内核可以执行必要的操作，然后选择继续执行当前进程或切换到其他进程。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;性能开销：
+用户态：用户态的进程之间的切换通常比较快速，但涉及到系统调用时，会有一定的性能开销。&lt;br&gt;
+内核态：内核态的进程之间的切换可能更为昂贵，因为涉及更高的权限级别和更多的上下文切换。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;用户态和内核态之间的切换是操作系统的核心机制，有助于保护系统的稳定性和安全性，同时允许用户程序执行必要的系统操作。&lt;/p&gt;
+&lt;h1 id=&#34;io的流程&#34;&gt;IO的流程&lt;/h1&gt;
+&lt;p&gt;在区分各种IO模型的区别之前，我们需要先了解一个IO，在操作系统的层面究竟发生了哪些事情。注意，我们说的IO模型对IO的优化，都是基于读IO。&lt;/p&gt;
+&lt;p&gt;假设我们需要等待Socket的数据，也就是说当前是一个读操作的IO，那么在操作系统层面需要分为两步：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;等待数据被写入Socket的缓冲区中&lt;/li&gt;
+&lt;li&gt;将Socket缓冲区中的数据拷贝到应用程序中&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;我们可以很容易的发现，第一步是由对方决定的，对方决定了什么时候把数据发送过来。第二步是由操作系统决定的，操作系统需要陷入内核态拷贝数据。&lt;/p&gt;
+&lt;p&gt;而我们的同步异步、阻塞非阻塞也是从这里出发的。&lt;/p&gt;
+&lt;p&gt;这里先提一下，阻塞和非阻塞指的是第一个阶段，进程等待缓冲区被写入数据的方式；同步和异步指的是第二个阶段，进程需不需要等待操作系统把数据从缓冲区拷贝到应用中。&lt;/p&gt;
+&lt;h1 id=&#34;五种io模型&#34;&gt;五种IO模型&lt;/h1&gt;
+&lt;h4 id=&#34;阻塞&#34;&gt;阻塞&lt;/h4&gt;
+&lt;p&gt;在同步阻塞的IO模型中，在第一阶段“等待数据被写入Socket的缓冲区中”，操作系统会把当前的进程设置为阻塞状态，直到缓冲区被写入数据这个进程才被唤醒。&lt;/p&gt;
+&lt;p&gt;这也就造成了一个问题，当操作系统把这个进程置为阻塞态的时候，这个进程就什么事都做不了了。&lt;/p&gt;
+&lt;h4 id=&#34;非阻塞&#34;&gt;非阻塞&lt;/h4&gt;
+&lt;p&gt;为了解决“同步阻塞”进程可能无期限阻塞的情况，于是产生了“同步非阻塞”。&lt;/p&gt;
+&lt;p&gt;在这种IO模型中，如果发现这个Socket里面没有准备好的数据就返回一个错误，而不是把这个进程设置为阻塞状态。&lt;/p&gt;
+&lt;p&gt;也就是说我们可以轮询这个Socket查看有无准备好的数据。&lt;/p&gt;
+&lt;h4 id=&#34;多路复用&#34;&gt;多路复用&lt;/h4&gt;
+&lt;p&gt;假设此时我们的服务器需要管理很多的IO请求，如果给每一个IO都分配一个进程/线程，自旋的等待有无数据到来，无疑是很浪费资源的。&lt;/p&gt;
+&lt;p&gt;如果我们用一个进程，轮询所有的IO请求，又会使IO的响应变得很慢。&lt;/p&gt;
+&lt;p&gt;因此，产生了多路复用IO。&lt;/p&gt;
+&lt;p&gt;多路复用IO就是用一条线程，同时监听多个IO请求，并且在有IO请求产生的时候返回。&lt;/p&gt;
+&lt;p&gt;注意，虽然我们的IO多路复用也会阻塞，但是这里的阻塞是应用层面的，也就是说在多路复用的方法上进行阻塞，而不是在操作系统层面去阻塞。&lt;/p&gt;
+&lt;h4 id=&#34;信号驱动&#34;&gt;信号驱动&lt;/h4&gt;
+&lt;p&gt;在以上的IO模型中，都是需要应用自己去“询问”Socket是否已经准备好了数据，而信号驱动就是由Socket“主动”告诉你有没有准备好数据。&lt;/p&gt;
+&lt;p&gt;这么做的好处在于第一阶段程序不需要任何的等待与轮询，只需要在收到了信号通知之后去处理这个IO即可。&lt;/p&gt;
+&lt;h4 id=&#34;异步io&#34;&gt;异步IO&lt;/h4&gt;
+&lt;p&gt;在以上的四种IO操作中，无论第一个阶段是如何进行优化的，在第二阶段都需要陷入内核态来拷贝数据。&lt;/p&gt;
+&lt;p&gt;异步IO就是为了解决这个问题。&lt;/p&gt;
+&lt;p&gt;异步IO在解决了阻塞这个问题后，同样把陷入内核态来拷贝数据的时间也节省了。&lt;/p&gt;
+&lt;p&gt;这样，当程序需要进行IO的时候，只需要发出IO的请求，然后就可以继续执行后面的代码，直到IO完成操作系统会通知程序。&lt;/p&gt;
+&lt;p&gt;同样的，异步IO是非阻塞的。&lt;/p&gt;
+&lt;h1 id=&#34;总结&#34;&gt;总结&lt;/h1&gt;
+&lt;p&gt;阻塞跟非阻塞，是在等待数据这个阶段的；同步跟非同步，指的是需不需要等待CPU进行数据的拷贝。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go关键字与标识符</title>
+      <link>https://tinklespring.com/posts/go%E5%85%B3%E9%94%AE%E5%AD%97%E4%B8%8E%E6%A0%87%E8%AF%86%E7%AC%A6/</link>
+      <pubDate>Tue, 05 Sep 2023 08:20:10 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/go%E5%85%B3%E9%94%AE%E5%AD%97%E4%B8%8E%E6%A0%87%E8%AF%86%E7%AC%A6/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;关键字和标识符是每个编程语言的基础元素，用于构成语法结构，Go也有关键字和标识符。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;go语言关键字&#34;&gt;Go语言关键字&lt;/h1&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;break&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;default&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;func&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;interface&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;select&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;case&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;defer&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;go&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;map&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;struct&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;chan&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;else&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;goto&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;package&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;switch&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;const&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;fallthrough&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;if&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;range&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;type&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;continue&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;for&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;import&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;return&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;var&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;关键字是语言本身预留，不能作为标识符使用。&lt;/p&gt;
+&lt;h1 id=&#34;命名规范&#34;&gt;命名规范&lt;/h1&gt;
+&lt;p&gt;标识符是开发者定义的用于标记各种程序要素的名称：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;变量名&lt;/li&gt;
+&lt;li&gt;常量名&lt;/li&gt;
+&lt;li&gt;函数名&lt;/li&gt;
+&lt;li&gt;类型名&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;命名须遵守以下规范：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;只能包含字母、数字和下划线&lt;/li&gt;
+&lt;li&gt;第一个字符必须是字母或下划线&lt;/li&gt;
+&lt;li&gt;严格区分大小写&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;合法的标识符&#34;&gt;合法的标识符&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;age // 小写标识符
+Age // 大写标识符
+_count // 以下划线开头
+user123 // 数字开头无效
+
+MAX_SIZE // 常量命名规范
+ThisIsVarName // 混合命名
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;保留字&#34;&gt;保留字&lt;/h1&gt;
+&lt;p&gt;除了关键字，Go中也有一些保留字，现在不是关键字，但未来可能称为关键字。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;append&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;imag&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;new&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;cap&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;len&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;real&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;complex&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;make&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;unsafe&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;这些保留字不建议作为标识符使用。&lt;/p&gt;
+&lt;h1 id=&#34;预声明标识符&#34;&gt;预声明标识符&lt;/h1&gt;
+&lt;p&gt;此外，Go中也有一些预声明标识符，可以直接使用：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;true false iota nil
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;样式规则&#34;&gt;样式规则&lt;/h1&gt;
+&lt;p&gt;Go中关键字和标识符有严格的大小写区分。&lt;/p&gt;
+&lt;h1 id=&#34;命名建议&#34;&gt;命名建议&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;userName // 不好,混合了多种命名
+user_name // 不好,下划线连接
+
+UserID // 好,大写驼峰
+
+MAX_COUNT // 好,常量全大写
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;注意&#34;&gt;注意&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;同一个作用域不能声明同名标识符&lt;/li&gt;
+&lt;li&gt;内置标识符不能重复使用&lt;/li&gt;
+&lt;li&gt;避免使用与关键字或保留字相似的标识符&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
     
     <item>
       <title>类型转换与类型断言</title>
@@ -2412,1456 +2795,6 @@ func main() {
 closing  //这个调用被延迟，直到snack函数退出（在panic期间）才进行调用
 panic: empty
 ....
-&lt;/code&gt;&lt;/pre&gt;</description>
-    </item>
-    
-    <item>
-      <title>11.接口</title>
-      <link>https://tinklespring.com/posts/11.%E6%8E%A5%E5%8F%A3/</link>
-      <pubDate>Mon, 14 Aug 2023 17:48:56 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/11.%E6%8E%A5%E5%8F%A3/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;有时并不关心一个值的特定类型，只需知道它能做特定的事情，能够在其上调用特定的接口。这就是Go接口的目标：允许定义能够保存任何类型的变量和函数参数，前提是定义了特定的方法。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;具有相同方法的两种不同类型&#34;&gt;具有相同方法的两种不同类型&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package gadget
-
-import &amp;#34;fmt&amp;#34;
-
-type TapePlayer struct {
-	Batteries string
-}
-
-func (t TapePlayer) Play(song string) {
-	fmt.Println(&amp;#34;Playing&amp;#34;, song)
-}
-func (t TapePlayer) Stop() {
-	fmt.Println(&amp;#34;Stopped!&amp;#34;)
-}
-
-type TapeRecorder struct {
-	Microphones int
-}
-
-func (t TapeRecorder) Play(song, string) { //有个与TapePlayer相同的Play方法
-	fmt.Println(&amp;#34;Playing&amp;#34;, song)
-}
-func (t TapeRecorder) Record() {
-	fmt.Println(&amp;#34;Recording&amp;#34;)
-}
-func (t TapeRecorder) Stop() { //有个与TapePlayer相同的Stop方法
-	fmt.Println(&amp;#34;Stopped!&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;TapePlayer类型有一个Play方法来模拟播放歌曲，一个Stop方法来停止播放，TapeRecorder类型也有Play和Stop方法，还有一个Record方法。&lt;/p&gt;
-&lt;h1 id=&#34;只能接受一种类型的方法参数&#34;&gt;只能接受一种类型的方法参数&lt;/h1&gt;
-&lt;p&gt;一个使用gadget包的示例：定义一个playList函数，接收一个TapePlayer值和一个在其上播放的一组歌名的切片，函数循环变量切片的每个歌名，并将它传递给TapePlayer的Play方法，当它播放列表后，调用TapePlayer的Stop方法。然后在main中，创建一个TapePlayer和一个歌单切片，并将其传递给playList。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;xxx/xxx/gadget&amp;#34;
-
-func playList(device gadget.TapePlayer, songs []string) {
-	for _, song := range songs { //循环每首歌曲
-                device.Play(song)  //播放当前歌曲
-	}
-        device.Stop()  //播放完成后，停止播放
-}
-
-func main() {
-        player := gadget.TapePlayer{}  //创建一个TapePlayer
-        mixtape := []string{&amp;#34;Jessie&amp;#39;s Girl&amp;#34;, &amp;#34;Whip It&amp;#34;, &amp;#34;9 to 5&amp;#34;}  //创建一个歌名的切片
-        playList(player, mixtape)  //使用TapePlayer播放歌曲
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Playing Jessie&amp;#39;s Girl
-Playing Whip It
-Playing 9 to 5
-Stopped!
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;PlayList函数使用TapePlayer值工作正常，但是希望它可以使用TapeRecorder作为参数，但playList函数需要一个TapePlayer类型，尝试传入其他类型会编译错误：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-         player := gadget.TapeRecorder{}
-         mixtape := []string{&amp;#34;Jessie&amp;#39;s Girl&amp;#34;, &amp;#34;Whip It&amp;#34;, &amp;#34;9 to 5&amp;#34;}
-         playList(player, mixtape)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;playList函数只接受TapePlayer值。&lt;/p&gt;
-&lt;h1 id=&#34;接口&#34;&gt;接口&lt;/h1&gt;
-&lt;p&gt;当在电脑上安装程序时，通常希望程序提供一种交互的方式，希望文字处理器提供键入文字的地方。这一组程序提供的用来交互的控制方法通常称为接口。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;一个接口是特定值预期具有的一组方法。&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;在Go中，一个接口被定义为特定值预期具有的一组方法，可以把接口看作需要类型实现的一组行为。&lt;/p&gt;
-&lt;p&gt;使用 &lt;code&gt;interface&lt;/code&gt; 关键字定义一个接口类型，后面跟着一个花括号，内部含有一组方法，以及方法期望的参数和返回值。&lt;br&gt;
-&lt;img  src=&#34;https://tinklespring.com/img/Golang/11-interface/interface.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;p&gt;任何拥有接口定义的所有方法的类型被称作&lt;code&gt;满足那个接口&lt;/code&gt;，一个满足接口的类型可以用在任何需要接口的地方。&lt;/p&gt;
-&lt;p&gt;方法名称、参数类型（可能没有）和返回值（可能没有）都需要与接口中定义的一致，除了接口中列出的方法外，类型还可以有更多的方法，但不能缺少接口中的任何方法，否则就不满足那个接口。&lt;/p&gt;
-&lt;p&gt;一个类型可以满足多个接口，一个接口可以有多个类型满足它。&lt;/p&gt;
-&lt;h1 id=&#34;定义满足接口的类型&#34;&gt;定义满足接口的类型&lt;/h1&gt;
-&lt;p&gt;一个名为mypkg的包，定义了一个有三个方法的名为MyInterface的接口，然后定义了一个名字MyType的类型，正好可满足MyInterface。&lt;/p&gt;
-&lt;p&gt;为了满足MyInterface接口需要有三个方法：MethodWithoutParameters方法，接受float64参数的MethodWithParameter方法，返回string类型的MethodWithReturnValue方法。然后声明另外一个类型MyType，为了使MyType满足MyInterface，定义了接口需要的所有方法，另外包含一个并不属于接口的额外的方法。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package mypkg
-
-import &amp;#34;fmt&amp;#34;
-
-type MyInterface interface {  //声明一个接口类型
-        MethodWithoutParameters()  //一个类型满足接口，如果有这个方法
-        MethodWithParameter(float64)
-        MethodWithReturnValue() string
-}
-
-type MyType int  //声明一个类型，让它满足MyInterface
-
-func (m MyType) MethodWithoutParameters() {  //第一个需要的方法
-        fmt.Println(&amp;#34;MethodWithoutParameters called&amp;#34;)
-}
-func (m MyType) MethodWithParameter(f float64) {  //第二个需要的方法
-        fmt.Println(&amp;#34;MethodWithParameter called with&amp;#34;, f)
-}
-func (m MyType) MethodWithReturnValue() string {  //第三个需要的方法
-        return &amp;#34;Hi from MethodWithReturnValue&amp;#34;
-}
-func (my MyType) MethodNotInterface() {  //一个类型即使有额外的不属于接口的方法，仍可以满足接口
-        fmt.Println(&amp;#34;MethodNotInterface called&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;其他语言中可能需要明确，MyType满足MyInterface，但在Go中是自动发生的，若一个类型包含接口中声明的所有方法，那么它可以在任何需要接口的地方使用，而不需要更多声明。&lt;/p&gt;
-&lt;p&gt;测试mypkg：一个接口类型的变量能够保存任何满足接口的类型的值，下面代码声明了一个MyInterface类型的名为value的变量，然后创建一个MyType的值并赋给value，（这样可以，因为Mytype满足MyInterface），然后可以在value上调用接口的任意方法。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-        &amp;#34;fmt&amp;#34;
-        &amp;#34;mypkg&amp;#34;
-)
-
-func main() {
-        var value mypkg.MyInterface  //声明一个接口类型的变量
-        value = mypkg.MyType(5)  //MyType的值满足MyInterface，所以可以将值赋给MyInterface的变量
-        value.MethodWithoutParameters()
-        value.MethodWithParameter(127.3)  //可以调用MyInterface的任何方法
-        fmt.Println(value.MethodWithReturnValue())
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;MethodWithoutParameters called
-MethodWithParameter called with 127.3
-Hi from MethodWithReturnValue
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-&lt;p&gt;接口只是一种约定或合同，描述了某种行为（方法），任何类型只要实现了这些方法，就可以说它“满足”了这个接口，这是Go多态性的基础。不需要像其他语言中那样显式说“这个类型实现了这个接口”，如果它有正确的方法，就自动满足接口。&lt;/p&gt;
-&lt;p&gt;&amp;ldquo;类型满足接口&amp;quot;意味着可以写一个函数，它接受定义的接口作为参数，并期望该参数有其包含的方法，而不必关心这个参数的实际类型。&lt;/p&gt;
-&lt;h1 id=&#34;具体类型和接口类型&#34;&gt;具体类型和接口类型&lt;/h1&gt;
-&lt;p&gt;之前定义的所有类型都是具体类型，一个具体类型不仅定义了它的值可以做什么（在其上可以调用哪些方法），也定义了它们是什么：它们定义了保存值的数据的基础类型。&lt;/p&gt;
-&lt;p&gt;接口类型并不描述哪个值，不会说它的基础类型是什么，或者数据如何存储，仅仅描述这个值能做什么（它有哪些方法）。&lt;/p&gt;
-&lt;h1 id=&#34;分配满足接口的任何类型&#34;&gt;分配满足接口的任何类型&lt;/h1&gt;
-&lt;p&gt;当有一个接口类型的变量时，它可以保存满足此接口的任何类型的值。&lt;/p&gt;
-&lt;p&gt;有Whistle和Horn类型，都有MakeSound方法，可以创建一个NoiseMaker接口来代替声明了MakeSound方法的任何类型。若定义了NoiseMaker类型的toy变量，可以将Whistle和Horn值赋给它（或者之后定义的任何类型，只要它定义了MakeSound方法）。&lt;/p&gt;
-&lt;p&gt;可以调用任何赋给toy变量的值的MakeSound方法，虽然并不知道toy保存的值的具体类型是什么，但我们知道它能做什么：发出声音。若它的类型没有MakeSound方法，那么不满足NoiseMaker接口，将无法赋变量它。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-type Whistle string
-
-func (w Whistle) MakeSound() {  //有MakeSound方法
-	fmt.Println(&amp;#34;Tweet!&amp;#34;)
-}
-
-type Horn string
-
-func (h Horn) MakeSound() {  //同样有MakeSound方法
-	fmt.Println(&amp;#34;Honk!&amp;#34;)
-}
-
-type NoiseMaker interface {  //代表任何含有MakeSound方法的类型
-	MakeSound()
-}
-
-func main() {
-	var toy NoiseMaker
-	toy = Whistle(&amp;#34;Toyco Canary&amp;#34;)  //将一个满足NoiseMaker的类型的值赋给变量
-	toy.MakeSound()
-	toy = Horn(&amp;#34;Toyco Blaster&amp;#34;)  //将另一个满足NoiseMaker的类型的值赋给变量
-	toy.MakeSound()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;也可以将函数的参数定义为接口类型（毕竟函数参数也就是变量）。若声明一个play函数来接受NoiseMaker类型，可以传入任何包含了MakeSound方法的值来播放。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func play(n NoiseMaker) {
-        n.MakeSound()
-}
-
-func main() {
-        play(Whistle(&amp;#34;Toyco Canary&amp;#34;))
-        play(Horn(&amp;#34;Toyco Blaster&amp;#34;))
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;只能调用接口中定义的方法&#34;&gt;只能调用接口中定义的方法&lt;/h1&gt;
-&lt;p&gt;一旦给一个接口类型的变量（或方法的参数）赋值，就只能调用接口定义的方法。&lt;/p&gt;
-&lt;p&gt;示例：&lt;br&gt;
-加入创建了Robot类型，除了有一个MakeSound方法外，还有一个Walk方法，在play函数中增加对Walk的调用，并将Robot的值传入play。但是代码运行失败，因为NoiseMaker值没有Walk方法。&lt;/p&gt;
-&lt;p&gt;为什么会这样？Robot值的确有Walk方法，我们传入play函数的并不是Robot值，而是NoiseMaker。假如传入Whistle或者Horn呢？它们没有包含Walk方法。&lt;/p&gt;
-&lt;p&gt;当有接口类型的变量时，唯一能确定的方法是接口中的方法，并且这些是Go允许调用的方法。有一种能够获取值的具体类型的方法，这样就可以调用更多特定的方法了。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-type Whistle string
-
-func (w Whistle) MakeSound() {
-	fmt.Println(&amp;#34;Tweet!&amp;#34;)
-}
-
-type Horn string
-
-func (h Horn) MakeSound() {
-	fmt.Println(&amp;#34;Honk!&amp;#34;)
-}
-
-type Robot string //声明一个新的Robot类型
-
-func (r Robot) MakeSound() { //Robot满足NoiseMaker接口
-	fmt.Println(&amp;#34;Beep Boop&amp;#34;)
-}
-
-func (r Robot) Walk() { //一个额外的方法
-	fmt.Println(&amp;#34;Powering legs&amp;#34;)
-}
-
-type NoiseMaker interface {
-	MakeSound()
-}
-
-func play(n NoiseMaker) {
-	n.MakeSound() //正确，NoiseMaker接口的一部分
-	n.Walk()      //错误，并非NoiseMaker的一部分
-}
-
-func main() {
-	play(Robot(&amp;#34;Botco Ambler&amp;#34;))
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;n.Walk undefined (type NoiseMaker has no field or method Walk)
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用接口修复playlist函数&#34;&gt;使用接口修复playList函数&lt;/h1&gt;
-&lt;p&gt;使用一个接口来允许playList函数使用两种具体类型（TapePlayer和TapeRecorder）的Play和Stop方法。&lt;/p&gt;
-&lt;p&gt;在main包中，声明了一个Player接口（也可以在gadget包中定义，但是接口定义在调用的包中会更灵活），指定接口需要有一个string参数的Play方法和一个无参的Stop方法，这意味着TapePlayer和TapeRecorder类型会满足Player接口。&lt;/p&gt;
-&lt;p&gt;更新playList函数来接受满足Player的任何值，而不是特定类型的TapePlayer，也更新player变量的类型，有个TapePlayer改为Player，允许将TapePlayer和TapeRecorder类型赋给player，然后将两种类型的值都传递给playList。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;xxx/xxx/gadget&amp;#34;
-
-type Player interface {  //定义一个接口类型
-        Play(string)  //要求一个接受string参数的Play方法
-        Stop()  //要求一个Stop方法
-}
-
-func playList(device Player, songs []string) {  //接受任何其他的类型，而不只是TapePlayer
-	for _, song := range songs {
-                device.Play(song)
-	}
-        device.Stop()
-}
-
-func main() {
-        mixtape := []string{&amp;#34;Jessie&amp;#39;s Girl&amp;#34;, &amp;#34;Whip It&amp;#34;, &amp;#34;9 to 5&amp;#34;}  //创建一个歌名的切片
-        var player Player = gadget.TapePlayer{}  //修改变量的类型来保存任何Player
-        playList(player, mixtape)  //给playList传入TapePlayer
-        player = gadget.TapeRecorder{}
-        playList(player, mixtape)   //给playList传入TapeRecorder
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;若一个类型声明了指针接收器方法，那么就只能将那个类型的指针传递给接口变量。&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;Switch类型的toggle方法需要使用指针类型的接收器，这样才能修改接收器。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;pacakge main
-
-import &amp;#34;fmt&amp;#34;
-
-type Switch string
-
-func (s *Switch) toggle() {
-        if *s == &amp;#34;on&amp;#34; {
-                *s = &amp;#34;off&amp;#34;
-	} else {
-                *s = &amp;#34;on&amp;#34;
-	}
-        fmt.Println(*s)
-}
-
-type Toggleable interface {
-        toggle()
-}
-
-func main() {
-        s := Switch(&amp;#34;off&amp;#34;)
-        var t Toggleable = s
-        t.toggle()
-        t.toggle()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是当把Switch的值赋给Toggleable的时候导致错误：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Switch does not implement Toggleable (toggle method has pointer receive)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go判断值是否满足一个接口的时候，指针方法并没有包含直接的值，但是它们包含指针，所以要将一个指向Switch的指针赋值给Toggleable变量，来代替一个直接Switch值：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var t Toggleable = &amp;amp;s  //赋给一个指针
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;类型断言&#34;&gt;类型断言&lt;/h1&gt;
-&lt;p&gt;定义了一个新的TryOut函数来测试TapePlayer和TapeRecorder类型的多种方法，TryOut有一个单独的Player接口类型的参数，这样可以传入TapePlayer类型和TapeRecorder类型。&lt;/p&gt;
-&lt;p&gt;在TryOut中，调用Player接口中的Play和Stop方法，同样也调用不在Player接口中的Record方法，它定义在TapeRecorder类型中，仅仅将TapeRecorder值传入TryOut。但是，这样不对，若把一个具体类型的值赋给了接口类型的变量（包括函数参数），然后就只能在其上调用接口的方法，不管具体类型还具有何种其他方法。在TryOut函数中，没有TapeRecorder值（具体类型），只有一个Player值（接口类型），并且Player接口并没有Record方法。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Player interface {
-        Play(string)
-        Stop()
-}
-
-func TryOut(player Player) {
-        player.Play(&amp;#34;Test Track&amp;#34;)
-        player.Stop()
-        player.Record()  //不属于Player接口
-}
-
-func main() {
-        TryOut(gadget.TapeRecorder{})  //给函数传入TapeRecorder，满足Player
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;player.Record undefined (type Player has no field or method Record)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们需要一个方法来取回具体类型（确实含有Record方法）的值。&lt;/p&gt;
-&lt;p&gt;若使用类型转换将Player类型的值转换为TapeRecorder类型的值，但是类型转换并不适用于接口类型，所以会产生错误。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func TryOut(player Player) {
-        player.Play(&amp;#34;Test Track&amp;#34;)
-        player.Stop()
-        recorder := gadget.TapeRecorder(player)  //类型转换无法工作
-        recorder.Record()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;cannot convert player (type Player) to type gadget.TapeRecorder: need type assertion
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当将一个具体类型的值赋给一个接口类型的变量时，&lt;code&gt;类型断言&lt;/code&gt;让你能够取回具体类型。&lt;/p&gt;
-&lt;p&gt;这像是一种形式的类型转换。它的语法像函数调用和类型转换的结合体。在一个接口值之后，输入一个点，后面接着一对括号括起来的具体类型（或者是想要断言的值的具体类型）。&lt;/p&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/11-interface/%e7%b1%bb%e5%9e%8b%e6%96%ad%e8%a8%80.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;p&gt;简单说类型断言就像说某物像“我知道这个变量使用接口类型NoiseMaker，但我很确信这个NoiseMaker实际上是Robot。”&lt;/p&gt;
-&lt;p&gt;一旦使用类型断言来取回具体类型的值，可以调用那个类型上的方法，但这方法并不属于接口。&lt;/p&gt;
-&lt;p&gt;代码将Robot赋值给了NoiseMaker接口值，可以调用NoiseMaker上的MakeSound方法，因为它是接口的一部分。但是为了调用Walk方法，需要使用类型断言来取回Robot值，一旦获取了Robot（而不是一个NoiseMaker），就能调用它上面的Walk方法。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Robot string
-
-func (r Robot) MakeSound() {
-        fmt.Println(&amp;#34;Beep Boop&amp;#34;)
-}
-
-func (r Robot) Walk() {
-        fmt.Println(&amp;#34;Powering legs&amp;#34;)
-}
-
-type NoiseMaker interface {
-        MakeSound()
-}
-
-func main() {
-        var noiseMaker NoiseMaker = Robot(&amp;#34;Botco Ambler&amp;#34;)  //定义一个接口类型的变量，并且将满足接口的类型值赋给它
-        noiseMaker.MakeSound()  //调用接口中的方法
-        var robot Robot = noiseMaker.(Robot)  //使用类型断言取回具体类型
-        robot.Walk()  //调用在具体类型（而不是接口）上定义的方法
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Beep Boop
-Powering legs
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;类型断言失败&#34;&gt;类型断言失败&lt;/h1&gt;
-&lt;p&gt;之前TryOut函数不能在Player值上调用Record方法，因为不是Player接口的一部分；我们传入一个TapeRecorder给TryOut，被赋值给一个Player类型的参数，能够调用Player值的Play和Stop方法，因为都是Player接口的一部分。然后使用一个类型断言来将Player转换回一个TapeRecorder，并调用其上的Record方法。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Player interface {
-        Play(string)
-        Stop()
-}
-
-func TryOut(player Player) {
-        player.Play(&amp;#34;Test Track&amp;#34;)
-        Player.Stop()
-        recorder := player.(gadget.TapeRecorder) //保存TapeRecorder值，使用类型断言来获得一个TapeRecorder值
-        recorder.Record()  //调用仅仅定义在具体类型上的方法
-}
-
-func main() {
-        TryOut(gadget.TapeRecorder{})
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Playing Test Track
-Stopped!
-Recording
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;对于TapeRecorder，看起来很正常，考虑到类型断言说TryOut的参数实际上是一个TapeRecorder，如果给TryOut传入TapePlayer会如何呢？&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-        TryOut(gadget.TapeRecorder{})
-        TryOut(gadget.TapePlayer{})  //传入一个TapePlayer
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当运行时，得到一个运行时异常，尝试断言TapePlayer是一个TapeRecorder无法工作。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;panic: interface conversion: main.Player is gadget.TapePlayer, not gadget.TapeRecorder
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;当类型断言失败时避免异常&#34;&gt;当类型断言失败时避免异常&lt;/h1&gt;
-&lt;p&gt;如果类型断言被用于仅有一个返回值的情况，并且原始的类型不与断言的类型相同，程序会在运行时（不在编译时）出现异常：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var player Player = gadget.TapePlayer{}
-recorder := player.(gadget.TapeRecorder)  //断言原类型是TapeRecorder，但它实际上是TapePlayer
-&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;panic: interface conversion: main.Player is gadget.TapePlayer, not gadget.TapeRecorder
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果类型断言被用于期待多个返回值的情况，能有第二个可选的返回值来表明断言是否成功。（并且断言并不会在不成功时出现异常。）第二个值是一个bool，并且当原类型和断言类型相同时，返回true，否则返回false。可以对第二个返回值做任何操作，但按惯例，通常被赋给一个名为ok的变量。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var player Player = gadget.TapePlayer{}
-recorder, ok := player.(gadget.TapeRecorder)  //将第二个返回值赋给ok变量
-if ok {
-        recorder.Record()  //如果原始类型是TapeRecorder，调用值上的Record
-} else {
-        fmt.Println(&amp;#34;Player was not a TapeRecorder&amp;#34;)  //否则报告断言失败
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;具体类型是TapePlayer，而不是TapeRecorder，所以断言失败，ok返回是false，if语句的else执行，一个运行时异常被避免。&lt;/p&gt;
-&lt;p&gt;当使用类型断言时，如果不能完全确定接口的原类型是什么，应该使用可选ok值来处理与期望的类型不同的情况，避免一个运行时异常。&lt;/p&gt;
-&lt;h1 id=&#34;使用类型断言测试tapeplayer和taperecorder&#34;&gt;使用类型断言测试TapePlayer和TapeRecorder&lt;/h1&gt;
-&lt;p&gt;接下来修复TryOut函数以适应TapePlayer和TapeRecorder值，与忽略类型断言的第二个返回值不同，我们将它赋值给一个ok变量，如果类型断言成功，ok变量会为true（标识recorder变量保存了一个TapeRecorder值，准备调用Record方法），否则为false（标识调用Record不安全）。将Record方法的调用包裹在if语句中来确保它仅仅在类型断言成功的情况下才会被调用。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Player interface {
-        Play(string)
-        Stop()
-}
-
-func TryOut(player Player) {
-        player.Play(&amp;#34;Test Track&amp;#34;)
-        player.Stop()
-        recorder, ok := player.(gadget.TapeRecorder)  //将第二个返回值赋给变量
-	if ok {  //仅仅在原值是TapeRecorder的时候调用Record方法
-                recorder.Record()
-	}
-}
-
-func main() {
-        TruOut(gadget.TapeRecorder{})
-        TryOut(gadget.TapePlayer{})
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Playing Test Track  //TapeRecorder被传入
-Stopped!
-Recording  //类型断言成功，Record被调用
-Playing Test Track  //TapePlayer被传入
-Stopped!  //类型断言未成功，Record没有被调用
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;与之前一样，在main方法中，首先传入了TapeRecorder值调用TryOut，TryOut获取传入的Player接口值，并调用Play和Stop方法。Player的值的具体类型是TapeRecorder的断言成功了，然后Record方法在TapeRecorder值上被调用。然后传入TapePlayer调用TryOut，这个调用在之前程序中停止，因为类型断言异常。Play和Stop被调用，类型断言失败，因为Player值保存着TapePlayer而不是TapeRecorder，因为捕获了ok值中的第二个返回值，类型断言不会导致异常，因为仅仅将ok值设置为false，导致if语句中的代码不被执行，也就导致了Record没有被调用。（因为TapePlayer值没有Record方法）&lt;/p&gt;
-&lt;h1 id=&#34;error接口&#34;&gt;error接口&lt;/h1&gt;
-&lt;p&gt;&lt;code&gt;一个错误值就是任何含有名为Error的方法的值，此方法返回string&lt;/code&gt;。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type error interface {
-        Error() string
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;声明一个接口的error类型意味着，若具有一个返回string的Error方法，就满足error接口，并且它是error的值。这意味着能定义自己的类型并用在任何需要error值的地方。&lt;/p&gt;
-&lt;p&gt;ComedyError类型，有返回string的Error方法，满足error接口，就能将它赋值给error类型的变量：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type ComedyError string  //定义一个以string为基础类型的类型
-func (c ComedyError) Error() string {  //满足error接口
-        return string(c)  //Error方法需要返回一个string，所以做个类型转换
-}
-
-func main() {
-        var err error  //声明一个error类型的变量
-        err = ComedyError(&amp;#34;What&amp;#39;s a programmer&amp;#39;s favorite beer? Logger!&amp;#34;)  //ComedyError满足error接口，所能把它赋值给变量
-        fmt.Println(err)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果需要一个error值，也需要追踪除了错误信息字符串之外更多的信息，可以创建自己的满足error接口的类型并保存需要的信息。&lt;/p&gt;
-&lt;p&gt;例：有一个程序监控一些设备保证它们不会过热。
-这个OverheatError类型可能游泳，有个确保满足error的Error方法，它使用float64作为基础类型，允许追踪过载的温度。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type OverheatError float64  //定义一个基础类型是float64的类型
-func (o OverheatError) Error() string {  //满足error接口
-        return fmt.Sprintf(&amp;#34;OverheatError by %0.2f degrees!&amp;#34;, o)  //在错误信息中使用温度
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;有个使用OverheatError的checkTemperature函数，接收系统实际温度和被认为是安全的温度作为参数，指定返回一个error类型的值，而不是OverheatError，但因为它满足error接口，若actual温度超过了safe温度，checkTemperature返回一个新的记录了超出量的OverheatError：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func checkTemperature(actual float64, safe float64) error {  //指定函数返回原生error值
-        excess := actual - safe
-        if excess &amp;gt; 0 {  //如果actual温度高于safe温度
-                return OverheatError(excess)  //就返回一个记录了超出量的OverheatError
-        }
-        return nil
-}
-
-func main() {
-        var err error = checkTemperature(121.379, 100.0)
-        if err != nil {
-                log.Fatal(err)
-        }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-&lt;p&gt;为什么可以在不同的包中使用error接口而不用导入？以小写字母开头？&lt;/p&gt;
-&lt;p&gt;error类型像int或string一样是一个“预定义标识符”，不属于任何包，是“全局块”的一部分，能在任何地方使用，无需考虑当前包信息。&lt;/p&gt;
-&lt;h1 id=&#34;stringer接口&#34;&gt;Stringer接口&lt;/h1&gt;
-&lt;p&gt;fmt包定义了fmt.Stringer接口：允许任何类型决定在输出时如何展示，让其他类型满足Stringer接口很简单，只需要定义一个返回string类型的方法。&lt;/p&gt;
-&lt;p&gt;定义：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Stringer interface {
-        String() string
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;比如，我们建立了一个CoffeePot类型来满足Stringer：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type CoffeePot string
-
-func (c CoffeePot) String() string {  //满足Stringer接口
-        return string(c) + &amp;#34; coffee pot&amp;#34;  //方法需要返回一个string
-}
-
-func main() {
-        coffeePot := CoffeePot(&amp;#34;LuxBrew&amp;#34;)
-        fmt.Println(coffeePot.String())
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;许多在fmt包中的函数都会判断传入的参数是否满足stringer接口，若满足就调用String方法，这些函数包括Print、Println和Printf等，CoffeePot满足了Stringer，可以把CoffeePot值直接传入这些函数，并且CoffeePot的String方法的返回值会在输出时使用：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;coffeePot ：= CoffeePot(&amp;#34;LuxBrew&amp;#34;)  //创建一个CoffeePot值
-fmt.Print(coffeePot, &amp;#34;\n&amp;#34;)
-fmt.Println(coffeePot)
-fmt.Printf(&amp;#34;%s&amp;#34;, coffeePot)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;LuxBrew coffee pot  //String方法的返回值在输出中使用
-LuxBrew coffee pot
-LuxBrew coffee pot
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;空接口&#34;&gt;空接口&lt;/h1&gt;
-&lt;p&gt;我们接触的大多数函数，只能使用指定的类型来调用，但是fmt.Println这样的fmt函数却能接受任何类型，这是怎么做到的？&lt;/p&gt;
-&lt;p&gt;来看下go doc： &lt;code&gt;go doc fmt Println&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;这是一个可变参数的函数，意味着它可以接受任何个数的参数；接口声明定义了方法，类型必须实现这个方法才能满足接口。若定义一个不需要任何方法的接口，它会被任何类型满足。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;Interface{}&lt;/code&gt;类型称为空接口，用来接受任何类型的值，不需要实现任何方法来满足空接口，所有的类型都满足空接口。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Anything interface {}
-
-func AcceptAnything(thing interface{}) {
-}
-
-func main() {
-        AcceptAnything(123.123)
-        AcceptAnything(&amp;#34;A string&amp;#34;)
-        AcceptAnything(true)
-        AcceptAnything(Whistle(&amp;#34;xxxxxx&amp;#34;))
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;先不要对所有的函数使用空接口，若有一个空接口类型的值，无法做任何操作。&lt;/p&gt;
-&lt;p&gt;不要尝试在空接口值上调用任何函数，如果有一个接口类型的值，只能调用接口上的方法。空接口没有任何方法，意味着没法调用空接口类型值的任何方法。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func AcceptAnything(thing interface{}) {
-        fmt.Println(thing)
-        thing.MakeSound()  //尝试在空接口值上调用方法
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;thing.MakeSound undefined (type interface {} is interface with no mehtods)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;为了在空接口类型的值上调用方法，需要使用类型断言来获得具体类型的值。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func AcceptAnything(thing interface{}) {
-        fmt.Println(thing)
-        whistle, ok := thing.(Whistle)  //使用类型断言来获得Whistle
-	if ok {
-                whistle.MakeSound()  //调用Whistle上的方法
-	}
-}
-
-func main() {
-        AcceptAnything(3.1415)
-        AcceptAnything(Whistle(&amp;#34;Toyco Canary&amp;#34;))
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;最好写一个接收特定具体类型的函数：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func AcceptWhistle(whistle Whistle) {  //接收Whistle
-        fmt.Println(whistle)
-        whistle.MakeSound()  //调用方法，不需要类型转换
-}
-&lt;/code&gt;&lt;/pre&gt;</description>
-    </item>
-    
-    <item>
-      <title>10.保密：封装和嵌入</title>
-      <link>https://tinklespring.com/posts/10.%E4%BF%9D%E5%AF%86%E5%B0%81%E8%A3%85%E5%92%8C%E5%B5%8C%E5%85%A5/</link>
-      <pubDate>Mon, 07 Aug 2023 16:27:10 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/10.%E4%BF%9D%E5%AF%86%E5%B0%81%E8%A3%85%E5%92%8C%E5%B5%8C%E5%85%A5/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;有时，程序会接收到无效的数据，从用户输入、文件读取或其他方式。&lt;code&gt;封装&lt;/code&gt;：一个保护string字段免受无效数据的方法。这样，数据字段能够安全使用。&lt;br&gt;
-也会在类型内部嵌入其他的类型，若struct类型需要已经存在于其他类型的方法，不需要赋值方法代码，可以将其嵌入struct类型中，然后像使用自己的类型的定义方法一样使用嵌入的方法。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;创建一个日期struct类型&#34;&gt;创建一个日期struct类型&lt;/h1&gt;
-&lt;p&gt;在struct中增加Year、Month、Day字段，每个都是int类型，在main函数中，将执行一个快速的测试来测试新类型，使用struct字面量来创建一个Date值，并填充所有字段。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-type Date struct {
-        Year  int
-        Month int
-        Day   int
-}
-
-func main() {
-        date := Date{Year: 2023, Month: 8, Day: 10}
-        fmt.Println(date)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;将date-struct字段设置为无效值&#34;&gt;将Date struct字段设置为无效值&lt;/h1&gt;
-&lt;p&gt;用户将日期格式设置的很奇怪，比如：&amp;ldquo;2023 14 50&amp;rdquo; 或 &amp;ldquo;0 0 -2&amp;rdquo; 等，我们知道只有1以上的年的数字才合法，但程序没做任何措施预防用户把日志以外设置为0或-999，月份也只有1-12合法，日只有1-31合法。&lt;/p&gt;
-&lt;p&gt;需要一种方法，让用户数据在被赋值之前是合法的，在CS领域中，被称为&lt;code&gt;数据校验&lt;/code&gt;，需要测试Year被设置为大于或等于1，Month被设置为1-12，Day被设置为1-31。&lt;/p&gt;
-&lt;h1 id=&#34;setter方法&#34;&gt;setter方法&lt;/h1&gt;
-&lt;p&gt;一个struct类型就是另一个定义的类型，可以像对其他类型一样定义它的方法。可以在Date类型上创建 SetYear、SetMonth、SetDay方法来接收值，判断是否有效，若有效则设置到struct字段。&lt;/p&gt;
-&lt;p&gt;这类方法被称为 &lt;code&gt;setter方法&lt;/code&gt; , Go的setter方法名为&lt;code&gt;SetX&lt;/code&gt;的形式，X 是想要设置的名称。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;setter 方法 是用来设置字段或基础类型中的其他值的方法。&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;在SetYear方法上进行第一次尝试，接收器参数是Date struct，SetYear接受想要设置的年份作为参数，并设置接收器Date struct上的Year字段，此时并不校验值有效性。在main方法中创建Date并调用SetYear，然后输出struct的Year字段。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-type Date struct {
-        Year  int
-        Month int
-        Day   int
-}
-
-func (d Date) SetYear(year int) {
-        d.Year = year    //设置struct字段
-}
-
-func main() {
-        date := Date{}  //创建一个Date
-        date.SetYear(2023)  //通过方法设置Year字段
-        fmt.Println(date.Year)  //打印Year字段
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;0
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当执行时，并没有正常工作，创建了一个Date并使用新值调用了它的setYear方法，Year字段仍被设置为零值。&lt;/p&gt;
-&lt;h1 id=&#34;setter方法需要指针接收器&#34;&gt;setter方法需要指针接收器&lt;/h1&gt;
-&lt;p&gt;之前Number类型上的Double方法，使用了一个普通的值接收器类型Number，像其他参数一样，接收器参数接受了一个原值的拷贝，Double方法只是更新了拷贝，在方法退出时更新就丢失了。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (n *Number) Double() {   //接收器类型为一个指针类型
-        *n *= 2  //修改指针指向的值
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;需要更新Double来接受指针的接收器类型 &lt;code&gt;*Number&lt;/code&gt; ，当更新指针指向的值的时候，在Double退出后更新会保留。&lt;/p&gt;
-&lt;p&gt;同样，SetYear也适用，Date接收器从原struct获取了一个拷贝，任何字段更新都在setYear退出后消失。&lt;/p&gt;
-&lt;p&gt;通过将接收器的值修改为指针来修正，不需要更新SetYear方法块，因为 d.Year 会自动获取指针指向的值（与&lt;code&gt;(*d).Year&lt;/code&gt; 一样），main函数中的date.SetYear也不需要修改，因为当Date值传递给方法的时候，会自动转换为 &lt;code&gt;*Date&lt;/code&gt; 。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Date struct {
-        Year  int
-        Month int
-        Day   int
-}
-
-func (d *Date) SetYear(year int) {
-        d.Year = year
-}
-
-func main() {
-        date := Date{}
-        date.SetYear(2023)  //自动转换为指针
-        fmt.Println(date.Year)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2023
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;添加其余的setter方法&#34;&gt;添加其余的setter方法&lt;/h1&gt;
-&lt;p&gt;按照这个模式在Date类型上定义SetMonth和SetDay方法，只需要在方法中使用指针接收器即可，在调用方法时，Go会自动把接收器转换为指针，并在修改struct字段时能够把指针转换回struct值。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-type Date struct {
-	Year  int
-	Month int
-	Day   int
-}
-
-func (d *Date) SetYear(year int) {
-	d.Year = year
-}
-
-func (d *Date) SetMonth(month int) {
-	d.Month = month
-}
-
-func (d *Date) SetDay(day int) {
-	d.Day = day
-}
-
-func main() {
-	date := Date{}
-	date.SetYear(2023)
-	date.SetMonth(5)
-	date.SetDay(27)
-	fmt.Println(date)  //输出所有字段
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在main函数中，创建了一个Date struct的值，通过新的方法设置了它的Year、Month和Day字段，并输出了整个struct查看结果。&lt;/p&gt;
-&lt;h1 id=&#34;在setter方法中添加校验&#34;&gt;在setter方法中添加校验&lt;/h1&gt;
-&lt;p&gt;在每个setter方法中，将测试值是否在正确合法范围内，若非法，返回error值，若合法，将正常设置 Date struct字段，并返回nil作为错误值。&lt;/p&gt;
-&lt;p&gt;首先对SetYear方法增加校验，修改方法的声明，增加一个error类型的返回值，在方法块的开始处，测试调用者传入的year参数是否小于1，若小于1，返回一个error信息，若大于等于1，将其设置为struct的Year字段并返回nil，表示没有错误。&lt;/p&gt;
-&lt;p&gt;在main函数中，调用SetYear并把返回值保存到名为err的变量中，若err不为nil，意味着赋值无效，所以记录错误并退出，否则继续输出Date struct的Year字段。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;errors&amp;#34; //允许创建error值
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;log&amp;#34; //允许记录error并退出
-)
-
-type Date struct {
-	Year  int
-	Month int
-	Day   int
-}
-
-func (d *Date) SetYear(year int) error { //增加一个error类型的返回值
-	if year &amp;lt; 1 {
-		return errors.New(&amp;#34;invalid year&amp;#34;) //若year是非法的，返回错误
-	}
-	d.Year = year
-	return nil
-}
-
-func main() {
-	date := Date{}
-	err := date.SetYear(0) //抓捕任何错误
-	if err != nil {
-		log.Fatal(err)  //若值无效记录错误并退出
-	}
-	fmt.Println(date.Year)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2023/08/10 16:56:33 invalid year
-exit status 1
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;传入一个无效的值给SetYear导致程序报错并退出，但若传入有效值，程序会继续输出，SetYear方法工作正常。&lt;/p&gt;
-&lt;p&gt;SetMonth 与 SetDay 方法中的校验代码与SetYear类似：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (d *Date) SetYear(year int) error { //增加一个error类型的返回值
-	if year &amp;lt; 1 {
-		return errors.New(&amp;#34;invalid year&amp;#34;) //若year是非法的，返回错误
-	}
-	d.Year = year
-	return nil
-}
-
-func (d *Date) SetMonth(month int) error {
-	if month &amp;lt; 1 || month &amp;gt; 12 {
-		return errors.New(&amp;#34;invalid month&amp;#34;)
-	}
-	d.Month = month
-	return nil
-}
-
-func (d *Date) SetDay(day int) error {
-	if day &amp;lt; 1 || day &amp;gt; 31 {
-		return errors.New(&amp;#34;invalid day&amp;#34;)
-	}
-	d.Day = day
-	return nil
-}
-
-func main() {
-        //try
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在SetMonth中，测试提供的月份值，若小于1或大于12，就返回错误，否则设置字段并返回nil。&lt;/p&gt;
-&lt;p&gt;在SetDay中，测试提供的日期小于1或大于31，返回错误，有效值设置字段并返回nil。&lt;/p&gt;
-&lt;h1 id=&#34;字段仍可以设置为无效值&#34;&gt;字段仍可以设置为无效值&lt;/h1&gt;
-&lt;p&gt;使用setter方法，提供校验很不错，但是用户可以直接设置struct字段，仍然能设置无效值。&lt;/p&gt;
-&lt;p&gt;没有任何方法能阻止直接设置Date struct字段，若这么做，就会绕过setter方法中的校验代码。&lt;/p&gt;
-&lt;p&gt;需要一个方式来保护这些字段，让Date类型只能使用setter方法来更新字段，Go提供了一个方式：&lt;code&gt;把Date类型移动到另一个包，并将数据字段设置为非导出的&lt;/code&gt;。未导出的变量、函数等在大多数情况下无法导出，即使之前的magazine包中的Subscriber struct类型被导出(字段首字母非大写)，但是它的字段并未被导出，导致在magazine包之外无法访问。&lt;/p&gt;
-&lt;h1 id=&#34;将date类型移动到另外的包中&#34;&gt;将Date类型移动到另外的包中&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package calendar
-
-import &amp;#34;errors&amp;#34;
-
-type Date struct {
-	year  int
-	month int
-	day   int
-}  //将字段名称修改为小写字母让其不可被导出
-
-func (d *Date) SetYear(year int) error {
-	if year &amp;lt; 1 {
-		return errors.New(&amp;#34;invalid year&amp;#34;)
-	}
-	d.year = year //更新字段名称匹配声明
-	return nil
-}
-
-func (d *Date) SetMonth(month int) error {
-	if month &amp;lt; 1 || month &amp;gt; 12 {
-		return errors.New(&amp;#34;invalid month&amp;#34;)
-	}
-	d.month = month //更新字段名称匹配声明
-	return nil
-}
-
-func (d *Date) SetDay(day int) error {
-	if day &amp;lt; 1 || day &amp;gt; 31 {
-		return errors.New(&amp;#34;invalid day&amp;#34;)
-	}
-	d.day = day  //更新字段名称匹配声明
-	return nil
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改main包：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-        &amp;#34;fmt&amp;#34;
-        &amp;#34;xxx/xxx/calendar&amp;#34;
-)
-
-func main() {
-        date := calendar.Date{}
-        date.year = 2023
-        date.month = 14
-        date.day = 50
-        fmt.Println(date)
-
-        date = calendar.Date{year: 0, month: 0, day: -2}
-        fmt.Println(date)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Date的字段未导出，从main包中访问，会导致编译错误。&lt;/p&gt;
-&lt;h1 id=&#34;通过导出的方法访问未导出的字段&#34;&gt;通过导出的方法访问未导出的字段&lt;/h1&gt;
-&lt;p&gt;可以间接访问字段。未导出的变量、struct字段、函数、方法等仍然能被相同包的导出的函数或者方法访问。所以当mian包中的代码在Date值上调用导出方法SetYear时，SetYear可以修改Date的year字段，即使year是未导出的。导出方法SetYear可以更新未导出的month字段等。&lt;/p&gt;
-&lt;p&gt;修改main包来使用setter方法，可以更新Date值的字段。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-        &amp;#34;fmt&amp;#34;
-        &amp;#34;xxx/xxx/calendar&amp;#34;
-        &amp;#34;log&amp;#34;
-)
-
-func main() {
-        date := calendar.Date{}
-        err := date.SetYear(2023)
-        if err != nil {
-                log.Fatal(err)
-        }
-        err = date.SetMonth(5)
-        if err != nil {
-                log.Fatal(err)
-        }
-        err = date.SetDay(27)
-        if err != nil {
-                log.Fatal(err)
-        }
-        fmt.Println(date)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{2023 5 27}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;未导出的变量、struct字段、函数、方法等仍然能够被相同包的导出的函数或方法访问。&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;此时若传入无效值，执行时会得到错误。&lt;/p&gt;
-&lt;p&gt;现在的Date值的字段只能通过setter方法更新，程序被保护，避免意外输出无效数据。&lt;/p&gt;
-&lt;h1 id=&#34;getter方法&#34;&gt;getter方法&lt;/h1&gt;
-&lt;p&gt;将值设置给struct字段或者变量的方法称为 &lt;code&gt;setter&lt;/code&gt; 方法。&lt;/p&gt;
-&lt;p&gt;获取struct字段或者变量的值的方法称为 &lt;code&gt;getter&lt;/code&gt; 方法。&lt;/p&gt;
-&lt;p&gt;按照惯例，getter方法的名称应该与访问的字段或者变量的名字相同。（若希望方法被导出，首字母应该大写。）所以Date需要一个Year方法来访问year字段，Month方法来访问month字段，Day方法来访问day字段。&lt;/p&gt;
-&lt;p&gt;getter方法不需要修改接收器，直接使用Date的值作为接收器。若类型的任何方法接受接收器指针类型，为了一致性，通常所有的方法都应该这样做。由于必须对所有的setter方法使用接收器指针，也应对所有的getter方法使用指针。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package calendar
-
-import &amp;#34;errors&amp;#34;
-
-type Date struct {
-	year  int
-	month int
-	day   int
-}
-
-func (d *Date) Year() int {  //与setter方法一致，使用一个接收器指针类型；Year与字段名称相同，为了导出首字母大写。
-	return d.year   //返回字段值
-}
-
-func (d *Date) Month() int {
-	return d.month
-}
-
-func (d *Date) Day() int {
-	return d.day
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改main：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-        date := calendar.Date{}
-        err := date.SetYear(2023)
-        if err != nil {
-                log.Fatal(err)
-        }
-        err = date.SetMonth(5)
-        if err != nil {
-                log.Fatal(err)
-        }
-        err = date.SetDay(27)
-        if err != nil {
-                log.Fatal(err)
-        }
-        fmt.Println(date.Year())
-        fmt.Println(date.Month())
-        fmt.Println(date.Day())
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出(getter方法返回的值)：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2023
-5
-27
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;封装&#34;&gt;封装&lt;/h1&gt;
-&lt;p&gt;将程序中的数据隐藏在一部分代码中而对另一部分不可见的方法称为&lt;code&gt;封装&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;封装可以用来防止无效数据，同样也可以修改程序代码的封装部分，而不用担心其他代码的访问，因为它们不可直接访问。&lt;/p&gt;
-&lt;p&gt;许多其他编程语言用类进行封装，类与Go的类型概念类似，但不完全相同，在Go中使用未导出的变量、struct字段、函数或者方法，把数据封装在包中。&lt;/p&gt;
-&lt;p&gt;Go通常在需要的时候才使用封装，不需要封装一个字段，通常导出并且允许直接访问。&lt;/p&gt;
-&lt;hr&gt;
-&lt;p&gt;问：其他语言不允许在定义封装的值的类之外访问该值，Go允许包内其他代码访问未导出代码是否安全？&lt;br&gt;
-答：通常一个包内的所有代码是一个开发者（或一组开发者）开发，包里所有的代码通常有相似的目的，相同包的代码的作者有可能需要访问未导出数据，并且有可能只用合理的方式来使用数据，所以在包内共享未导出数据是安全的。包外的代码有可能是其他开发者编写，但未导出代码是隐藏的，不会意外将其值改为无效数据。&lt;/p&gt;
-&lt;p&gt;问：其他语言所有getter方法的名字都以“Get”开头，比如GetName、GetCity等，在go中是否可以这样做？&lt;br&gt;
-答：Go允许这样做，但不推荐。Go社区大会讨论后决定在getter方法前面去掉Get前缀，保留它只会让后继者感到困惑。Go仍然对setter方法使用Set前缀，因为需要区分同一个字段的setter方法和getter方法。&lt;/p&gt;
-&lt;hr&gt;
-&lt;p&gt;练习：&lt;/p&gt;
-&lt;p&gt;要求：
-1.字段未导出&lt;br&gt;
-2.为每个字段增加一个getter方法（遵守约定：一个getter方法应该与它访问的字段名称相同，若需要导出，首字母大写）&lt;br&gt;
-3.为setter方法增加校验，SetLatitude若接收到小于-90或大于90的值返回错误，Setlongitude若接收到小于-180大于180的值返回错误。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package geo
-
-import &amp;#34;errors&amp;#34;
-
-type Coordinates struct {
-	latitude  float64
-	longitude float64 //字段需要未导出的
-}
-
-func (c *Coordinates) Latitude() float64 { //getter方法名应该与字段名相同，但是首字母需要大写；返回与字段类型相同
-	return c.latitude
-}
-
-func (c *Coordinates) Longitude() float64 {
-	return c.longitude
-}
-
-func (c *Coordinates) SetLatitude(latitude float64) error { //需要返回错误类型
-	if latitude &amp;lt; -90 || latitude &amp;gt; 90 {
-		return errors.New(&amp;#34;invalid latitude&amp;#34;) //返回一个新的错误值
-	}
-	c.latitude = latitude
-	return nil //如果没有错误返回nil
-}
-
-func (c *Coordinates) SetLongitude(longitude float64) error {
-	if longitude &amp;lt; -180 || longitude &amp;gt; 180 {
-		return errors.New(&amp;#34;invalid longitude&amp;#34;)
-	}
-	c.longitude = longitude
-	return nil
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;main 包代码要求：
-1.遍历每个settter方法，保存error返回值&lt;br&gt;
-2.若error不为nil，使用log.Fatal函数记录错误并退出&lt;br&gt;
-3.若设置字段没有错误，调用所有getter方法输出字段值&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;geo&amp;#34;
-	&amp;#34;log&amp;#34;
-)
-
-func main() {
-	coordinates := geo.Coordinates{}
-	err := coordinates.SetLatitude(37.42) //保存返回的错误值
-	if err != nil {                       //若有错误，记录并返回
-		log.Fatal(err)
-	}
-	err = coordinates.SetLongitude(-1122.08) //一个无效值
-	if err != nil {                          //若有错误记录并返回
-		log.Fatal(err)
-	}
-	fmt.Println(coordinates.Latitude())
-	fmt.Println(coordinates.Longitude()) //getter方法
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;在event类型中嵌入date类型&#34;&gt;在Event类型中嵌入Date类型&lt;/h1&gt;
-&lt;p&gt;Date类型很棒，setter方法确保了只有合法的数据才能设置字段，getter方法让我们能取回这些值，现在只需给事件分配标题。&lt;/p&gt;
-&lt;p&gt;定义一个Event类型，并内嵌一个Date作为匿名字段。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package calendar
-
-type Event struct {
-        Title string
-        Date   //使用一个匿名字段嵌入Date
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在calendar包中创建另外一个文件，名为event.go（将把它放到已存在的date.go），在那个文件中，定义一个含有两个字段的类型：一个string类型的Title字段和一个匿名的Date字段。&lt;/p&gt;
-&lt;h1 id=&#34;未导出的字段不会被提升&#34;&gt;未导出的字段不会被提升&lt;/h1&gt;
-&lt;p&gt;将Date嵌入到Event类型中并不会导致Date的字段被提升到Event，Date字段是未导出的，并且Go不会将未导出的字段提升到封闭类型。确认字段被封装，就只能够被setter 方法和getter方法访问，不希望封装被字段提升绕开。&lt;/p&gt;
-&lt;p&gt;在main包中，若尝试通过包裹它的Event设置Date中的month字段，会得到错误：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;xxx/xxx/calendar&amp;#34;
-
-func main() {
-        event := calendar.Event{}
-        event.month = 5  //未导出的Date字段并没有提升到Event
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-        event := calendar.Event{}
-        event.Date.year = 2023
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用点运算符链来返回Date字段并且直接访问其中的字段也无法工作，不能单独访问一个Date的未导出字段，当Date是Event的一部分的时，也不能访问Event中Date未导出的字段。&lt;/p&gt;
-&lt;h1 id=&#34;导出的方法像字段一样被提升&#34;&gt;导出的方法像字段一样被提升&lt;/h1&gt;
-&lt;p&gt;若嵌入了一个具有导出方法的struct类型，它的方法会被提升到外部类型，意味着可以调用这个方法，就像在外部类型上定义了该方法一样。&lt;/p&gt;
-&lt;p&gt;有一个定义了两种类型的包，MyType是一个struct类型，其中嵌入了第二个类型EmbeddedType，是一个匿名字段：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package mypackage  //类型在它们自己的包中
-
-import &amp;#34;fmt&amp;#34;
-
-type MyType struct {  //声明MyType是一个struct类型
-        EmbeddedType  //EmbeddedType是一个嵌入MyType的类型
-}
-
-type EmbeddedType string  //声明一个被嵌入的类型（并不在意它是否是个struct）
-
-func (e EmbeddedType) ExportedMethod() {  //这个方法会被提升至MyType
-        fmt.Println(&amp;#34;Hi from ExportedMethod on EmbeddedType&amp;#34;)
-}
-
-func (e EmbeddedType) unexportedMethod() {  //这个方法不会被提升
-
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;因为EmbeddedType定义了一个导出的方法（名为ExportedMethod），这个类型被提升到MyType，并可以被MyType值所调用。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;mypackage&amp;#34;
-
-func main() {
-        value := mypackage.MyType{}
-        value.ExportedMethod()  //调用从EmbeddedType提升的方法
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;对于未导出的字段，未导出的方法没有被提升，若尝试调用，会得到一个错误。&lt;/p&gt;
-&lt;p&gt;Date字段不会被提升到Event类型，因为它们未导出，但是Date上的getter和setter方法被导出了，它们提升到了Event类型。&lt;/p&gt;
-&lt;p&gt;意味着我们可以创建一个Event值，并在Event值上直接调用Date的getter和setter方法：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-        &amp;#34;fmt&amp;#34;
-        &amp;#34;xxx/xxx/calendar&amp;#34;
-        &amp;#34;log&amp;#34;
-)
-
-func main() {
-        event := calendar.Event{}
-        err := event.SetYear(2023)
-        if err != nil {
-                log.Faltal(err)
-        }
-        err = event.SetMonth(5)
-        if err != nil {
-                log.Faltal(err)
-        }
-        err = event.SetDay(27)
-        if err != nil {
-                log.Faltal(err)
-        }
-        fmt.Println(event.Year())
-        fmt.Println(event.Month())
-        fmt.Println(event.Day())  //这个Date的getter方法被提升到了Event
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当然，也可以使用运算符链来调用Date值上的方式：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(event.Date.Year())
-fmt.Println(event.Date.Month())
-fmt.Println(event.Date.Day())   //获取Event的Date字段，然后调用其getter方法
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;封装event的title字段&#34;&gt;封装Event的Title字段&lt;/h1&gt;
-&lt;p&gt;由于Event struct的Title字段被导出，仍然可以直接访问它。&lt;/p&gt;
-&lt;p&gt;这会面临与之前Date字段相同的问题，例如，Title字符串没有长度限制：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-        event := calendar.Event{}
-        event.Title = &amp;#34;An extremely long title that is impractical to print&amp;#34;
-        fmt.Println(event.Title)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;将Title字段封装起来，这样就能校验新的值，将其命名为title，然后增加setter和getter方法，来自 unicode/utf8 包中的RuneCountInString函数被用来确保string中没有过多的字符。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package calendar
-
-import (
-        &amp;#34;errors&amp;#34;
-        &amp;#34;unicode/utf8&amp;#34;
-)
-
-type Event struct {
-        title string  //修改为非导出
-        Date
-}
-
-func (e *Event) Title() string {   //getter方法
-        return e.title
-}
-
-func (e *Event) SetTitle(title string) error {  //setter方法
-	if utf.RuneCountInString(title) &amp;gt; 30 {
-                return errors.New(&amp;#34;invalid title&amp;#34;)
-	}
-        e.title = title
-        return nil
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;提升的方法与外部类型的方法共存&#34;&gt;提升的方法与外部类型的方法共存&lt;/h1&gt;
-&lt;p&gt;现在已经为title字段添加了getter和setter方法，若title长度超过30个字符，会返回错误。&lt;/p&gt;
-&lt;p&gt;Event类型的Title和SetTitle方法与从嵌入的Date类型提升的方法一同存在，导入calendar包的代码可以让所有的方法被视为属于Event类型，而不用考虑它们真正定义在哪个类型上。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-        event := calendar.Event{}
-        err := event.SetTitle(&amp;#34;Mom&amp;#39;s birthday&amp;#34;)  //定义在Event上
-        if err != nil {
-                log.Fatal(err)
-        }
-        err = event.SetYear(2023)  //从Date提升
-        if err != nil {
-                log.Fatal(err)
-        }
-        err = event.SetMonth(5)  //从Date提升
-        if err != nil {
-                log.Fatal(err)
-        }
-        err = event.SetDay(27)  //从Date提升
-        if err != nil {
-                log.Fatal(err)
-        }
-        fmt.Println(event.Title())  //Event自己定义的
-        fmt.Println(event.Year())   //从Date提升
-        fmt.Println(event.Month())  //从Date提升
-        fmt.Println(event.Day())    //从Date提升
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-&lt;p&gt;现在能在Event上直接调用Title和SetTitle方法，并调用方法设置年月日就像它们是属于Event一样，它们实际上是在Date上定义的，但我们不需要关心。&lt;/p&gt;
-&lt;p&gt;方法提升允许使用其他类型的方法就像使用自己的一样，可以用这个来组合类型，该类型组合了多种其他类型的方法，这可以帮助保持代码整洁，且不牺牲便利性。&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>9.定义类型</title>
-      <link>https://tinklespring.com/posts/9.%E5%AE%9A%E4%B9%89%E7%B1%BB%E5%9E%8B/</link>
-      <pubDate>Sat, 05 Aug 2023 12:28:25 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/9.%E5%AE%9A%E4%B9%89%E7%B1%BB%E5%9E%8B/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;本篇展示使用任意类型作为基础类型。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;具有底层基础类型的定义类型&#34;&gt;具有底层基础类型的定义类型&lt;/h1&gt;
-&lt;p&gt;Go经常使用 struct 作为基础类型来定义类型，但也能基于 int、string、bool或其他任何类型。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-type Liters float64
-type Gallons float64  //定义两个新类型，基础类型都是float64
-
-func main() {
-        var carFuel Gallons
-        var busFuel Liters
-        carFuel = Gallons(10.0)   //把float64转换为Gallons
-        busFuel = Liters(240.0)   //把float64转换为Liters
-        fmt.Println(carFuel, busFuel)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;一旦定义一个类型，可以把任何基础类型的值转换为定义的类型，像其他类型转换一样，写下需要转换到的类型，后面跟着小括号中的希望转换的值。&lt;/p&gt;
-&lt;p&gt;若需要，上面代码中可以使用短变量声明:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;carFuel := Gallons(10.0)
-busFuel := Liters(240.0)  //与类型转换同时使用短变量声明
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若变量使用了已定义的类型，不能把另一个类型的值赋给它，即使另一个类型也具有相同的基础类型。&lt;/p&gt;
-&lt;p&gt;但是可以在具有相同基础类型的类型之间转换，Liters可以与Gallons互相转换，因为其基础类型都是float64，但是Go只在转换时考虑基础类型的值，Gallons(Liters(240.0)) 与 Liters(Gallons(240.0)) 没有区别，简单地把值从一个类型转换到另一个类型使针对这个类型应该出现的错误保护机制失效。&lt;/p&gt;
-&lt;p&gt;升与加仑转换：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;carFuel = Gallons(Liters(40.0) * 0.264)
-busFuel = Liters(Gallons(63.0) * 3.785)
-fmt.Printf(&amp;#34;Gallons: %0.1f Liters: %0.1f\n&amp;#34;, carFuel, busFuel)
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;定义类型和运算符&#34;&gt;定义类型和运算符&lt;/h1&gt;
-&lt;p&gt;一个定义类型提供与所有基础类型相同的运算，基于float64类型，提供算数运算符&lt;code&gt;+、-、*、/&lt;/code&gt;，也提供比较运算&lt;code&gt;==、&amp;gt;、&amp;lt;&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;并且基于基础类型string的类型，支持&lt;code&gt;+、==、&amp;gt;、&amp;lt;&lt;/code&gt;，但是不支持&lt;code&gt;-&lt;/code&gt;，因为 - 对于string不是合法的运算符。&lt;/p&gt;
-&lt;p&gt;一个定义类型可以被用来与字面值一起运算：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(Liters(1.2) + 3.4)
-fmt.Println(Gallons(5.5) - 2.2)
-fmt.Println(Gallons(1.2) == 1.2)
-fmt.Println(Liters(1.2) &amp;lt; 3.4)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;4.6
-3.3
-true
-true
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;定义类型不能用来与不同类型的值一起运算，即使它们来自相同的基础类型。若想要将一个Liters中的值与Gallons中的值作运算，需要将其中一个类型转换为另一个类型。&lt;/p&gt;
-&lt;h1 id=&#34;使用函数进行类型转换&#34;&gt;使用函数进行类型转换&lt;/h1&gt;
-&lt;p&gt;让不同类型的值一起运算，需要进行类型转换：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;carFuel = Gallons(Liters(40.0) * 0.264)
-busFuel = Liters(Gallons(63.0) * 3.785)
-
-	func ToGallons(l Liters) Gallons {
-                return Gallons(l * 0.364)
-	}
-
-        func ToLiters(g Gallons) Liters {
-                return Liters(g * 3.785)
-        }
-
-        func main() {
-                carFuel := Gallons(1.2)
-                busFuel := Liters(4.5)
-                carFuel += ToGallons(Liters(40.0))   //先将Liters转换为Gallons
-                busFuel += ToLiters(Gallons(30.0))   //先将Gallons转换为Liters
-                fmt.Printf(&amp;#34;Car fuel: %0.1f gallons\n&amp;#34;, carFuel)
-                fmt.Printf(&amp;#34;Bus fuel: %0.1f liters\n&amp;#34;, busFuel)
-        }
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Car fuel: 11.8 gallons
-Bus fuel: 118.1 litters
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;增加一个新类型，Milliliters：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Liters float64
-type Milliliters float64
-type Gallons float64
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;也需要将Milliliters类型进行转换，但如果增加一个Milliliters转换为Gallons的函数，会产生错误，不能在同一个包中出现两个ToGallons函数！&lt;/p&gt;
-&lt;p&gt;可以分别修改两个ToGallons函数的名字：LitersToGallons和MillilitersToGallons：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func LitersToGallons(l Liters) Gallons {
-        return Gallons(l * 0.264)
-}
-func MillilitersToGallons(m Milliliters) Gallons {
-        return Gallons(m * 0.000264)
-}
-func GallonsToLiters(g Gallons) Liters {
-        return Liters(g * 3.785)
-}
-func GallonsToMilliliters(g Gallons) Milliliters {
-        return Milliliters(g * 3785.41)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;虽然这样消除了冲突，但是名字很长，不方便。&lt;/p&gt;
-&lt;p&gt;其他语言的重载，允许存在多个同名函数，只要其参数不同即可，但go不支持重载，有其他方式能达到类似的效果。&lt;/p&gt;
-&lt;h1 id=&#34;使用方法修复函数名冲突&#34;&gt;使用方法修复函数名冲突&lt;/h1&gt;
-&lt;p&gt;方法：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-        var now time.Time = time.Now()  //time.Now返回一个time.Time值代表当前日期和时间
-        var year int = now.Year()  //time.Time值有一个Year方法来返回当前年
-        fmt.Printlnt(year)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-        broken := &amp;#34;G# r#cks&amp;#34;
-        replacer := strings.NewReplacer(&amp;#34;#&amp;#34;, &amp;#34;o&amp;#34;)  //返回一个strings.Replacer值，被设置为&amp;#34;#&amp;#34;到&amp;#34;o&amp;#34;的转换
-        fixed := replacer.Replace(broken)  //调用strings.Replacer的Replace方法，并传入一个字符串来作转换
-        fmt.Println(fixed)  //输出Replace方法返回的字符串
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以用自定义方法来帮助解决类型转换的问题。&lt;/p&gt;
-&lt;p&gt;不允许有多个ToGallons函数，所以不得不写很长的函数名称；但是可以有多个名为ToGallons的方法，只要它们被定义在单独的类型中，不用担心名称冲突，让方法名称更短小。&lt;/p&gt;
-&lt;h1 id=&#34;定义方法&#34;&gt;定义方法&lt;/h1&gt;
-&lt;p&gt;方法定义与函数定义类似，只有一点不同：需要增加一个额外的参数，一个接收器参数，在函数名称之前的括号中；需要提供一个接收器参数的名称，后面跟着类型。&lt;br&gt;
-&lt;img  src=&#34;https://tinklespring.com/img/Golang/9-type/%e5%ae%9a%e4%b9%89%e6%96%b9%e6%b3%95.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;p&gt;为了调用定义的方法，键入要在其上调用方法的值，一个点和要调用的方法的名称，跟着一对括号；这里调用的方法被称为&lt;code&gt;方法接收器&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;当调用一个方法时，接收器要被列为第一个，并当定义一个方法的时候，接收器参数也被列为第一个。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;value := MyType(&amp;#34;a MyType value&amp;#34;)
-value.sayHi()  //value为方法接收器，sayHi为方法名称
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;方法定义中的接收器参数的名称不重要，重要的是它的类型，定义的方法与此类型的值都关联。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-type MyType string   //定义一个类型
-
-func (m MyType) sayHi() {  //定义一个接收器，函数被定义在MyType上
-        fmt.Println(&amp;#34;Hi&amp;#34;)
-}
-
-func main() {
-        value := MyType(&amp;#34;a MyType value&amp;#34;)  //创建一个MyType值
-        value.sayHi()  //在这个值上调用sayHi
-        anotherValue := MyType(&amp;#34;another value&amp;#34;)  //创建另一个MyType值
-        anotherValue.sayHi()  //在另一个值上调用sayHi
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Hi
-Hi
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;首先定义了一个名为MyType的类型，使用string作为基础类型，然后定义一个名为sayHi的方法，由于sayHi有一个MyType类型的接收器参数，可以使用任何MyType的值来调用sayHi方法。&lt;/p&gt;
-&lt;p&gt;一旦方法被定义在了某个类型，它就能被该类型的任何值调用。&lt;/p&gt;
-&lt;h1 id=&#34;接收器参数几乎就是另一个参数&#34;&gt;接收器参数（几乎）就是另一个参数&lt;/h1&gt;
-&lt;p&gt;接收器参数的类型是与之联系的方法的类型，除此以外，接收器在Go中没有什么特殊，可以在方法块中访问它们的内容，就像其他的函数参数一样。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-type MyType string
-
-func (m MyType) sayHi() {  //输出接收器参数的值
-        fmt.Println(&amp;#34;Hi from&amp;#34;, m)
-}
-
-func main() {
-        value := MyType(&amp;#34;a MyType value&amp;#34;)  //调用方法所需的值
-        value.sayHi()  //传递给接收器参数的接收器
-        anotherValue := MyType(&amp;#34;another value&amp;#34;)  //调用方法所需的值
-        anotherValue.sayHi()  //传递给接收器参数的接收器
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Hi from a MyType value
-Hi from another value    //获取了输出中的接收器的值
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go可以命名接收器的名称，但是若类型定义的所有方法的接收器参数名称一致，则更易读。&lt;/p&gt;
-&lt;p&gt;Go开发者通常使用一个字母作为名称：小写的接受器类型名称的首字母（使用m作为MyType接收器的参数名称）。&lt;/p&gt;
-&lt;hr&gt;
-&lt;p&gt;1.能否为任何类型定义新的方法？&lt;br&gt;
-方法和类型必须定义在同一包中；意味着不会在hacking包中定义security包中的类型的方法，并且不会为像int或string一类的普通类型定义新的方法。&lt;/p&gt;
-&lt;p&gt;2.需要在别人的类型上使用自己的方法&lt;br&gt;
-首先考虑是否需要一个函数就足够，函数可以接受需要的任何类型作为参数，但若真的需要一个值具有自定义的方法，在不同的包中给类型增加一些方法，可以创建一个新的类型并将其他包的类型作为匿名字段嵌入，后边会演示如何操作。&lt;/p&gt;
-&lt;h1 id=&#34;方法几乎就像一个函数&#34;&gt;方法（几乎）就像一个函数&lt;/h1&gt;
-&lt;p&gt;除了在接收器上被调用外，方法与函数完全相同，与其他函数一样，可以在方法名称后面的括号中定义额外的参数，参数变量与接收器参数一样，可以被方法块所访问。当调用方法时，将需要为每个参数提供值。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (m MyType) MethodWithParameters(number int, flag bool) {
-        fmt.Println(m)
-        fmt.Println(number)
-        fmt.Println(flag)
-}
-
-func main() {
-        value := MyType(&amp;#34;MyType value&amp;#34;)
-        value.MethodWithParameters(4, true)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;MyType value
-4
-true
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;与函数一样，可以为方法声明一个或多个返回值，返回值将在函数被调用时返回：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (m MyType) WithReturn() int {
-        return len(m)
-}
-
-func main() {
-        value := MyType(&amp;#34;MyType value&amp;#34;)
-        fmt.Println(value.WithReturn())
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;12
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;与函数一样，方法名称以大写字母开头，则认为是可导出的，若以小写字母开头，认为是不可导出的。想要在当前包之外使用定义的方法，要确保名字以大写字母开头。&lt;/p&gt;
-&lt;h1 id=&#34;指针类型的接收器参数&#34;&gt;指针类型的接收器参数&lt;/h1&gt;
-&lt;p&gt;定义了一个新的以int为基础类型的Number类型，为Number类型提供一个名为double的方法，它将接收器的基础类型值乘以2并且重新赋值给接收器，从输出上看方法的接收器并未更新。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-type Number int  //定义一个基础类型为int的类型
-
-func (n Number) Double() {   //定义一个Number类型
-        n *= 2  //接收器的值乘以2，尝试更新接收器
-}
-
-func main() {
-        number := Number(4)  //创建一个Number的值
-        fmt.Println(&amp;#34;Original value of number:&amp;#34;, number)
-        number.Double()  //尝试加倍Number
-        fmt.Println(&amp;#34;number after calling Double:&amp;#34;, number)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Original value of number: 4
-number after calling Double: 4  //Number并未加倍
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;之前的double函数也有同样的问题，函数参数接收的是函数调用时的拷贝，不是原始值，当函数退出后任何更新都会失效，为了能让double函数正常，传递一个要更新的值的指针，然后更新该指针指向的值。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-        amount := 6
-        double(&amp;amp;amount)  //传递一个指针而不是值
-        fmt.Println(amount)
-}
-
-func double(number *int) {  //接收指针而不是int值
-        *number *= 2  //更新指针指向的值
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;需要修改Double方法以使用指针来作其接收器参数：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (n *Number) Double() {  //接收器参数接收指针类型
-        *n *= 2  //修改指针指向的值
-}
-
-func main() {
-        number := Number(4)
-        fmt.Println(&amp;#34;Original value of number:&amp;#34;, number)
-        number.Double()  //不需要修改方法的调用
-        fmt.Println(&amp;#34;number after calling Double:&amp;#34;, number)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Original value of number: 4
-number after calling Double: 8  //指针指向的值被更新
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不需要修改方法的调用，当用一个非指针的变量调用一个需要指针的接收器的方法时，Go会自动将非指针类型转换为指针类型，同样指针类型也会自动转换为非指针类型，若调用一个要求值类型的接收器，Go会自动获取指针指向的值，然后传递给方法。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyType string
-
-func (m MyType) method() {
-        fmt.Println(&amp;#34;Method with value receiver&amp;#34;)
-}
-func (m *MyType) pointerMethod() {
-        fmt.Println(&amp;#34;Method with pointer receiver&amp;#34;)
-}
-
-func main() {
-        value := MyType(&amp;#34;a value&amp;#34;)
-        pointer := &amp;amp;value
-        value.method()
-        value.pointerMethod()   //值类型自动转换为指针
-        pointer.method()   //指针类型自动转换为值
-        pointer.pointerMethod()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Method with value receiver
-Method with pointer receiver
-Method with value receiver
-Method with pointer receiver
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;名为method的方法接受一个值类型的接收器，但我们同时使用了值类型和指针类型，如果需要，Go会自动转换；名为pointerMethod的方法接受一个指针类型的接收器，但是使用了值类型和指针类型调用，如果需要，Go会自动转换。&lt;/p&gt;
-&lt;p&gt;为了一致性，所有的类型函数接受值类型或者都接受指针类型，避免混用。&lt;/p&gt;
-&lt;hr&gt;
-&lt;p&gt;为了调用需要接收器指针的方法，需要或者这个值类型的指针！&lt;/p&gt;
-&lt;p&gt;只能获取保存在变量中的指针，若尝试获取没有保存在变量中的值的地址，会得到错误：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;&amp;amp;MyType(&amp;#34;a value&amp;#34;)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;错误输出:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;cannot take the address of MyType(&amp;#34;a value&amp;#34;)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;相同的限制也存在于使用接收器指针调用方法时，Go无法将值类型转换为指针类型，除非将接收器的值保存在变量中，若尝试在值类型上调用方法，Go也不会转换为指针，会得到相同的错误：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;MyType(&amp;#34;a value&amp;#34;).pointerMethod()
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;错误输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;cannot call pointer method on MyType(&amp;#34;a value&amp;#34;)
-cannot take the address of MyType(&amp;#34;a value&amp;#34;)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;需要将值保存在变量中，允许Go能得到一个指向它的指针：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;value := MyType(&amp;#34;a value&amp;#34;)
-value.pointerMethod()   //将其转化为指针
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-&lt;p&gt;这是一个Number类型，定义了两个方法：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-import &amp;#34;fmt&amp;#34;
-type Number int
-func (n *Number) Display() {
-        fmt.Println(*n)
-}
-func (n *Number) Double() {
-        *n *= 2
-}
-func main() {
-        number := Number(4)
-        number.Double()
-        number.Display()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;若如此&amp;hellip;&lt;/th&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;代码会失败，因为：&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;func (n &lt;del&gt;*Number&lt;/del&gt;int) Double() {&lt;br&gt;        *n *= 2&lt;br&gt;}&lt;br&gt;&lt;pre&gt;将接收器参数类型改为一个未在当前包中定义的类型&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;只能为定义在当前包中的类型定义方法。为一个像int一样全局定义的类型定义方法会导致编译错误&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;func (n &lt;del&gt;*&lt;/del&gt;Number) Double() {&lt;br&gt;        &lt;del&gt;*&lt;/del&gt;n *= 2&lt;br&gt;}&lt;br&gt;&lt;pre&gt;将Double方法的接收器参数改为一个非指针类型&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;接收器参数接受了一个接收器的拷贝，若Double函数仅修改这个拷贝，当Double返回的时候，原值不会改变&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;Number(4).Double()&lt;pre&gt;在一个没有保存到变量的值上直接调用一个需求接收器的指针的方法&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;当调用一个指针类型的接收器时，如果接收器保存在变量中，Go会自动将值转换为指针类型，若没有保存，会得到一个错误&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;func (n &lt;del&gt;*&lt;/del&gt;Number) Display() {&lt;br&gt;        fmt.Println(&lt;del&gt;*&lt;/del&gt;n)&lt;br&gt;}&lt;br&gt;&lt;pre&gt;将Display方法的接收器参数改为一个非指针类型&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;在修改之后，代码仍能正常运行，但破坏了惯例，方法中的接收器参数可以都是指针，或者都是值类型，避免混用&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h1 id=&#34;使用方法将liters和milliliters转换为gallons&#34;&gt;使用方法将Liters和Milliliters转换为Gallons&lt;/h1&gt;
-&lt;p&gt;不同于函数，只要方法定义在不同的类型中，就可以重名。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-type Liters float64
-type Milliliters float64
-type Gallons float64
-
-func (l Liters) ToGallons() Gallons {
-	return Gallons(l * 0.264)
-}
-func (m Milliliters) ToGallons() Gallons {
-	return Gallons(m * 0.000264)
-}
-
-func main() {
-	soda := Liters(2)
-	fmt.Printf(&amp;#34;%0.3f liters equals %0.3f gallons\n&amp;#34;, soda, soda.ToGallons())
-	water := Milliliters(500)
-	fmt.Printf(&amp;#34;%0.3f milliliters equals %0.3f gallons\n&amp;#34;, water, water.ToGallons())
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2.000 liters equals 0.528 gallons
-500.000 milliliters equals 0.132 gallons
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;没有使用指针类型作为接收器参数，不需要修改接收器，值类型没有消耗很多内存，参数接受一个拷贝也是合适的。&lt;/p&gt;
-&lt;h1 id=&#34;使用方法将gallons转换为liters和milliliters&#34;&gt;使用方法将Gallons转换为Liters和Milliliters&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (g Gallons) ToLiters() Liters {
-	return Liters(g * 3.785)
-}
-func (g Gallons) ToMilliliters() Milliliters {
-	return Milliliters(g * 3785.41)
-}
-
-func main() {
-	milk := Gallons(2)
-	fmt.Printf(&amp;#34;%0.3f gallons equals %0.3f liters\n&amp;#34;, milk, milk.Toliters())
-	fmt.Printf(&amp;#34;%0.3f gallons equals %0.3f milliliters\n&amp;#34;, milk, milk.ToMilliliters())
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;练习：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-type Liters float64
-type Milliliters float64
-type Gallons float64
-
-func (l Liters) ToMilliliters() Milliliters {
-	return Milliliters(l * 1000)
-}
-func (m Milliliters) ToLiters() Liters {
-	return Liters(m / 1000)
-}
-
-func main() {
-	l := Liters(3)
-	fmt.Printf(&amp;#34;%0.1f liters is %0.1f milliliters\n&amp;#34;, l, l.ToMilliliters())
-	ml := Milliliters(500)
-	fmt.Printf(&amp;#34;%0.1f milliliters is %0.1f liters\n&amp;#34;, ml, ml.ToLiters())
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;3.0 liters is 3000.0 milliliters
-500.0 milliliters is 0.5 liters
 &lt;/code&gt;&lt;/pre&gt;</description>
     </item>
     
