@@ -5,10 +5,246 @@
     <description>Recent content in Tags on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Tue, 05 Sep 2023 11:16:34 +0800</lastBuildDate>
+    <lastBuildDate>Wed, 13 Sep 2023 09:13:42 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/tags/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Go中的JSON序列化与反序列化</title>
+      <link>https://tinklespring.com/posts/go%E4%B8%AD%E7%9A%84json%E5%BA%8F%E5%88%97%E5%8C%96%E4%B8%8E%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/</link>
+      <pubDate>Wed, 13 Sep 2023 09:13:42 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/go%E4%B8%AD%E7%9A%84json%E5%BA%8F%E5%88%97%E5%8C%96%E4%B8%8E%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;JSON 是一种流行的数据交换格式，在Go中经常需要将结构体实例序列化为JSON字符串保存和传输。本文介绍使用Go中的&lt;code&gt;encoding/json&lt;/code&gt;包将结构体序列化为JSON数据。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;目录&#34;&gt;目录&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href=&#34;#JSON%e5%ba%8f%e5%88%97%e5%8c%96%e6%a6%82%e8%bf%b0&#34;&gt;JSON序列化概述&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e5%ae%9a%e4%b9%89%e5%8f%af%e5%ba%8f%e5%88%97%e5%8c%96%e7%9a%84%e7%bb%93%e6%9e%84%e4%bd%93&#34;&gt;定义可序列化的结构体&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e5%ba%8f%e5%88%97%e5%8c%96&#34;&gt;使用json.Marshal序列化&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e5%ae%9a%e5%88%b6%e5%ba%8f%e5%88%97%e5%8c%96%e9%80%bb%e8%be%91&#34;&gt;定制序列化逻辑&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e5%8f%8d%e5%ba%8f%e5%88%97%e5%8c%96&#34;&gt;使用json.Unmarshal反序列化&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e5%a4%84%e7%90%86%e7%a9%ba%e5%80%bc%e5%92%8c%e9%bb%98%e8%ae%a4%e5%80%bc&#34;&gt;处理空值和默认值&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e5%b5%8c%e5%a5%97%e5%af%b9%e8%b1%a1%e5%92%8c%e5%8c%bf%e5%90%8d%e5%ad%97%e6%ae%b5&#34;&gt;嵌套对象和匿名字段&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e5%ba%8f%e5%88%97%e5%8c%96%e7%a9%ba%e6%8e%a5%e5%8f%a3&#34;&gt;序列化interface{}&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#stream%e7%bc%96%e7%a0%81%e5%99%a8&#34;&gt;stream编码器&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#JSON%e4%b8%8eXML%e5%af%b9%e6%af%94&#34;&gt;JSON与XML对比&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e6%96%87%e6%9c%ac%e6%a0%bc%e5%bc%8f%e7%9a%84%e4%bc%98%e7%82%b9&#34;&gt;文本格式的优点&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e8%a7%84%e8%8c%83&#34;&gt;使用规范&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e5%ba%8f%e5%88%97%e5%8c%96%e6%80%a7%e8%83%bd%e4%bc%98%e5%8c%96&#34;&gt;序列化性能优化&lt;/a&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;json序列化概述&#34;&gt;JSON序列化概述&lt;/h2&gt;
+&lt;p&gt;JSON是一种非常流行的结构化数据格式，被广泛用于网络传输和数据存储中。Go主要通过json包来处理JSON数据，有两个核心的函数：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;json.Marshal&lt;/code&gt; 序列化Go对象为JOSN格式字节流&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;json.Unmarshal&lt;/code&gt; JSON数据解析为Go对象&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;定义可序列化的结构体&#34;&gt;定义可序列化的结构体&lt;/h2&gt;
+&lt;p&gt;想要将一个结构体实例序列化为JSON，需要确保结构体字段可被json包访问，通常有两种方式：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;字段首字母答谢，可以被外部包访问&lt;/li&gt;
+&lt;li&gt;通过tag指定字段名&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;比如：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type User struct {
+	ID int `json:&amp;#34;id&amp;#34;`
+	Name string `json:&amp;#34;name&amp;#34;`
+	Age int
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;使用序列化&#34;&gt;使用序列化&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;encoding/json&amp;#34;
+	&amp;#34;fmt&amp;#34;
+)
+
+type User struct {
+	Name string `json:&amp;#34;name&amp;#34;`
+	Age  int    `json:&amp;#34;age&amp;#34;`
+}
+
+func main() {
+	user := User{&amp;#34;John&amp;#34;, 20}
+
+	// 序列化
+	buf, err := json.Marshal(user)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// 打印JSON
+	fmt.Println(string(buf))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{&amp;#34;name&amp;#34;:&amp;#34;John&amp;#34;,&amp;#34;age&amp;#34;:20}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;定制序列化逻辑&#34;&gt;定制序列化逻辑&lt;/h2&gt;
+&lt;p&gt;若需要控制序列化的细节，可以实现Marshaler接口，这样可以灵活控制各字段编码过程。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;encoding/json&amp;#34;
+	&amp;#34;fmt&amp;#34;
+)
+
+type User struct {
+	Name string `json:&amp;#34;name&amp;#34;`
+	Age  int    `json:&amp;#34;age&amp;#34;`
+}
+
+// 实现Marshaler接口
+func (u User) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`{&amp;#34;name&amp;#34;:&amp;#34;%s&amp;#34;}`, u.Name)), nil
+}
+
+func main() {
+	u := User{&amp;#34;John&amp;#34;, 20}
+
+	jsonBytes, _ := json.Marshal(u)
+	fmt.Println(string(jsonBytes)) // {&amp;#34;name&amp;#34;:&amp;#34;John&amp;#34;}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;使用反序列化&#34;&gt;使用反序列化&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;encoding/json&amp;#34;
+	&amp;#34;fmt&amp;#34;
+)
+
+type User struct {
+	Name string `json:&amp;#34;name&amp;#34;`
+	Age  int    `json:&amp;#34;age&amp;#34;`
+}
+
+func main() {
+	jsonStr := `{&amp;#34;name&amp;#34;:&amp;#34;John&amp;#34;,&amp;#34;age&amp;#34;:20}`
+
+	// 反序列化到user
+	var user User
+	err := json.Unmarshal([]byte(jsonStr), &amp;amp;user)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(user.Name) // John
+	fmt.Println(user.Age)  // 20
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;传入JSON数据以及对象指针，即可解析。&lt;/p&gt;
+&lt;h2 id=&#34;处理空值和默认值&#34;&gt;处理空值和默认值&lt;/h2&gt;
+&lt;p&gt;对于空值的序列化，默认会忽略空值字段：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type User struct {
+  Name string
+  Age  int
+}
+
+u := User{&amp;#34;John&amp;#34;, 0} 
+
+jsonBytes, _ := json.Marshal(u)
+
+fmt.Println(string(jsonBytes)) // {&amp;#34;Name&amp;#34;:&amp;#34;John&amp;#34;}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以通过定义 MarshalJSON 方法自定义处理空值的编码。&lt;/p&gt;
+&lt;p&gt;反序列化时，需要处理不存在的字段，可以使用指针或默认值。&lt;/p&gt;
+&lt;h2 id=&#34;嵌套对象和匿名字段&#34;&gt;嵌套对象和匿名字段&lt;/h2&gt;
+&lt;p&gt;对于嵌套的对象字段和内嵌匿名类型，也可以正常序列化和反序列化:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Info struct {
+  Addr string
+}
+
+type User struct {
+  Info // 嵌套Info
+  
+  Name string
+}
+
+u := User{Info{&amp;#34;Beijing&amp;#34;}, &amp;#34;Tom&amp;#34;}
+
+jsonBytes, _ := json.Marshal(u)
+
+fmt.Println(string(jsonBytes)) // {&amp;#34;Addr&amp;#34;:&amp;#34;Beijing&amp;#34;,&amp;#34;Name&amp;#34;:&amp;#34;Tom&amp;#34;}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;编码后嵌套的类型将被内联到结果中。&lt;/p&gt;
+&lt;h2 id=&#34;序列化空接口&#34;&gt;序列化空接口&lt;/h2&gt;
+&lt;p&gt;json包可以处理任意的 interface{} 值：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;data := map[string]interface{}{
+  &amp;#34;name&amp;#34;: &amp;#34;John&amp;#34;,
+  &amp;#34;age&amp;#34;: 20,
+}
+
+jsonBytes, _ := json.Marshal(data)
+
+fmt.Println(string(jsonBytes))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但编码结果会包含类型信息和Base64编码后的值，这比定制序列化更低效。&lt;/p&gt;
+&lt;h2 id=&#34;stream编码器&#34;&gt;stream编码器&lt;/h2&gt;
+&lt;p&gt;也可以使用streaming模式的encoder来进行序列化：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+  &amp;#34;encoding/json&amp;#34;
+  &amp;#34;os&amp;#34;
+)
+
+func main() {
+  type User struct {
+    Name string
+    Age  int
+  }
+  
+  user := User{&amp;#34;John&amp;#34;, 20}
+  
+  // 使用stream encoder
+  enc := json.NewEncoder(os.Stdout)
+  enc.Encode(user)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这种编码方式很灵活，可以实现各种自定义输出格式。&lt;/p&gt;
+&lt;h2 id=&#34;json与xml对比&#34;&gt;JSON与XML对比&lt;/h2&gt;
+&lt;p&gt;JSON对比XML优点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;读取和解析更加方便快捷&lt;/li&gt;
+&lt;li&gt;存储占用更小且具有可读性&lt;/li&gt;
+&lt;li&gt;支持更多语言与平台&lt;/li&gt;
+&lt;li&gt;性能和解析速度更快&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;文本格式的优点&#34;&gt;文本格式的优点&lt;/h2&gt;
+&lt;p&gt;JSON与其他二进制序列化格式相比，文本格式JSON优点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;可读性强,便于打印调试&lt;/li&gt;
+&lt;li&gt;可复用现有文本处理工具&lt;/li&gt;
+&lt;li&gt;不依赖语言和平台&lt;/li&gt;
+&lt;li&gt;可支持部分更新修改&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;使用规范&#34;&gt;使用规范&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;格式化打印 JSON 数据&lt;/li&gt;
+&lt;li&gt;为类型和字段定义 Canonical 名称&lt;/li&gt;
+&lt;li&gt;提供完整的文档&lt;/li&gt;
+&lt;li&gt;版本控制 JSON 接口&lt;/li&gt;
+&lt;li&gt;采用更灵活的 schema 描述&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;序列化性能优化&#34;&gt;序列化性能优化&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;提前指定好对象大小&lt;/li&gt;
+&lt;li&gt;重用分配的内存&lt;/li&gt;
+&lt;li&gt;尽量避免解析嵌套数据&lt;/li&gt;
+&lt;li&gt;按需完成自定义编码&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
     
     <item>
       <title>Go语言Mutex互斥锁</title>
@@ -2047,755 +2283,6 @@ func main() {
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;现在输出将把页面大小和URl配对，以前，我们的程序必须一次请求一个页面，goroutine让我们在等待网站响应时开始处理下一个请求，大大提高了速度。&lt;/p&gt;
 </description>
-    </item>
-    
-    <item>
-      <title>12.从失败中恢复</title>
-      <link>https://tinklespring.com/posts/12.%E4%BB%8E%E5%A4%B1%E8%B4%A5%E4%B8%AD%E6%81%A2%E5%A4%8D/</link>
-      <pubDate>Thu, 17 Aug 2023 18:08:56 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/12.%E4%BB%8E%E5%A4%B1%E8%B4%A5%E4%B8%AD%E6%81%A2%E5%A4%8D/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;每个程序都会遇到错误，有时处理错误可以像报告错误并退出程序一样简单，但其他错误可能需要额外的操作，比如需要关闭打开的文件或网络链接，或者以其他方式清理，这样程序不会混乱。本篇将展示如何延迟清理操作，以便在出现错误时也能执行这些操作；还将展示如何在适当的情况下使程序出现panic，以及如何在事后恢复。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;从文件中读取数字重新访问&#34;&gt;从文件中读取数字，重新访问&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;bufio&amp;#34;
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;os&amp;#34;
-	&amp;#34;strconv&amp;#34;
-)
-
-func OpenFile(fileName string) (*os.File, error) {
-	fmt.Println(&amp;#34;Opening&amp;#34;, fileName)
-	return os.Open(fileName) //打开文件并返回指向该文件的指针，以及遇到的任何错误
-}
-func CloseFile(file *os.File) {
-	fmt.Println(&amp;#34;Closing file&amp;#34;)
-	file.Close() //关闭文件
-}
-
-func GetFloats(fileName string) ([]float64, error) {
-	var numbers []float64
-	file, err := OpenFile(fileName) //不是直接调用os.Open，而是调用OpenFile
-	if err != nil {
-		return nil, err
-	}
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		number, err := strconv.ParseFloat(scanner.Text(), 64)
-		if err != nil {
-			return nil, err
-		}
-		numbers = append(numbers, number)
-	}
-	CloseFile(file) //不是直接调用file.Close，而是调用CloseFile
-	if scanner.Err() != nil {
-		return nil, scanner.Err()
-	}
-	return numbers, nil
-}
-
-func main() {
-	numbers, err := GetFloats(os.Args[1]) //存储从文件中读取的数字切片以及任何错误，使用第一个命令行参数作为文件名
-	if err != nil {                       //如果有错误，记录并退出
-		log.Fatal(err)
-	}
-	var sum float64 = 0
-	for _, number := range numbers { //把切片中的所有数字加起来
-		sum += number
-	}
-	fmt.Printf(&amp;#34;Sum: %0.2f\n&amp;#34;, sum) //打印总和
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们希望将要读取的文件名称指定为命令行参数，因此在main函数中，通过访问 &lt;code&gt;os.Args[1]&lt;/code&gt; 从第一个命令行参数获取要打开文件的名称。（&lt;code&gt;os.Args[0]&lt;/code&gt;元素是正在运行的程序的名称，实际的程序参数出现在os.Args[1]和后面的元素中）。&lt;/p&gt;
-&lt;p&gt;然后将文件名传递给GetFloats来读取文件，并得到一个返回float64值的切片。如果在这个过程中遇到任何错误，它们将从GetFloats函数返回，将把它们存储在err变量中，若err不是nil，意味着有错误，只需记录并退出。否则意味着文件被成功读取，使用for循环将切片中的每个值相加，并打印总和。&lt;/p&gt;
-&lt;p&gt;data.txt:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;1.25
-8.75
-5.0
-10.5
-15.5
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;执行：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;# go run sum.go data.txt
-Opening 123.txt
-Closing file
-Sum: 41.00
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;任何错误都阻止关闭文件&#34;&gt;任何错误都阻止关闭文件&lt;/h1&gt;
-&lt;p&gt;但是如果提供了一个格式不正确的文件，就会出现问题，比如文件的行不能解析为float64。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;20.25
-hello   //无法解析为float64
-123.11
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这是正常的，因为每个程序都会遇到接收无效数据的情况，但是GetFloats函数在完成后，调用CloseFile函数，实际上却没有调用。&lt;/p&gt;
-&lt;p&gt;当对无法转换为float64的字符串调用strconv.ParseFloat时，返回一个错误，我们的代码被设置为在此时从GetFloats函数返回，但是这个返回发生在调用CloseFile之前，这意味着文件永远不会被关闭。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func GetFloats(fileName string) ([]float64, error) {
-	var numbers []float64
-	file, err := OpenFile(fileName)
-	if err != nil {
-		return nil, err
-	}
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		number, err := strconv.ParseFloat(scanner.Text(), 64) //当不能将文本行转换为float64时，ParseFloat返回一个错误，这回导致GetFloats返回一个错误
-		if err != nil {
-			return nil, err
-		}
-		numbers = append(numbers, number)
-	}
-	CloseFile(file)  //CloseFile永远不会被调用
-	if scanner.Err() != nil {
-		return nil, scanner.Err()
-	}
-	return numbers, nil
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;延迟函数调用&#34;&gt;延迟函数调用&lt;/h1&gt;
-&lt;p&gt;关闭文件失败似乎没什么大不了，对于一个只打开一个文件的简单程序来说，可能没问题，但是每个打开的文件都会消耗操作系统的资源，打开文件越多可能会累积并导致程序失败，甚至影响操作系统。&lt;/p&gt;
-&lt;p&gt;如果有一个无论如何都希望运行的函数调用，可以使用&lt;code&gt;defer&lt;/code&gt;语句。可以将defer关键字放在任何普通函数或方法调用&lt;code&gt;之前&lt;/code&gt;，Go将延迟执行函数调用，直到当前函数退出之后。&lt;/p&gt;
-&lt;p&gt;通常来说，函数调用一遇到就立即执行：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func Socialize() {
-        fmt.Println(&amp;#34;Goodbye!&amp;#34;)
-        fmt.Println(&amp;#34;Hello!&amp;#34;)
-        fmt.Println(&amp;#34;Nice!&amp;#34;)
-}
-
-func main() {
-        Socialize()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是，如果在调用fmt.Println(&amp;ldquo;Goodbye!&amp;rdquo;) 之前添加defer关键字，则在Socialize函数中的所有剩余代码运行之前以及Socialize退出之前，该调用不会执行。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func Socialize() {
-        defer fmt.Println(&amp;#34;Goodbye!&amp;#34;)  //在函数调用之前添加defer关键字
-        fmt.Println(&amp;#34;Hello!&amp;#34;)
-        fmt.Println(&amp;#34;Nice!&amp;#34;)
-}
-
-func main() {
-        Socialize()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Hello!
-Nice!
-Goodbye!   //第一个函数调用被推迟到Socialize退出之后
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用延迟函数调用从错误中恢复&#34;&gt;使用延迟函数调用从错误中恢复&lt;/h1&gt;
-&lt;p&gt;defer 用于“无论如何”都需要发生的函数调用：
-defer 关键字通过使用return 关键字确保函数调用发生，即使调用函数提前退出。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-        &amp;#34;fmt&amp;#34;
-        &amp;#34;log&amp;#34;
-)
-
-func Socialize() error {
-        defer fmt.Println(&amp;#34;Goodbye!&amp;#34;)
-        fmt.Println(&amp;#34;Hello!&amp;#34;)
-        return fmt.Errorf(&amp;#34;I don&amp;#39;t want to talk.&amp;#34;)
-        fmt.Println(&amp;#34;Nice!&amp;#34;)  //不会运行
-        return nil  //不会运行
-}
-
-func main() {
-        err := Socialize()
-        if err != nil {
-                log.Fatal(err)
-        }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Hello!
-Goodbye!
-2023/08/18 10:38:37 I don&amp;#39;t want to talk.
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;defer 关键字确保函数调用发生，即使调用函数提前退出。&lt;/p&gt;
-&lt;p&gt;当return语句被执行时：&lt;br&gt;
-1.return语句首先计算其返回值（如果有的话），并保存在内部变量中；
-2.执行所有defer语句；
-3.实际返回已保存的返回值，并退出函数；&lt;/p&gt;
-&lt;p&gt;在Socialize函数中的return语句被执行时，首先保存了要返回的错误值，然后执行defer，最后再执行return返回错误值，退出函数。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;先执行defer，最后执行return&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;使用延迟函数调用确保文件关闭&#34;&gt;使用延迟函数调用确保文件关闭&lt;/h1&gt;
-&lt;p&gt;因为defer关键字可以确保“无论如何”都执行函数调用，所以通常用于需要运行的代码，即使在出现错误的情况下也是如此，比如在文件打开后关闭它们。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func GetFloats(fileName string) ([]float64, error) {
-	var numbers []float64
-	file, err := OpenFile(fileName) //不是直接调用os.Open，而是调用OpenFile
-	if err != nil {
-		return nil, err
-	}
-	defer CloseFile(file) //添加defer，这样即使函数退出后也会执行，并将其移动到OpenFile之后
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		number, err := strconv.ParseFloat(scanner.Text(), 64)
-		if err != nil {
-			return nil, err  //即使返回错误，CloseFile仍然会被调用
-		}
-		numbers = append(numbers, number)
-	}
-	if scanner.Err() != nil {
-		return nil, scanner.Err()  //如果函数正常完成，就会调用CloseFile
-	}
-	return numbers, nil
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用defer可以确保在GetFloats退出时调用CloseFile，不管它是正常完成还是解析文件出错。&lt;/p&gt;
-&lt;hr&gt;
-&lt;p&gt;问：是否可以延迟其他语句，比如for循环或者变量赋值？&lt;/p&gt;
-&lt;p&gt;答：不可以，只能延迟函数和方法调用，可以编写一个函数或方法，然后延迟对函数或方法的调用，但是defer关键字本身只能与函数或方法调用一起使用。&lt;/p&gt;
-&lt;h1 id=&#34;列出目录中的文件&#34;&gt;列出目录中的文件&lt;/h1&gt;
-&lt;p&gt;Go还有一些特性可以帮助处理错误。&lt;/p&gt;
-&lt;p&gt;创建一个名为my_directory的内容，指出它包含的每个项的名称，以及它是文件还是子目录。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;├── my_directory
-│   ├── a.txt
-│   ├── subdir
-│   └── z.txt
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;io/ioutil 包 包含一个ReadDir函数，允许读取目录内容，向ReadDir传递一个目录的名称，将返回一个值切片，每个值切片对应目录包含的每个文件或子目录（以及遇到的任何错误）。&lt;/p&gt;
-&lt;p&gt;每个切片的值都满足FileInfo接口，该接口包括一个返回文件名的Name方法和一个如果是目录则返回true的IsDir方法。&lt;/p&gt;
-&lt;p&gt;因此，程序调用ReadDir，将my_directory的名称作为参数传递给它，然后循环遍历返回的切片中的每个值，如果IsDir返回值为true，将打印“Directory: ” 和文件名，否则将打印“File: ” 和文件名。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-        &amp;#34;fmt&amp;#34;
-        &amp;#34;io/ioutil&amp;#34;
-        &amp;#34;log&amp;#34;
-)
-
-func main() {
-        files, err := ioutil.ReadDir(&amp;#34;my_directory&amp;#34;)  //获取一个包含代表&amp;#34;my_directory&amp;#34;的内容的值的切片
-        if err != nil {
-                log.Fatal(err)
-        }
-        for _, file := range files {   //对于切片中的每个文件。。。
-		if file.IsDir() {  //如果文件是一个目录...
-                        fmt.Println(&amp;#34;Directory:&amp;#34;, file.Name())
-		} else {  //否则，打印...
-                        fmt.Println(&amp;#34;File:&amp;#34;, file.Name())
-		}
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;File: a.txt
-Directory: subdir
-File: z.txt
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;程序运行并生成my_directory所包含的文件和目录的列表。&lt;/p&gt;
-&lt;p&gt;读取单个目录内容的程序不复杂，但是若想列出更复杂的内容，比如Go工作区目录，它将包含嵌套在子目录中的整个子目录树，有些包含文件，有些不包含。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;├── go
-│   └── src
-│       ├── geo
-│       │   ├── coordinates.go
-│       │   └── landmark.go
-│       ├── locked
-│       │   └── secret.go
-│       └── vehicle
-│           └── car.go
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;递归函数调用&#34;&gt;递归函数调用&lt;/h1&gt;
-&lt;p&gt;递归允许函数调用自身。&lt;/p&gt;
-&lt;p&gt;若不小心，会得到一个无限循环，函数会不停调用自己：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func recurses() {
-        fmt.Println(&amp;#34;Oh, no, I&amp;#39;m stuck!&amp;#34;)
-        recurses()  //函数调用自己
-}
-
-func main() {
-        recurses()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Oh, no, I&amp;#39;m stuck!
-Oh, no, I&amp;#39;m stuck!
-Oh, no, I&amp;#39;m stuck!
-Oh, no, ^Csignal: interrupt
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是如果能确保递归循环能停止，其实递归是有用的。&lt;/p&gt;
-&lt;p&gt;这是一个递归count函数，从第一个数到最后一个数进行计数（通常来说循环更有效，这里仅演示递归工作原理）。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func count(start int, end int) {
-        fmt.Println(start)   //打印当前的起始数
-        if start &amp;lt; end {  //如果还没有达到结束数字
-                count(start+1, end)  //“count”函数使用比之前多1的起始数调用自身
-        }
-}
-
-func main() {
-        count(1, 3)  //第一次调用“count”，指定它应该从1到3计数
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;程序的顺序：&lt;br&gt;
-1.main使用起始（start）参数1和结束（end）参数3调用count；&lt;/p&gt;
-&lt;p&gt;2.count打印起始参数1；&lt;/p&gt;
-&lt;p&gt;3.start(1) 小于end(3)，因此count以起始数2和结束数3调用自己；&lt;/p&gt;
-&lt;p&gt;4.第二次调用count将打印其新的起始参数：2；&lt;/p&gt;
-&lt;p&gt;5.start(2) 小于end(3)，因此count以起始数3和结束数3调用自己；&lt;/p&gt;
-&lt;p&gt;6.第三次调用count将打印其新的起始参数：3；&lt;/p&gt;
-&lt;p&gt;7.start(3) 不小于end(3)，因此count不再调用自己，只是返回；&lt;/p&gt;
-&lt;p&gt;8.前两次count调用也返回了，程序结束。&lt;/p&gt;
-&lt;p&gt;若再添加对Printf调用，来显示每次count的调用和输出，这个程序更明显：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func count(start int, end int) {
-        fmt.Printf(&amp;#34;count(%d, %d) called\n&amp;#34;, start, end)
-        fmt.Println(start)
-        if start &amp;lt; end {
-                count(start+1, end)
-        }
-        fmt.Printf(&amp;#34;Returning from count(%d, %d) call\n&amp;#34;, start, end)
-}
-
-func main() {
-        count(1, 3)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;count(1, 3) called
-1
-count(2, 3) called
-2
-count(3, 3) called
-3
-Returning from count(3, 3) call
-Returning from count(2, 3) call
-Returning from count(1, 3) call
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;递归列出目录内容&#34;&gt;递归列出目录内容&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;io/ioutil&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;path/filepath&amp;#34;
-)
-
-func scanDirectory(path string) error { //递归函数，接受要扫描的路径，返回遇到的任何错误
-	fmt.Println(path)                  //打印当前目录
-	files, err := ioutil.ReadDir(path) //获取包含目录内容的切片
-	if err != nil {
-		return err
-	}
-	for _, file := range files {
-		filePath := filepath.Join(path, file.Name()) //应斜杠将目录路径和文件名连接起来
-		if file.IsDir() {                            //如果这是一个目录
-			err := scanDirectory(filePath) //递归调用scanDirectory，这次是用子目录的路径
-			if err != nil {
-				return err
-			}
-		} else {
-			fmt.Println(filePath) //如果这是一个普通文件，只需打印它的路径
-		}
-	}
-	return nil
-}
-
-func main() {
-	err := scanDirectory(&amp;#34;go&amp;#34;) //通过对顶部目录调用scanDirectory来启动该过程
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出；&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;go
-go/src
-go/src/geo
-go/src/geo/coordinates.go
-go/src/geo/landmark.go
-go/src/locked
-go/src/locked/secret.go
-go/src/vehicle
-go/src/vehicle/car.go
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;scanDirectory第一件事是打印当前路径，这样就知道我们在哪个目录下工作，然后它对该路径调用ioutil.ReadDir来获取目录的内容。&lt;/p&gt;
-&lt;p&gt;循环遍历ReadDir返回FileInfo值切片，处理每个值，调用filepath.Join将当前目录路径与当前文件名用斜杠连接起来（因此&amp;quot;go&amp;quot;和&amp;quot;src&amp;quot;被连接成&amp;quot;go/src&amp;quot;）。&lt;/p&gt;
-&lt;p&gt;如果当前文件不是一个目录，scanDirectory只打印其完整卢金个，然后移动到下一个文件（如果当前目录中有其他文件）。&lt;/p&gt;
-&lt;p&gt;但是如果当前文件是一个目录，则会启动递归：scanDirectory使用该子目录的路径调用自己，如果该子目录有任何子目录，那么scanDirectory将使用每个子目录来调用自己，以此类推，遍历整个文件数。&lt;/p&gt;
-&lt;p&gt;过程：&lt;br&gt;
-1.main使用“go”路径调用scanDirectory；&lt;/p&gt;
-&lt;p&gt;2.scanDirectory打印它所传递的路径“go”，代表它所工作的目录；&lt;/p&gt;
-&lt;p&gt;3.使用“go”路径调用 ioutil.ReadDir;&lt;/p&gt;
-&lt;p&gt;4.返回的切片中只有一条内容：“src”；&lt;/p&gt;
-&lt;p&gt;5.对“go”的当前目录路径和“src”文件名调用filepath.Join，得到新路径“go/src”;&lt;/p&gt;
-&lt;p&gt;6.src 是一个子目录，所以再次调用 scanDirectory，这次使用的路径是 &amp;ldquo;go/src&amp;rdquo;，&amp;lt;&amp;ndash;递归&lt;/p&gt;
-&lt;p&gt;7.scanDirectory打印新路径：“go/src”&lt;/p&gt;
-&lt;p&gt;8.使用“go/src”路径调用 ioutil.ReadDir ;&lt;/p&gt;
-&lt;p&gt;9.返回的切片中的第一条内容是“geo”；&lt;/p&gt;
-&lt;p&gt;10.对“go/src”的当前目录路径和“geo”文件名调用filepath.Join，得到新路径“go/src/geo”；&lt;/p&gt;
-&lt;p&gt;11.geo是一个子目录，因此再次调用 scanDirectory，这次使用的路径是 “go/src/geo”；&lt;/p&gt;
-&lt;p&gt;12.scanDirectory打印新路径&amp;quot;go/src/geo&amp;quot;;&lt;/p&gt;
-&lt;p&gt;13.使用“go/src/geo”路径调用ioutil.ReadDir;&lt;/p&gt;
-&lt;p&gt;14.返回的切片中第一条内容是“coordinates.go”;&lt;/p&gt;
-&lt;p&gt;15.coordinates.go不是目录，所以只打印名字；&lt;/p&gt;
-&lt;p&gt;16.以此类推。。。&lt;/p&gt;
-&lt;p&gt;递归函数比较难写，并且通常会比非递归解决方式消耗更多的计算资源，但有时候递归函数可以解决用其他方式难以解决的问题。&lt;/p&gt;
-&lt;h1 id=&#34;递归函数中的错误处理&#34;&gt;递归函数中的错误处理&lt;/h1&gt;
-&lt;p&gt;如果scanDirectory在扫描任何子目录时遇到错误，比如没有访问该目录的权限，将返回一个错误。&lt;/p&gt;
-&lt;p&gt;添加两个Printf语句来显示返回的错误，会发现处理此错误的方式并不理想，如果在递归的scanDirectory调用中发生错误，则必须沿整个链返回该错误，直到main函数为止。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func scanDirectory(path string) error {
-	fmt.Println(path)
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		fmt.Printf(&amp;#34;Returning error form scanDirectory(\&amp;#34;%s\&amp;#34;) call\n&amp;#34;, path)  //对ReadDir调用中的错误打印调试信息
-		return err
-	}
-	for _, file := range files {
-		filePath := filepath.Join(path, file.Name())
-		if file.IsDir() {
-			err := scanDirectory(filePath)
-			if err != nil {
-				fmt.Printf(&amp;#34;Returning error form scanDirectory(\&amp;#34;%s\&amp;#34;) call\n&amp;#34;, path)  //对递归的scanDirectory调用中的错误打印调试信息
-				return err
-			}
-		} else {
-			fmt.Println(filePath)
-		}
-	}
-	return nil
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;发起一个panic&#34;&gt;发起一个panic&lt;/h1&gt;
-&lt;p&gt;以前遇到过panic，在访问数组和切片中的无效索引时。当类型断言失败时，也会看到：当程序出现panic时，当前函数停止运行，程序打印日志消息并崩溃。可以通过调用内置的panic函数来引发panic。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-func main() {
-	panic(&amp;#34;oh, no, we&amp;#39;re going down&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;panic: oh, no, we&amp;#39;re going down
-
-goroutine 1 [running]:
-main.main()
-	/golang/panic.go:4 +0x39
-exit status 2
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;panic函数需要一个满足空接口的参数（也就是说，它可以是任何类型），该参数将被转换为字符串（如果需要），并作为panic日志信息的一部分打印出来。&lt;/p&gt;
-&lt;h1 id=&#34;堆栈跟踪&#34;&gt;堆栈跟踪&lt;/h1&gt;
-&lt;p&gt;每个被调用的函数都需要返回到调用的它的函数，为了实现这一点，Go保持一个调用堆栈，即在任何给定点上处于活动状态的函数的调用的列表。&lt;/p&gt;
-&lt;p&gt;当程序发生panic时，panic输出中包含堆栈跟踪，即调用堆栈列表，这对于确定导致程序崩溃的原因很有用。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-func main() {
-	one()
-}
-func one() {
-	two()
-}
-func two() {
-	three()
-}
-func three() {
-	panic(&amp;#34;this call stack&amp;#39;s too deep for me!&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;panic: this call stack&amp;#39;s too deep for me!
-
-goroutine 1 [running]:
-main.three(...)
-	/golang/one.go:13
-main.two(...)
-	/golang/one.go:10
-main.one(...)
-	/golang/one.go:7
-main.main()
-	/golang/one.go:4 +0x3b
-exit status 2
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;堆栈跟踪包括已执行的函数调用的列表。&lt;/p&gt;
-&lt;h1 id=&#34;延迟调用在崩溃前完成&#34;&gt;延迟调用在崩溃前完成&lt;/h1&gt;
-&lt;p&gt;当程序出现panic时，所有延迟的函数调用仍然会被执行，如果有多个延迟调用，它们的执行顺序将与被延迟的顺序相反。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func main() {
-	one()
-}
-func one() {
-	defer fmt.Println(&amp;#34;deferred in one()&amp;#34;)  //这个函数调用被延迟，所以排在最后执行
-	two()
-}
-func two() {
-	defer fmt.Println(&amp;#34;deferred in two()&amp;#34;)  //这个函数调用被延迟，所以排在最后执行
-	panic(&amp;#34;Let&amp;#39;s see what&amp;#39;s been deferred!&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;deferred in two()
-deferred in one()
-panic: Let&amp;#39;s see what&amp;#39;s been deferred!
-
-goroutine 1 [running]:
-main.two()
-	/golang/two.go:14 +0x95
-main.one()
-	/golang/two.go:10 +0x85
-main.main()
-	/golang/two.go:6 +0x20
-exit status 2
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;通过scandirectory使用panic&#34;&gt;通过scanDirectory使用&amp;quot;panic&amp;quot;&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;io/ioutil&amp;#34;
-	&amp;#34;path/filepath&amp;#34;
-)
-
-func scanDirectory(path string) { //不再需要返回错误值
-	fmt.Println(path)
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		panic(err) //不返回错误值，而是将其传递给&amp;#34;panic&amp;#34;
-	}
-	for _, file := range files {
-		filePath := filepath.Join(path, file.Name())
-		if file.IsDir() {
-			scanDirectory(filePath) //不再需要存储或检查错误返回值
-		} else {
-			fmt.Println(filePath)
-		}
-	}
-}
-
-func main() {
-	scanDirectory(&amp;#34;go&amp;#34;) //不再需要存储或检查错误返回值
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;从scanDirectory声明中删除错误返回值，若从ReadDir返回一个error值，将其传递给panic，可以从对scanDirectory的递归调用中删除错误处理代码，也可以在main中从对scanDirectory的调用中删除错误处理代码。&lt;/p&gt;
-&lt;p&gt;当scanDirectory在读取目录遇到错误时，就产生panic，所有对scanDirectory的递归调用都退出。&lt;/p&gt;
-&lt;h1 id=&#34;何时产生panic&#34;&gt;何时产生panic&lt;/h1&gt;
-&lt;p&gt;事实上，调用panic并不是处理错误的理想方法。&lt;/p&gt;
-&lt;p&gt;无法访问的文件、网络故障和错误的用户输入通常是被允许的，应该通过错误值来进行适当的处理，通产，调用panic应该留给&amp;quot;不可能&amp;quot;的情况，比如错误表示的是程序中的错误，而不是用户方的错误。&lt;/p&gt;
-&lt;p&gt;下面这个示例使用panic来指明一个bug。会颁发隐藏在三扇虚拟门中其中一扇门后面的奖品，doorNumber 变量不是由用户输入的，而是由rand.Intn函数选择的一个随机数，如果doorNumber 包含1、2或3以外的任何数字，就是程序的bug，而不是用户错误。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;math/rand&amp;#34;
-	&amp;#34;time&amp;#34;
-)
-
-func awardPrize() {
-	doorNumber := rand.Intn(3) + 1 //产生一个1到3之间的随机整数
-	if doorNumber == 1 {
-		fmt.Println(&amp;#34;you win a cruise!&amp;#34;)
-	} else if doorNumber == 2 {
-		fmt.Println(&amp;#34;you win a car!&amp;#34;)
-	} else if doorNumber == 3 {
-		fmt.Println(&amp;#34;you win a goat!&amp;#34;)
-	} else {
-		panic(&amp;#34;invalid door number&amp;#34;) //不应该产生其他数字，如果产生就panic
-	}
-}
-
-func main() {
-	rand.Seed(time.Now().Unix())
-	awardPrize()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;因此，假如doorNumber包含无效值，调用panic是有意义的。&lt;/p&gt;
-&lt;h1 id=&#34;recover函数&#34;&gt;&amp;ldquo;recover&amp;quot;函数&lt;/h1&gt;
-&lt;p&gt;将scanDirectory函数改为使用panic而不是返回错误，这大大简化了错误处理代码，但panic也会导致程序崩溃，出现难看的堆栈跟踪，宁愿只显示错误信息。&lt;/p&gt;
-&lt;p&gt;Go提供了一个内置的&lt;code&gt;recover&lt;/code&gt;函数，可以阻止程序陷入panic，需要使用它来体面的退出程序。&lt;/p&gt;
-&lt;p&gt;正常程序执行过程中调用recover时，只返回nil，而不执行其他操作：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func main() {
-	fmt.Println(recover())  //如果在一个程序中调用&amp;#34;recover&amp;#34;，而这个程序没有panic...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;&amp;lt;nil&amp;gt;  //什么都不做，返回nil
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果在程序处于panic状态时调用recover，将停止panic，但是当在函数中调用panic时，该函数将停止执行。因此，在panic所在的同一个函数中调用recover没有意义，因为panic无论如何都会继续：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func freakOut() {
-	panic(&amp;#34;oh no&amp;#34;)  //panic阻止了freakOut函数的其余部分运行
-	recover()
-}
-func main() {
-	freakOut()
-	fmt.Println(&amp;#34;Exiting normally&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;panic: oh no
-
-goroutine 1 [running]:
-main.freakOut()
-	/golang/freakOut.go:6 +0x39
-main.main()
-	/golang/freakOut.go:11 +0x22
-exit status 2
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是，当程序panic时，有一种方式可以调用recover。在panic期间，任何延迟的函数调用都将完成，因此可以在一个单独的函数中放置一个recover调用，并在引发panic的代码之前使用defer调用该函数。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func calmDown() {
-	recover()
-}
-func freakOut() {
-	defer calmDown()
-	panic(&amp;#34;oh no&amp;#34;)
-}
-func main() {
-	freakOut()
-	fmt.Println(&amp;#34;Exiting normally&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;调用recover不会导致在出现panic时恢复执行，至少不会完全恢复。产生panic的函数将立即返回，而该函数块中panic之后的任何代码都不会执行。但是在产生panic的函数返回之后，正常的执行将恢复。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func calmDown() {
-	recover()
-}
-func freakOut() {
-	defer calmDown()
-	panic(&amp;#34;oh no&amp;#34;)  //当恢复时freakOut在这个位置返回
-	fmt.Println(&amp;#34;I won&amp;#39;t be run!&amp;#34;)  //panic之后的代码永远不会运行
-}
-func main() {
-	freakOut()
-	fmt.Println(&amp;#34;Exiting normally&amp;#34;)  //这段代码在freakOut返回后运行
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;panic值从recover中返回&#34;&gt;panic值从recover中返回&lt;/h1&gt;
-&lt;p&gt;程序当没有panic时，调用recover返回nil，但是当出现panic时，&lt;code&gt;recover返回传递给panic的任何值&lt;/code&gt;，这可以用来收集有关panic的信息，帮助恢复或向用户报告错误。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func calmDown() {
-	fmt.Println(recover())   //调用&amp;#34;recover&amp;#34;并打印panic值
-}
-func main() {
-	defer calmDown()
-	panic(&amp;#34;oh no&amp;#34;)  //将从&amp;#34;recover&amp;#34;返回的值
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;oh no
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;panic函数其参数类型是 interface{} ，即空接口，因此panic可以接收任何值。同样recover的返回值类型也是 interface{} ，可以将recover的返回值传递给诸如Println（它接受interface{}值）之类的fmt函数，但不能直接对其调用方法。&lt;/p&gt;
-&lt;p&gt;将error值传递给panic，但这样做时，error被转换为一个空接口值，当延迟的函数稍后调用recover时，返回的是interface{}值，即使底层的error值有一个Error方法，试图调用interface{}值上的Error会导致编译错误。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func calmDown() {
-	p := recover()  //返回一个空接口
-	fmt.Println(p.Error())   //即使底层的“error”值有一个Error方法，但interface{}没有
-}
-func main() {
-	defer calmDown()
-	err := fmt.Errorf(&amp;#34;there&amp;#39;s an error&amp;#34;)
-	panic(err)  //将错误值而不是字符串传递给“panic”
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;p.Error undefined (type interface{} is interface with no methods)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;要对panic值调用方法或执行其他操作，需要使用类型断言将其转换回其底层类型：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func calmDown() {
-	p := recover()
-	err, ok := p.(error)  //断言panic值的类型为“error”
-	if ok {
-		fmt.Println(err.Error())  //现在有了一个“error”值，可以调用Error方法
-	}
-}
-func main() {
-	defer calmDown()
-	err := fmt.Errorf(&amp;#34;there&amp;#39;s an error&amp;#34;)
-	panic(err)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;there&amp;#39;s an error
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;从scandirectory中的panic恢复&#34;&gt;从scanDirectory中的panic恢复&lt;/h1&gt;
-&lt;p&gt;添加一个reportPanic函数，在main中使用defer调用它，在调用scanDirectory前调用它，这可能会引起潜在的panic。&lt;/p&gt;
-&lt;p&gt;在reportPanic中，调用recover并存储它返回的panic值，如果程序处于panic状态，这将会停止panic。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;io/ioutil&amp;#34;
-	&amp;#34;path/filepath&amp;#34;
-)
-
-func reportPanic() {
-	p := recover() //调用“recover”并存储它的返回值
-	if p == nil {  //如果返回nil，则没有panic
-		return
-	}
-	err, ok := p.(error) //否则，获取底层的“error”值
-	if ok {
-		fmt.Println(err) //然后打印出来
-	}
-}
-
-func scanDirectory(path string) {
-	fmt.Println(path)
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		panic(err)
-	}
-	for _, file := range files {
-		filePath := filepath.Join(path, file.Name())
-		if file.IsDir() {
-			scanDirectory(filePath)
-		} else {
-			fmt.Println(filePath)
-		}
-	}
-}
-
-func main() {
-	defer reportPanic() //在调用可能引起panic的代码前，延迟调用新reportPanic函数
-	scanDirectory(&amp;#34;go&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果没有panic，从reportPanic返回，不做任何事情，若panic值不是nil，意味着出现了panic，因为scanDirectory将error值传递给panic，所以使用类型断言将 interface{}panic 值转换为error值，若转换成功，则打印error值。&lt;/p&gt;
-&lt;p&gt;这样的话，程序输出只会看到错误信息，而不是难看的panic日志和堆栈跟踪。&lt;/p&gt;
-&lt;h1 id=&#34;恢复panic&#34;&gt;恢复panic&lt;/h1&gt;
-&lt;p&gt;reportPanic还存在一个潜在的问题，它可以拦截任何panic，即使不是来自scanDirectory，如果panic值不能转换为error类型，reportPanic将不会打印它。&lt;/p&gt;
-&lt;p&gt;可以通过在main中使用一个string参数来添加另一个对panic的调用：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-	defer reportPanic()
-	panic(&amp;#34;some other issue&amp;#34;)
-	scanDirectory(&amp;#34;go&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;   //没有输出
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;reportPanic函数从新的panic中恢复，但是因为panic值不是一个error，所以reportPanic不会打印它，我们不知道为什么程序失败了。&lt;/p&gt;
-&lt;p&gt;有一种策略来处理不曾预料且不准备从中恢复的panic，即简单的恢复panic状态。&lt;/p&gt;
-&lt;p&gt;如果将panic值转换为error的类型断言成功，只需像以前那样打印它，如果失败，只需用同样的panic值再次调用panic。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func reportPanic() {
-	p := recover()
-	if p == nil {
-		return
-	}
-	err, ok := p.(error)
-	if ok {
-		fmt.Println(err)
-	} else {
-		panic(p) //如果panic值不是error，则使用相同的值恢复panic
-	}
-}
-
-func scanDirectory(path string) {
-// ...
-}
-
-func main() {
-	defer reportPanic()
-	panic(&amp;#34;some other issue&amp;#34;) //一旦确定reportPanic起作用，不要忘记删除这个测试panic
-	scanDirectory(&amp;#34;go&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;panic: some other issue [recovered]
-	panic: some other issue
-
-goroutine 1 [running]:
-main.reportPanic()
-	/golang/reportPanic_panic.go:18 +0xec
-panic(0x10ab940, 0x10e8ff0)
-	/usr/local/go/src/runtime/panic.go:969 +0x166
-main.main()
-	/golang/reportPanic_panic.go:40 +0x5b
-exit status 2
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;reportPanic从我们对panic的测试调用中恢复了，但是当error类型断言失败，它将再次陷入panic。&lt;/p&gt;
-&lt;hr&gt;
-&lt;p&gt;Go语言本身的设计不鼓励使用panic和recover，Go鼓励以处理程序其他部分的方式处理错误，比如使用if和return语句，以及error值。&lt;/p&gt;
-&lt;hr&gt;
-&lt;p&gt;练习：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func snack() {
-	defer fmt.Println(&amp;#34;closing&amp;#34;)
-	fmt.Println(&amp;#34;opening&amp;#34;)
-	panic(&amp;#34;empty&amp;#34;)
-}
-func main() {
-	snack()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;opening
-closing  //这个调用被延迟，直到snack函数退出（在panic期间）才进行调用
-panic: empty
-....
-&lt;/code&gt;&lt;/pre&gt;</description>
     </item>
     
   </channel>
