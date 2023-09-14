@@ -5,10 +5,844 @@
     <description>Recent content in Posts on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Wed, 13 Sep 2023 09:13:42 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 14 Sep 2023 11:10:03 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/posts/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Go语言RWMutex读写互斥锁</title>
+      <link>https://tinklespring.com/posts/go%E8%AF%AD%E8%A8%80rwmutex%E8%AF%BB%E5%86%99%E4%BA%92%E6%96%A5%E9%94%81/</link>
+      <pubDate>Thu, 14 Sep 2023 11:10:03 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/go%E8%AF%AD%E8%A8%80rwmutex%E8%AF%BB%E5%86%99%E4%BA%92%E6%96%A5%E9%94%81/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;RWMutex 可以说是 Mutex 的改进版，在某些场景下可以发挥出更加强大、灵活的控制能力，比如读取数据的频率远大于写数据的频率的场景。如果在 1 次写然后 N 次读的场景使用 Mutex 的话，则整个过程是串行的，因为即使 N 次读操作互相之间并不影响，但也都需要先持有 Mutex 锁后才可以操作。如果使用 RWMutex 的话，那么 N 次读操作可以同时持有锁，互相不影响，读操作都可以并行，因此并发能力将大大的提升。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;mutex与rwmutex区别与应用场景&#34;&gt;Mutex与RWMutex区别与应用场景&lt;/h1&gt;
+&lt;p&gt;Mutex 是最基本的互斥锁，在同一时间只允许一个 Goroutine 访问被保护资源。它适用于那些只有一个 Goroutine 需要修改资源或者执行临界区代码的情况。&lt;/p&gt;
+&lt;p&gt;然而，在某些场景下，我们允许多个 Goroutine 并发地读取共享资源，但同时也希望确保写操作是独占式进行的。这种情况下就可以使用 RWMutex。RWMutex 分为两种状态：读模式和写模式。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;在读模式下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;多个 Goroutine 可以同时获取锁，并且都能够安全地对共享资源进行只读操作。&lt;/li&gt;
+&lt;li&gt;如果已经有一个或多个 Goroutine 正在读取，则其它 Goroutine 仍然可以获取锁，但是不能执行写操作。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在写模式下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;只有一个 Goroutine 能够获取锁，并且能够对共享资源进行读取或写入操作。此时其它所有的读和写请求都会被阻塞。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;实现-rwmutex-锁需要解决的问题&#34;&gt;实现 RWMutex 锁需要解决的问题&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;写锁需要阻塞写锁：即一个协程拥有写锁时，其它协程的写锁需要阻塞；&lt;/li&gt;
+&lt;li&gt;写锁需要阻塞读锁：即一个协程拥有写锁时，其它协程的读锁需要阻塞；&lt;/li&gt;
+&lt;li&gt;读锁需要阻塞写锁：即一个协程拥有读锁时，其它协程的写锁需要阻塞；&lt;/li&gt;
+&lt;li&gt;读锁不能阻塞读锁：即一个协程拥有读锁时，其它协程也可以拥有读锁。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;rwmutex基本使用&#34;&gt;RWMutex基本使用&lt;/h1&gt;
+&lt;p&gt;可以通过sync包来使用RWMutex，首先创建一个新的RWMutex对象：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var rwMutex sync.RWMutex
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;然后就可以在代码中使用该对象了，要进入读模式（共享访问）或者写模式（独占访问），分别调用两个方法：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;进入读模式：&lt;code&gt;rwMutex.RLock()&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;进入写模式：&lt;code&gt;rwMutex.Lock()&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：在完成对共享资源的访问后，一定要释放锁。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;退出读模式：&lt;code&gt;rwMutex.RUnlock()&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;退出写模式：&lt;code&gt;rwMutex.Unlock()&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;示例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;sync&amp;#34;
+)
+
+// 共享资源
+var counter = 0
+
+// 创建新的RWMutex对象
+var rwMutex sync.RWMutex
+
+func main() {
+	// 使用 WaitGroup 等待所有 Goroutine 完成任务
+	wg := sync.WaitGroup{}
+
+	// 启动十个并发的 Goroutine 增加 counter 的值
+	for i := 0; i &amp;lt; 100; i++ {
+		wg.Add(1)
+		go incrementCounter(&amp;amp;wg)
+	}
+
+	// 等待所有 Goroutine 完成任务
+	wg.Wait()
+
+	// 输出最终结果
+	fmt.Println(&amp;#34;Final Counter:&amp;#34;, counter)
+}
+
+func incrementCounter(wg *sync.WaitGroup) {
+	// 进入写模式，获取锁
+	rwMutex.Lock()
+	// 在函数返回前释放锁，加锁和解锁一定要写在一起
+	defer rwMutex.Unlock()
+
+	// 对共享资源进行修改操作
+	counter++
+
+	// 通知 WaitGroup 当前 Goroutine 完成任务
+	wg.Done()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Final Counter: 100
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;rwmutex实现原理&#34;&gt;RWMutex实现原理&lt;/h1&gt;
+&lt;p&gt;源码数据结构：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type RWMutex struct {
+    w           Mutex  // 用于控制多个锁，获得写锁之前需要获取该锁
+    writerSem   uint32 // 写阻塞等待的信号量，最后一个读者释放锁时会释放信号量
+    readerSem   uint32 // 读阻塞的协程等待的信号量，持有写锁的协程释放锁后会释放信号量
+    readerCount int32  // 记录读协程的个数
+    readerWait  int32  // 记录写阻塞时读协程的个数
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;读写锁内部有一个Mutex互斥锁，用于将多个写操作隔离开，其他的几个都用于隔离读操作和写操作。&lt;/p&gt;
+&lt;p&gt;RWMutex还实现了四个接口，四个接口和上面的成员配合起来完成读写互斥锁的实现。&lt;/p&gt;
+&lt;p&gt;接口定义：&lt;br&gt;
+RWMutex提供4个简单接口：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;RLock() ：读锁定（记忆为 ReadLock）。&lt;/li&gt;
+&lt;li&gt;RUnlock()：解除读锁定（记忆为 ReadLock）。&lt;/li&gt;
+&lt;li&gt;Lock() ：写锁定，它与 Mutex 完全一致。&lt;/li&gt;
+&lt;li&gt;UnLock()：解除写锁定，与 Mutex 完全一致。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;lock实现逻辑&#34;&gt;Lock()实现逻辑：&lt;/h3&gt;
+&lt;p&gt;写锁定操作需要做两件事：&lt;br&gt;
+1.获取互斥锁Mutex&lt;br&gt;
+2.若此时有读操作的话，需要阻塞等待所有的读操作结束&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Lock locks rw for writing.
+// If the lock is already locked for reading or writing,
+// Lock blocks until the lock is available.
+func (rw *RWMutex) Lock() {
+    if race.Enabled {
+        _ = rw.w.state
+        race.Disable()
+    }
+    // 首先，解决与其它写操作的竞争。
+    rw.w.Lock()
+    
+    // 向读操作通知有一位待定的写操作。
+    r := atomic.AddInt32(&amp;amp;rw.readerCount, -rwmutexMaxReaders) + rwmutexMaxReaders
+    
+    // 等待活跃的读操作结束。
+    if r != 0 &amp;amp;&amp;amp; atomic.AddInt32(&amp;amp;rw.readerWait, r) != 0 {
+        runtime_SemacquireMutex(&amp;amp;rw.writerSem, false, 0)
+    }
+    if race.Enabled {
+        race.Enable()
+        race.Acquire(unsafe.Pointer(&amp;amp;rw.readerSem))
+        race.Acquire(unsafe.Pointer(&amp;amp;rw.writerSem))
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80RWMutex%e8%af%bb%e5%86%99%e4%ba%92%e6%96%a5%e9%94%81/%e5%86%99%e9%94%81%e5%ae%9a%e9%80%bb%e8%be%91.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h3 id=&#34;unlock实现逻辑&#34;&gt;UnLock()实现逻辑&lt;/h3&gt;
+&lt;p&gt;解除锁定需要做两件事：&lt;br&gt;
+1.唤醒因读锁定而被阻塞的协程（如果有的话）&lt;br&gt;
+2.解除互斥锁&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Unlock unlocks rw for writing. It is a run-time error if rw is
+// not locked for writing on entry to Unlock.
+//
+// As with Mutexes, a locked RWMutex is not associated with a particular
+// goroutine. One goroutine may RLock (Lock) a RWMutex and then
+// arrange for another goroutine to RUnlock (Unlock) it.
+func (rw *RWMutex) Unlock() {
+    if race.Enabled {
+        _ = rw.w.state
+        race.Release(unsafe.Pointer(&amp;amp;rw.readerSem))
+        race.Disable()
+    }
+
+    // 向读协程宣布没有活跃的写协程。
+    r := atomic.AddInt32(&amp;amp;rw.readerCount, rwmutexMaxReaders)
+    if r &amp;gt;= rwmutexMaxReaders {
+        race.Enable()
+        fatal(&amp;#34;sync: Unlock of unlocked RWMutex&amp;#34;)
+    }
+    
+    // 取消阻塞被阻塞的读协程（如果有的话）
+    for i := 0; i &amp;lt; int(r); i++ {
+        runtime_Semrelease(&amp;amp;rw.readerSem, false, 0)
+    }
+    
+    // 解除写锁，允许其它写协程继续写
+    rw.w.Unlock()
+    if race.Enabled {
+        race.Enable()
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80RWMutex%e8%af%bb%e5%86%99%e4%ba%92%e6%96%a5%e9%94%81/%e8%a7%a3%e9%99%a4%e5%86%99%e9%94%81%e5%ae%9a%e9%80%bb%e8%be%91.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h3 id=&#34;rlock实现逻辑&#34;&gt;RLock()实现逻辑&lt;/h3&gt;
+&lt;p&gt;读锁定操作需要做两件事：&lt;br&gt;
+1.增加读操作的计数，即 readerCount++&lt;br&gt;
+2.若阻塞等待写操作结束&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Happens-before relationships are indicated to the race detector via:
+// - Unlock  -&amp;gt; Lock:  readerSem
+// - Unlock  -&amp;gt; RLock: readerSem
+// - RUnlock -&amp;gt; Lock:  writerSem
+//
+// The methods below temporarily disable handling of race synchronization
+// events in order to provide the more precise model above to the race
+// detector.
+func (rw *RWMutex) RLock() {
+    if race.Enabled {
+        _ = rw.w.state
+        race.Disable()
+    }
+    if atomic.AddInt32(&amp;amp;rw.readerCount, 1) &amp;lt; 0 {
+        // A writer is pending, wait for it.
+        runtime_SemacquireMutex(&amp;amp;rw.readerSem, false, 0)
+    }
+    if race.Enabled {
+        race.Enable()
+        race.Acquire(unsafe.Pointer(&amp;amp;rw.readerSem))
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80RWMutex%e8%af%bb%e5%86%99%e4%ba%92%e6%96%a5%e9%94%81/%e8%af%bb%e9%94%81%e5%ae%9a%e5%ae%9e%e7%8e%b0%e9%80%bb%e8%be%91.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h3 id=&#34;runlock实现逻辑&#34;&gt;RUnlock()实现逻辑&lt;/h3&gt;
+&lt;p&gt;解除读锁定需要做两件事：&lt;br&gt;
+1.减少读操作计数，即 readerCount- -&lt;br&gt;
+2.唤醒等待写操作的协程，如果有的话。注意：这里只有最后一个解除读锁定的协程才会释放信号量将该协程唤醒，因为只有当所有的读操作协程释放锁后才可以唤醒写操作协程。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// RUnlock undoes a single RLock call;
+// it does not affect other simultaneous readers.
+// It is a run-time error if rw is not locked for reading
+// on entry to RUnlock.
+func (rw *RWMutex) RUnlock() {
+    if race.Enabled {
+        _ = rw.w.state
+        race.ReleaseMerge(unsafe.Pointer(&amp;amp;rw.writerSem))
+        race.Disable()
+    }
+    if r := atomic.AddInt32(&amp;amp;rw.readerCount, -1); r &amp;lt; 0 {
+        // Outlined slow-path to allow the fast-path to be inlined
+        rw.rUnlockSlow(r)
+    }
+    if race.Enabled {
+        race.Enable()
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80RWMutex%e8%af%bb%e5%86%99%e4%ba%92%e6%96%a5%e9%94%81/%e8%a7%a3%e9%99%a4%e8%af%bb%e9%94%81%e5%ae%9a%e5%ae%9e%e7%8e%b0%e9%80%bb%e8%be%91.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h1 id=&#34;rwmutex关键实现&#34;&gt;RWMutex关键实现&lt;/h1&gt;
+&lt;h3 id=&#34;写操作如何阻止写操作&#34;&gt;写操作如何阻止写操作？&lt;/h3&gt;
+&lt;p&gt;读写锁包含一个互斥锁（Mutex），写锁定必须先获取该互斥锁，如果互斥锁已被协程 1 获取（或者协程 1 在阻塞等待读结束），则意味着协程 1 已获取了互斥锁，那么协程 2 只能阻塞等待该互斥锁。&lt;/p&gt;
+&lt;p&gt;所以写操作依赖互斥锁阻止其他的写操作。&lt;/p&gt;
+&lt;h3 id=&#34;写操作如何阻止读操作&#34;&gt;写操作如何阻止读操作？&lt;/h3&gt;
+&lt;p&gt;这是 RWMutex 实现中最最最精华的技巧。&lt;/p&gt;
+&lt;p&gt;我们知道 RWMutex.readerCount 是一个整型值，用于表示读协程数量。在不考虑写操作的情况下，每次读锁定将该值 +1，每次解除读锁定将该值 -1，所以 readerCount 的取值为  [0, N]，N 为读操作的个数，实际上最大可支持 2的30次方个读操作。&lt;/p&gt;
+&lt;p&gt;当进行写锁定时，会将 readerCount 减去 2的30次方，从而让 readerCount 变成负值，此时再有读操作到来时检查 readerCount 为负值，便知道写操作在进行中，只好阻塞等待。&lt;/p&gt;
+&lt;p&gt;而真实的读操作个数却不会丢失，因为只需要将 readerCount + 2的30次方 即可恢复回来。&lt;/p&gt;
+&lt;p&gt;因此，写操作是将 readerCount 变成负值来阻止写操作的。&lt;/p&gt;
+&lt;h3 id=&#34;读操作如何阻止写操作&#34;&gt;读操作如何阻止写操作？&lt;/h3&gt;
+&lt;p&gt;读锁定会先将 RWMutex.readerCount + 1，此时写操作到来时发现读者数量不为 0，会阻塞等待所有读操作结束。&lt;/p&gt;
+&lt;p&gt;因此，读操作是通过 readerCount 来阻止写操作的。&lt;/p&gt;
+&lt;h3 id=&#34;为什么写锁定不会被-饿死&#34;&gt;为什么写锁定不会被 “饿死”？&lt;/h3&gt;
+&lt;p&gt;我们知道写操作要等待读操作结束后才可以获得锁，写操作等待期间可能还有新的读操作持续到来，如果写操作等待所有的读操作结束，则可能会被 “饿死”，RWMutex 是通过 RWMutex.readerWait 来完美解决这个问题的。&lt;/p&gt;
+&lt;p&gt;写操作到来时，会把RWMutex.readerCount 的值复制到 RWMutex.readerWait 中，用于标记排在写操作前面的读操作个数。&lt;/p&gt;
+&lt;p&gt;前面的读操作结束后，除了递减 RWMutex.readerCount 的值，还会递减 RWMutex.readerWait 的值，所以 RWMutex.readerWait 的值变为 0 的时候，可以唤醒写操作了（真巧妙）。&lt;/p&gt;
+&lt;p&gt;因此写操作相当于把一段连续的读操作划成了两部分，前面的读操作结束后唤醒写操作，写操作结束后唤醒后续的读操作。&lt;/p&gt;
+&lt;h1 id=&#34;注意事项&#34;&gt;注意事项&lt;/h1&gt;
+&lt;p&gt;RWMutex 是一种高级的并发控制机制，但相比于 Mutex 来说，它在处理读操作时会带来更小的开销。因此，在某些场景下可以使用 RWMutex 来提升程序的性能。&lt;/p&gt;
+&lt;p&gt;然而，在使用 RWMutex 时需要注意以下几点:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;不要滥用 RWMutex：只有在确实需要多个 Goroutine 并发地读取共享资源，并且同时保证独占式写入时才使用 RWMutex。&lt;/li&gt;
+&lt;li&gt;避免持有锁太久：持有锁时间过长会影响整个系统的吞吐量。所以应该尽量缩小临界区大小。&lt;/li&gt;
+&lt;li&gt;注意解决死锁问题：当多个 Goroutine 相互等待对方释放锁导致无法继续执行时，就产生了死锁。合理地设计和使用锁可以避免死锁的发生。&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>反射biubiubiu~</title>
+      <link>https://tinklespring.com/posts/%E5%8F%8D%E5%B0%84biubiubiu~/</link>
+      <pubDate>Thu, 14 Sep 2023 11:06:00 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/%E5%8F%8D%E5%B0%84biubiubiu~/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;go的反射是一种强大且复杂的特性，允许创造更灵活、更动态的代码。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;反射基本概念&#34;&gt;反射基本概念&lt;/h1&gt;
+&lt;p&gt;什么是反射？&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;反射是检查自身结构的机制&lt;/li&gt;
+&lt;li&gt;反射是困惑的源泉&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;测验题目&#34;&gt;测验题目&lt;/h2&gt;
+&lt;p&gt;如何判断 Person 结构中的两个变量是否相等？是否可以使用“==”操作符进行比较？&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Person struct {
+    Name string
+    Age int
+    extra interface{}
+}
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Go读取配置文件的方式</title>
+      <link>https://tinklespring.com/posts/go%E8%AF%BB%E5%8F%96%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84%E6%96%B9%E5%BC%8F/</link>
+      <pubDate>Thu, 14 Sep 2023 10:53:03 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/go%E8%AF%BB%E5%8F%96%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84%E6%96%B9%E5%BC%8F/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;go有 viper 与 configor 配置管理方案。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;viper管理配置&#34;&gt;viper管理配置&lt;/h1&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/spf13/viper&#34;target=&#34;_blank&#34; rel=&#34;noopener noreferrer&#34;&gt;https://github.com/spf13/viper&lt;/a&gt;
+&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;支持多种配置文件格式，包括 JSON,TOML,YAML,HECL,envfile，甚至还包括Java properties&lt;/li&gt;
+&lt;li&gt;支持为配置项设置默认值&lt;/li&gt;
+&lt;li&gt;可以通过命令行参数覆盖指定的配置项&lt;/li&gt;
+&lt;li&gt;支持参数别名&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;viper 按照优先级从高到低获取配置项的取值：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;explicit call to Set: 在代码逻辑中通过viper.Set()直接设置配置项的值&lt;/li&gt;
+&lt;li&gt;flag：命令行参数&lt;/li&gt;
+&lt;li&gt;env：环境变量&lt;/li&gt;
+&lt;li&gt;config：配置文件&lt;/li&gt;
+&lt;li&gt;key/value store：etcd或者consul&lt;/li&gt;
+&lt;li&gt;default：默认值&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;time&amp;#34;
+
+	&amp;#34;github.com/fsnotify/fsnotify&amp;#34;
+	&amp;#34;github.com/spf13/viper&amp;#34;
+)
+
+func main() {
+
+	loadConfig()
+}
+
+func loadConfig() {
+
+	configVar := &amp;#34;shuang-config.yaml&amp;#34;
+	configVar = &amp;#34;&amp;#34; // 这行如果注释掉，则从指定的configVar读取配置文件；否则就各种条件去找了
+
+	if configVar != &amp;#34;&amp;#34; {
+		// SetConfigFile 显式定义配置文件的路径、名称和扩展名。
+		// Viper 将使用它而不检查任何配置路径。
+		viper.SetConfigFile(configVar)
+	} else {
+
+		// 如果没有显式指定配置文件，则
+
+		// 会去下面的路径里找文件名`cui-config`的文件  name of config file (without extension)
+		// 按照 []string{&amp;#34;json&amp;#34;, &amp;#34;toml&amp;#34;, &amp;#34;yaml&amp;#34;, &amp;#34;yml&amp;#34;, &amp;#34;properties&amp;#34;, &amp;#34;props&amp;#34;, &amp;#34;prop&amp;#34;, &amp;#34;hcl&amp;#34;, &amp;#34;tfvars&amp;#34;, &amp;#34;dotenv&amp;#34;, &amp;#34;env&amp;#34;, &amp;#34;ini&amp;#34;}的顺序(居然还支持Java用的properties)
+		viper.SetConfigName(&amp;#34;cui-config&amp;#34;)
+		viper.AddConfigPath(&amp;#34;/etc/myapp&amp;#34;) // 找寻的路径
+		viper.AddConfigPath(&amp;#34;$HOME/.myapp/&amp;#34;)
+		viper.AddConfigPath(&amp;#34;.&amp;#34;)
+	}
+
+	viper.WatchConfig()
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		fmt.Printf(&amp;#34;配置文件 %s 发生了更改!!! 最新的Global.Source这个字段的值为 %s:&amp;#34;, e.Name, viper.GetString(&amp;#34;Global.Source&amp;#34;))
+	})
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf(&amp;#34;error reading config: %s&amp;#34;, err))
+	}
+
+	fmt.Printf(&amp;#34;到底用的是哪个配置文件: &amp;#39;%s&amp;#39;\n&amp;#34;, viper.ConfigFileUsed())
+
+	fmt.Printf(&amp;#34;Global.Source这个字段的值为: &amp;#39;%s&amp;#39;\n&amp;#34;, viper.GetString(&amp;#34;Global.Source&amp;#34;))
+
+	time.Sleep(10000e9)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;watch机制配置更新后热加载&#34;&gt;Watch机制（配置更新后热加载）&lt;/h3&gt;
+&lt;p&gt;该机制可以监听配置文件的修改, 这样就实现了热加载，修改配置后，无需重启服务。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;对于本地文件，是通过fsnotify实现的，然后通过一个回调函数去通知应用来reload&lt;/li&gt;
+&lt;li&gt;对于Remote KV Store，目前只支持etcd，做法比较ugly，(5秒钟)轮询一次 而不是watch api&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;configor-管理配置&#34;&gt;configor 管理配置&lt;/h1&gt;
+&lt;p&gt;Configor 支持YAML，JSON，TOML，Shell环境，支持热加载。&lt;/p&gt;
+&lt;p&gt;出自jinzhu ：https://github.com/jinzhu&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;time&amp;#34;
+
+	&amp;#34;github.com/jinzhu/configor&amp;#34;
+)
+
+type Config struct {
+	APPName string `default:&amp;#34;app name&amp;#34;`
+	DB      struct {
+		Name     string
+		User     string `default:&amp;#34;root&amp;#34;`
+		Password string `required:&amp;#34;true&amp;#34; env:&amp;#34;DBPassword&amp;#34;`
+		Port     uint   `default:&amp;#34;3306&amp;#34;`
+	}
+	Contacts []struct {
+		Name  string
+		Email string `required:&amp;#34;true&amp;#34;`
+	}
+}
+
+func main() {
+	var conf = Config{}
+
+	// reload模式,可实现热加载
+
+	err := configor.New(&amp;amp;configor.Config{
+		AutoReload:         true,
+		AutoReloadInterval: time.Second,
+		AutoReloadCallback: func(config interface{}) {
+			// config发生变化后出发什么操作
+			fmt.Printf(&amp;#34;配置文件发生了变更%#v\n&amp;#34;, config)
+		},
+	}).Load(&amp;amp;conf, &amp;#34;config.yml&amp;#34;)
+
+	// 无reload模式
+	//err := configor.Load(&amp;amp;conf, &amp;#34;config.yml&amp;#34;)
+
+	// err := configor.New(&amp;amp;configor.Config{Debug: true}).Load(&amp;amp;conf, &amp;#34;config.yml&amp;#34;)  // 测试模式，也可以通过环境变量开启测试模式(CONFIGOR_DEBUG_MODE=true go run main.go )，这样就无需修改代码
+
+	//err := configor.New(&amp;amp;configor.Config{Verbose: true}).Load(&amp;amp;conf, &amp;#34;config.yml&amp;#34;) // 模式，也可以通过环境变量开启详细模式(CONFIGOR_VERBOSE_MODE=true go run main.go )，这样就无需修改代码
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf(&amp;#34;%v \n&amp;#34;, conf)
+
+	time.Sleep(100000e9)
+}
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Go编程陷阱</title>
+      <link>https://tinklespring.com/posts/go%E7%BC%96%E7%A8%8B%E9%99%B7%E9%98%B1/</link>
+      <pubDate>Thu, 14 Sep 2023 08:27:56 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/go%E7%BC%96%E7%A8%8B%E9%99%B7%E9%98%B1/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;Go中有一些容易让人掉进去的陷阱，本篇列出一些常见的，教你如何避免。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;nil切片与空切片&#34;&gt;Nil切片与空切片&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var a []int   //nil切片
+b := []int{}  //空切片
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;两者都没有元素，但行为上不同，例如，当检查长度或追加元素时：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(len(a), cap(a))  //0 0
+fmt.Println(len(b), cap(b))  //0 0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是当某些操作时，比如JSON的序列化，两者不一样：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;dataA, _ := json.Marshal(a)
+dataB, _ := json.Marshal(b)
+fmt.Println(string(dataA))  // null
+fmt.Println(string(dataB))  // []
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：先明确需求，若表示“不存在的切片”，使用 nil ；若需要一个空的集合，则使用空切片。&lt;/p&gt;
+&lt;h1 id=&#34;不初始化的map&#34;&gt;不初始化的Map&lt;/h1&gt;
+&lt;p&gt;在Go中，map必须使用 make 函数初始化，否则将是 nil 。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var m map[string]int
+m[&amp;#34;key&amp;#34;] = 42  // panic: assignment to entry in nil map
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：始终要用 &lt;code&gt;make&lt;/code&gt; 初始化map。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;m := make(map[string]int)
+m[&amp;#34;key&amp;#34;] = 42
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;并发map读写&#34;&gt;并发Map读写&lt;/h1&gt;
+&lt;p&gt;Go的map在并发读写时是不安全的。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;m := make(map[string]int)
+go func() {
+    for {
+        m[&amp;#34;key&amp;#34;] = 42
+    }
+}()
+go func() {
+    for {
+        _ = m[&amp;#34;key&amp;#34;]
+    }
+}()
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上述代码会产生panic，需要使用 &lt;code&gt;sync.RWMutex&lt;/code&gt; 进行锁定或考虑使用 &lt;code&gt;sync.Map&lt;/code&gt; 。&lt;/p&gt;
+&lt;h1 id=&#34;闭包中的循环变量&#34;&gt;闭包中的循环变量&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+import &amp;#34;sync&amp;#34;
+
+func main() {
+    wg := sync.WaitGroup{}
+
+    for _, v := range []int{1, 2, 3, 4} {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+
+            fmt.Println(v)
+        }()
+    }
+
+    wg.Wait()
+    fmt.Println(&amp;#34;main done&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可能希望输出 1，2，3，4，但实际上 v 的值在每个 goroutine 中都可能是 4 。&lt;/p&gt;
+&lt;p&gt;解决方式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+import &amp;#34;sync&amp;#34;
+
+func main() {
+    wg := sync.WaitGroup{}
+
+    for _, v := range []int{1, 2, 3, 4} {
+        wg.Add(1)
+
+        go func(v int) {
+            defer wg.Done()
+
+            fmt.Println(v)
+        }(v)
+    }
+
+    wg.Wait()
+    fmt.Println(&amp;#34;main done&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;将循环变量作为参数传递给闭包。&lt;/p&gt;
+&lt;h1 id=&#34;error不被检查&#34;&gt;Error不被检查&lt;/h1&gt;
+&lt;p&gt;Go没有其他语言那样的异常机制，它使用 error 来传递错误。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;f, _ := os.Open(&amp;#34;filename.ext&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上述代码，错误被忽略，可能导致后续操作在文件上失败。&lt;/p&gt;
+&lt;p&gt;解决方法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;f, err := os.Open(&amp;#34;filename.ext&amp;#34;)
+if err != nil {
+	log.Fatal(err)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;始终检查错误并处理。&lt;/p&gt;
+&lt;h1 id=&#34;不正确的string转换&#34;&gt;不正确的String转换&lt;/h1&gt;
+&lt;p&gt;直接将 byte 切片转换为 string 会导致不可预期的结果，特别是当 byte 切片中包含非 UTF-8 字符时。&lt;/p&gt;
+&lt;p&gt;解决方式： 使用正确的转换方法，如 utf8.Valid 检查是否为有效的 UTF-8。&lt;/p&gt;
+&lt;h1 id=&#34;失效的goroutine&#34;&gt;失效的Goroutine&lt;/h1&gt;
+&lt;p&gt;若主goroutine结束，其他goroutine也会立即停止。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	go func() {
+		time.Sleep(2 * time.Second)
+		fmt.Println(&amp;#34;This will never get printed&amp;#34;)
+	}()
+	fmt.Println(&amp;#34;main done&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;main done
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决方法：使用 &lt;code&gt;sync.WaitGroup&lt;/code&gt; 或其他同步机制来确保所有goroutine完成。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;sync&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		time.Sleep(2 * time.Second)
+		fmt.Println(&amp;#34;This will never get printed&amp;#34;)
+	}()
+
+	wg.Wait()
+	fmt.Println(&amp;#34;main done&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;This will never get printed
+main done
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;变量阴影&#34;&gt;变量阴影&lt;/h1&gt;
+&lt;p&gt;可能会不小心创建了一个同名的局部变量，从而“阴影”了外部的变量。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;x := 5
+func f() {
+    x, err := doSomething() // 这里 unintentionally 阴影了外部的 x
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(x) // 这可能不是你期望的 x 的值
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：始终注意变量的作用域，使用 go vet 来识别此类问题。&lt;/p&gt;
+&lt;h1 id=&#34;使用--比较复杂的数组和结构&#34;&gt;使用 == 比较复杂的数组和结构&lt;/h1&gt;
+&lt;p&gt;Go允许使用 == 来比较数组和结构，但若它们本身包含不可比较的字段（如map或函数），则会导致编译错误。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Person struct {
+    Name string
+    Ages map[string]int
+}
+
+func main() {
+    p1 := Person{Name: &amp;#34;Alice&amp;#34;, Ages: map[string]int{&amp;#34;Bob&amp;#34;: 30}}
+    p2 := Person{Name: &amp;#34;Alice&amp;#34;, Ages: map[string]int{&amp;#34;Bob&amp;#34;: 30}}
+    fmt.Println(p1 == p2) // 编译错误
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决：为复杂的数据结构实现自己的比较函数或者使用第三方库。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+import &amp;#34;reflect&amp;#34;
+
+type Person struct {
+    Name string
+    Ages map[string]int
+}
+
+func main() {
+    p1 := Person{Name: &amp;#34;Alice&amp;#34;, Ages: map[string]int{&amp;#34;Bob&amp;#34;: 30}}
+    p2 := Person{Name: &amp;#34;Alice&amp;#34;, Ages: map[string]int{&amp;#34;Bob&amp;#34;: 30}}
+    fmt.Println(reflect.DeepEqual(p1,p2)) // 正确比较
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;非显式的接口实现&#34;&gt;非显式的接口实现&lt;/h1&gt;
+&lt;p&gt;Go 使用非显式的接口实现，这意味着只要类型实现了接口的所有方法，它就被认为实现了该接口。这可能导致意外实现了某个接口。&lt;/p&gt;
+&lt;p&gt;解决方法：虽然这是 Go 的特性，但是在可能的情况下，为类型提供明确的文档，说明它实现了哪些接口。&lt;/p&gt;
+&lt;h1 id=&#34;小心defer使用&#34;&gt;小心defer使用&lt;/h1&gt;
+&lt;p&gt;虽然 defer 是处理资源清理的好方法，但使用它时仍然需要注意。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+    for i := 0; i &amp;lt; 10; i++ {
+        defer fmt.Println(i)
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可能期望它在循环的每次迭代后立即输出，但实际上它会在函数返回时输出，并且顺序是反的。&lt;/p&gt;
+&lt;p&gt;解决： 理解 defer 的行为和用途，并仔细考虑何时使用它。&lt;/p&gt;
+&lt;h1 id=&#34;容易被忽视的零值&#34;&gt;容易被忽视的零值&lt;/h1&gt;
+&lt;p&gt;Go 的每种类型都有一个零值，例如，数值类型为 0，bool 类型为 false，string 为 &amp;ldquo;&amp;quot;。但这有时可能导致意外的行为，尤其是当结构体有复杂的嵌套时。&lt;/p&gt;
+&lt;p&gt;解决方法：在初始化结构时，明确指定所有期望的值，避免依赖零值。&lt;/p&gt;
+&lt;h1 id=&#34;指针和零值&#34;&gt;指针和零值&lt;/h1&gt;
+&lt;p&gt;指针的零值是 nil ，而不是指向零初始化的值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var p *int
+fmt.Println(*p) // 这会引发 panic，因为 p 是 nil，没有值可以解引用
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决： 始终确保指针已初始化并指向有效的内存地址。&lt;/p&gt;
+&lt;h1 id=&#34;在切片上的原位修改&#34;&gt;在切片上的原位修改&lt;/h1&gt;
+&lt;p&gt;切片其实是底层数组的一个视图。在一个切片上的修改可能影响其他引用相同底层数组的切片。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+    original := []int{1, 2, 3, 4, 5}
+    subset := original[1:4]
+    subset[0] = 9
+    fmt.Println(original) // 输出：[1 9 3 4 5]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：如果不想修改原始数据，要使用 copy 创建一个新的切片副本。&lt;/p&gt;
+&lt;h1 id=&#34;错误地使用接口类型&#34;&gt;错误地使用接口类型&lt;/h1&gt;
+&lt;p&gt;Go 中的接口是静态类型的，但它们可以持有任何值。很多新手尝试将接口值直接转换为另一种类型，而不是使用类型断言。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func MyFunc(a interface{}) {
+    str := a.(string)
+    fmt.Println(str)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;调用 MyFunc(123) 会引发panic。&lt;/p&gt;
+&lt;p&gt;解决：在使用类型断言前，要检查是否成功。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+    MyFunc(&amp;#34;123&amp;#34;)
+    MyFunc(123)
+}
+
+func MyFunc(a interface{}) {
+    str := a.(string)
+    fmt.Println(str)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;忽略goroutine泄漏&#34;&gt;忽略Goroutine泄漏&lt;/h1&gt;
+&lt;p&gt;Goroutines 是轻量级的，但它们并非完全没有成本。未正确终止的 Goroutines 会导致内存泄漏。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func leakyFunc() {
+    for {
+        go func() {
+            time.Sleep(time.Hour)
+        }()
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决： 确保为 Goroutines 设计合适的退出策略，例如使用 context 或 select 和 channel 机制。&lt;/p&gt;
+&lt;h1 id=&#34;没有初始化的结构体字段&#34;&gt;没有初始化的结构体字段&lt;/h1&gt;
+&lt;p&gt;在 Go 中，如果结构体的字段没有显式初始化，它们将被赋予零值。这可能导致意外的行为，尤其是当你期望它们有一个非零的默认值时。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Config struct {
+    Timeout time.Duration
+}
+
+c := Config{}
+fmt.Println(c.Timeout) // 输出：0s，可能不是你期望的默认超时值
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决： 创建返回正确初始化的结构体的工厂函数或构造函数。&lt;/p&gt;
+&lt;h1 id=&#34;忽略channel的返回值&#34;&gt;忽略channel的返回值&lt;/h1&gt;
+&lt;p&gt;当从已关闭的 channel 读取时，你将接收该类型的零值，而不会得到任何明确的“channel 已关闭”的错误。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ch := make(chan int)
+close(ch)
+val := &amp;lt;-ch
+fmt.Println(val) // 输出：0，可能误导你认为 channel 传递了一个 0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决： 使用两个返回值的形式来检查 channel 是否已关闭：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;val, ok := &amp;lt;-ch
+if !ok {
+    fmt.Println(&amp;#34;Channel is closed&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+	ch := make(chan int)
+	close(ch)
+	val := &amp;lt;-ch
+	fmt.Println(val) // 输出：0，可能误导你认为 channel 传递了一个 0
+
+	ch1 := make(chan int)
+	close(ch1)
+	val1, ok := &amp;lt;-ch
+	if !ok {
+		fmt.Println(&amp;#34;Channel is closed&amp;#34;) // 检查 channel 是否已关闭
+	} else {
+		fmt.Println(val1) // 输出正确的值
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;非法的字符串操作&#34;&gt;非法的字符串操作&lt;/h1&gt;
+&lt;p&gt;Go 的字符串是不可变的，尝试修改字符串会导致编译错误。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;str := &amp;#34;hello&amp;#34;
+str[0] = &amp;#39;H&amp;#39; // 编译错误
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决： 使用切片和 string 转换函数来实现字符串的变化。&lt;/p&gt;
+&lt;h1 id=&#34;range循环的陷阱&#34;&gt;range循环的陷阱&lt;/h1&gt;
+&lt;p&gt;在 for … range 循环中，范围变量的值在每次迭代中都会被重用，这可能会导致意外的闭包行为。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+    funcs := []func(){}
+    for _, val := range []int{1, 2, 3} {
+        funcs = append(funcs, func() {
+            fmt.Println(val)
+        })
+    }
+    for _, f := range funcs {
+        f() // 会三次打印 3，而不是 1, 2, 3
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;正确的写法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+    funcs := []func(){}
+    for _, val := range []int{1, 2, 3} {
+        v := val
+        funcs = append(funcs, func() {
+            fmt.Println(v)
+        })
+    }
+
+    for _, f := range funcs {
+        f() // 会三次打印 3，而不是 1, 2, 3
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决： 在循环体内部为范围变量创建一个新的局部变量。&lt;/p&gt;
+&lt;h1 id=&#34;对nil切片和nil-map的误解&#34;&gt;对nil切片和nil map的误解&lt;/h1&gt;
+&lt;p&gt;虽然 nil 切片和 nil map 都表示“没有元素”的集合，但它们在使用时的行为是不同的。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var s []int
+var m map[string]int
+
+s = append(s, 1) // 正确的，你可以 append 到 nil 切片
+m[&amp;#34;key&amp;#34;] = 1     // 运行时 panic，不能直接赋值给 nil map
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决：在使用 map 之前，确保使用 make 初始化它。&lt;/p&gt;
+&lt;h1 id=&#34;小心map并发访问&#34;&gt;小心map并发访问&lt;/h1&gt;
+&lt;p&gt;Go的map不是并发安全的，多个goroutine同时读写map时可能导致运行时错误。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+import &amp;#34;sync&amp;#34;
+
+func main() {
+    m := make(map[string]int)
+    wg := sync.WaitGroup{}
+
+
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+
+        m[&amp;#34;key&amp;#34;] = 1
+        fmt.Printf(&amp;#34;1: %v \n&amp;#34;,m)
+    }()
+
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+
+        m[&amp;#34;key&amp;#34;] = 2
+        fmt.Printf(&amp;#34;2: %v \n&amp;#34;,m)
+    }()
+
+    wg.Wait()
+
+    fmt.Println(m)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2: map[key:2] 
+1: map[key:1] 
+map[key:1]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决：使用互斥锁（如：sync.Mutex）来同步对map的访问，或考虑使用并发安全的数据结构，如 sync.Map 。&lt;/p&gt;
+&lt;h1 id=&#34;方法和指针接收者&#34;&gt;方法和指针接收者&lt;/h1&gt;
+&lt;p&gt;当定义方法时，区分值接收者和指针接收者是很重要的，特别是当你想修改接收者中的值时。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Counter struct {
+	count int
+}
+
+func (c Counter) Add() {
+	c.count++
+}
+
+func (c *Counter) AddPtr() {
+	c.count++
+}
+func main() {
+
+	counter := Counter{}
+	counter.Add()
+	fmt.Println(counter.count) // 输出 0，因为 Add() 没有改变原值
+
+	counter.AddPtr()
+	fmt.Println(counter.count) // 输出 1，因为 AddPtr() 修改了原值
+}
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
     
     <item>
       <title>Go中的JSON序列化与反序列化</title>
@@ -730,1559 +1564,6 @@ strconv.AppendInt(buf, 123, 10)
 &lt;p&gt;这俩实现了Go字符串语法与strcov字符串转换之间的转化，用于在字符串周围添加或移除引号，对于处理字符串中的特殊字符、转义序列和字符串字面值很有用。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;strconv.Unquote(`&amp;#34;Hello&amp;#34;`) // Hello
 &lt;/code&gt;&lt;/pre&gt;</description>
-    </item>
-    
-    <item>
-      <title>const&#43;iota枚举最佳方式</title>
-      <link>https://tinklespring.com/posts/const&#43;iota%E6%9E%9A%E4%B8%BE%E6%9C%80%E4%BD%B3%E6%96%B9%E5%BC%8F/</link>
-      <pubDate>Mon, 28 Aug 2023 13:42:33 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/const&#43;iota%E6%9E%9A%E4%B8%BE%E6%9C%80%E4%BD%B3%E6%96%B9%E5%BC%8F/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;Go中没有直接的枚举类型，但可以通过conts和iota来模拟枚举。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;传统的枚举实现&#34;&gt;传统的枚举实现&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
-	Sunday = 0
-	Monday = 1
-	Tuesday = 2
-	Wednesday = 3
-	Thursday = 4
-	Friday = 5
-	Saturday = 6
-)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这种方式不直观，可读性差。&lt;/p&gt;
-&lt;h1 id=&#34;使用iota实现枚举&#34;&gt;使用iota实现枚举&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
-	Sunday = iota
-	Monday
-	Tuesday
-	Wednesday
-	Thursday
-	Friday
-	Saturday
-)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;iota会自动累加生成序列常量，这种方式很直观。&lt;/p&gt;
-&lt;h1 id=&#34;值iota自动填充&#34;&gt;值iota自动填充&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
-	_ = iota
-	Sunday  //1
-	_
-	Tuesday  //3
-)
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;自定义iota起始值&#34;&gt;自定义iota起始值&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
-	StartAt = iota + 1  //1
-	Sunday  //2
-	Monday  //3
-)
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;多个iota定义&#34;&gt;多个iota定义&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
-	A = iota  //0
-	B         //1
-	C = iota  //2
-	D         //3
-)
-&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
-	A = iota // 0
-	B        // 1
-)
-
-const (
-	C = iota // 0 (因为新的const块，iota重新开始计数)
-	D        // 1
-)
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;位运算模拟位掩码&#34;&gt;位运算模拟位掩码&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
-  Read = 1 &amp;lt;&amp;lt; iota // 1
-  Write            // 2
-  Execute          // 4 
-)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;iota 初始值是 0，然后它被位移操作符 &amp;laquo; 逐渐左移一位，即 1 &amp;laquo; 0、1 &amp;laquo; 1、1 &amp;laquo; 2 等。这会使得 Read 的值为 1、Write 的值为 2，而 Execute 的值会是 4。&lt;/p&gt;
-&lt;p&gt;具体来说：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Read 对应的二进制是 001，左移 0 位，值为 1。&lt;/li&gt;
-&lt;li&gt;Write 对应的二进制是 010，左移 1 位，值为 2。&lt;/li&gt;
-&lt;li&gt;Execute 对应的二进制是 100，左移 2 位，值为 4。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&#34;字符串类型枚举&#34;&gt;字符串类型枚举&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
-  Unknown = &amp;#34;UNKNOWN&amp;#34;
-  Male = &amp;#34;MALE&amp;#34;
-  Female = &amp;#34;FEMALE&amp;#34;
-)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go中，iota 用于自动递增生成常量序列的枚举器，只能用于整数类型，如果想对字符串枚举，不能使用 iota。&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>15.泛型</title>
-      <link>https://tinklespring.com/posts/15.%E6%B3%9B%E5%9E%8B/</link>
-      <pubDate>Thu, 24 Aug 2023 08:17:30 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/15.%E6%B3%9B%E5%9E%8B/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;2022年3月15日，泛型终于在Go1.18发布～&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;函数的行参和实参&#34;&gt;函数的行参和实参&lt;/h1&gt;
-&lt;p&gt;假设有个计算两数之和的函数：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func Add(a int, b int) int {
-	return a + b
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这个函数比较简单，但是无法计算int类型之外的和，如果想计算浮点数或字符串的和怎么办？解决方式之一就是为不同的类型定义不同的函数：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func AddFloat32(a float32, b float32) float32 {
-	return a + b
-}
-func AddString(a string, b string) string {
-	return a + b
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;函数的&lt;code&gt;行参（parameter）&lt;/code&gt;和&lt;code&gt;实参（argument）&lt;/code&gt;：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func Add(a int, b int) int {
-	// 变量a，b是函数的行参；&amp;#34;a int, b int&amp;#34; 这一串被称为行参列表
-	return a + b
-}
-Add(100, 200) //调用函数时，传入的100和200是实参
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;函数的行参只是类似占位符实际并没有具体值，只有调用函数传入实参之后才有具体的值。&lt;/p&gt;
-&lt;p&gt;如果将行参、实参推广一下，给变量的类型也引入和类似行参的概念的话，问题就迎刃而解，给其命名为 &lt;code&gt;类型行参type parameter&lt;/code&gt;和&lt;code&gt;类型实参type argument&lt;/code&gt;：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//假设T是类型行参，在定义函数时其类型不确定，类似占位符
-func Add(a T, b T) T {
-	return a + b
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上述伪代码中，T被称为类型行参，不是具体的类型，因为T类型不确定，所以需要像函数行参那样，在调用函数时传入具体类型，这样一个函数就能同时支持多个不同的类型，这里被传入的具体类型称为类型实参。&lt;br&gt;
-再写一段伪代码：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//[T=int]中的int是类型实参，代表Add()函数中定义的类型行参T全都被int替换
-Add[T=int](100, 200)
-//传入类型实参int后，Add()函数的定义可近似堪称如下这样：
-func Add(a int, b int) int {
-	return a + b
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;另一个例子，当想要计算两个字符串之和时，就传入string类型实参：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Add[T=string](&amp;#34;hello&amp;#34;, &amp;#34;world&amp;#34;)
-//了行实参string传入后，Add()定义近似如下：
-func Add(a string, b string) string {
-	return a + b
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;通过引入类型行参和类型实参两个概念，让函数获得了处理多种不同类型数据的能力，这种编程方式称为&lt;code&gt;泛型编程&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;虽然Go的 接口+反射 也能实现这样的动态数据处理，但是反射的问题：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;用起来比较麻烦&lt;/li&gt;
-&lt;li&gt;失去了编译时的类型检查，容易写错&lt;/li&gt;
-&lt;li&gt;性能差&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;泛型的适用场景：&lt;br&gt;
-&lt;code&gt;如果经常要分别为不同的类型编写完全相同逻辑的代码，那么泛型是最佳选择。&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;go的泛型&#34;&gt;Go的泛型&lt;/h1&gt;
-&lt;p&gt;Go引入了全新的概念实现泛型编程：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;类型行参（type parameter）&lt;/li&gt;
-&lt;li&gt;类型实参（type argument）&lt;/li&gt;
-&lt;li&gt;类型行参列表（type parameter list）&lt;/li&gt;
-&lt;li&gt;类型约束（type constraint）&lt;/li&gt;
-&lt;li&gt;实例化（instantiations）&lt;/li&gt;
-&lt;li&gt;泛型类型（generic type）&lt;/li&gt;
-&lt;li&gt;泛型接收器（generic receiver）&lt;/li&gt;
-&lt;li&gt;泛型函数（generic function）&lt;/li&gt;
-&lt;li&gt;&amp;hellip;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&#34;类型行参类型实参类型约束和泛型类型&#34;&gt;类型行参、类型实参、类型约束和泛型类型&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Slice[T int|float32|float64] []T
-&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;T&lt;/code&gt;就是 类型行参 ，在定义Slice类型的时候T代表的具体类型并不确定，类似一个占位符&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;int|float32|float64&lt;/code&gt;这部分被称为 类型约束 ，中间的 &lt;code&gt;|&lt;/code&gt; 意思是告诉编译器，类型行参 T 只可以接收 int 或 float32 或 float64 这三种类型实参&lt;/li&gt;
-&lt;li&gt;中括号里的 &lt;code&gt;T int|float32|float64&lt;/code&gt; 这一整串定义所有类型的行参，所以称其为 类型行参列表&lt;/li&gt;
-&lt;li&gt;新定义的类型名称为 &lt;code&gt;Slice[T]&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;这种类型定义的方式中带了类型行参，与普通的类型定义不一样，称这种类型定义中带 类型行参 的类型，叫 &lt;code&gt;泛型类型 generic type&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;泛型类型不能直接使用，必须传入 类型实参 将其确定为具体的类型后才能使用。传入类型实参确定具体类型的操作被称为 &lt;code&gt;实例化&lt;/code&gt;&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//传入类型实参int，泛型类型Slice[T]被实例化为具体的类型 Slice[int]
-var a Slice[int] = []int{1, 2, 3}
-fmt.Printf(&amp;#34;Type Name: %T&amp;#34;, a)   //输出：Type Name: Slice[int]
-
-//传入类型实参float32，将泛型类型Slice[T]实例化为具体的类型 Slice[float32]
-var b Slice[float32] = []float32{1.0, 2.0, 3.0}
-fmt.Printf(&amp;#34;Type Name: %T&amp;#34;, b)  //输出：Type Name: Slice[float32]
-
-//下面错误，a类型为Slice[int]，b类型为Slice[float32]，不同类型之间的变量赋值不允许
-a = b
-
-//下面错误，Slice[T]是泛型类型，不可直接使用必须实例化为具体类型
-var x Slice[T] = []int{1, 2, 3}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;map类型示例：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// MyMap类型定义了两个类型形参 KEY 和 VALUE。分别为两个形参指定了不同的类型约束
-// 这个泛型类型的名字叫： MyMap[KEY, VALUE]
-type MyMap[KEY int | string, VALUE float32 | float64] map[KEY]VALUE  
-
-// 用类型实参 string 和 flaot64 替换了类型形参 KEY 、 VALUE，泛型类型被实例化为具体的类型：MyMap[string, float64]
-var a MyMap[string, float64] = map[string]float64 {
-    &amp;#34;jack_score&amp;#34;: 9.6,
-    &amp;#34;bob_score&amp;#34;:  8.4,
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
-&lt;li&gt;KEY和VALUE是类型行参&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;int | string&lt;/code&gt;是KEY的类型约束，&lt;code&gt;float32 | float64&lt;/code&gt;是VALUE的类型约束&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;KEY int | string, VALUE float32&lt;/code&gt;是类型约束列表&lt;/li&gt;
-&lt;li&gt;MyMap[KEY, VALUE] 是泛型类型，类型的名字就叫MyMap[KEY, VALUE]&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;var a MyMap[string, float64] = map[string]float64&lt;/code&gt;中的string和float64是类型实参，分别用于替换 KEY 和 VALUE，实例化出了具体的类型 MyMap[string, float32]&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h4 id=&#34;其他泛型类型&#34;&gt;其他泛型类型&lt;/h4&gt;
-&lt;p&gt;所有类型定义都可使用类型行参，下面这种结构体及接口定义也可以使用类型行参：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//一个泛型类型的结构体，可用 int 或 string 类型实例化
-type MyStruct[T int | string] struct {
-	Name string
-	Data T
-}
-//一个泛型接口
-type IPrintData[T int | float32 | string] interface {
-	Print(data T)
-}
-//一个泛型channel，可用类型实参 int 或 string 实例化
-type MyChan[T int | string] chan T
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;类型行参相互套用&#34;&gt;类型行参相互套用&lt;/h4&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type WowStruct[T int | float32, S []T] struct {
-    Data     S
-    MaxValue T
-    MinValue T
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上述代码有点复杂且难懂，只要记住：&lt;code&gt;任何泛型类型都必须传入类型实参实例化才可以使用&lt;/code&gt;。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//泛型类型 WowStruct[T, S] 被实例化后的类型名字叫 WowStruct[int, []int]
-var ws WowStruct[int, []int]
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面为T传入了实参int，然后因为S的定义是 []T，所以S的实参是 []int，经过实例化后， WowStruct[T, S] 的定义类型如下：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//一个存储int类型切片，以及切片中最大、最小值的结构体
-type WowStruct[int, []int] struct {
-	Data     []int
-	MaxValue int
-	MinValue int
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;因为S定义是 []T，所以T一旦确定，S实参就不能随意传，如下代码是错误的：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//错误，S定义是[]T，这里T传入了实参int，所以S实参应当为 []int 而不是[]float32
-ws := WowStruct[int, []float32]{
-        Data:     []float32{1.0, 2.0, 3.0},
-        MaxValue: 3,
-        MinValue: 1,
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;语法使用&#34;&gt;语法使用&lt;/h4&gt;
-&lt;p&gt;1.定义泛型的时候，&lt;strong&gt;基础类型不能只有类型行参&lt;/strong&gt;：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//错误，类型行参不能单独使用
-type CommonType[T int|string|float32] T
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;2.类型约束正确写法是，给类型约束包上&lt;code&gt;interface{}&lt;/code&gt;：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type NewType[T interface{*int}] []T
-type NewType2[T interface{*int|*float64}] []T 
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;特殊的泛型类型&#34;&gt;特殊的泛型类型&lt;/h4&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Wow[T int | string] int
-
-var a Wow[int] = 123     // 编译正确
-var b Wow[string] = 123  // 编译正确
-var c Wow[string] = &amp;#34;hello&amp;#34; // 编译错误，因为&amp;#34;hello&amp;#34;不能赋值给底层类型int
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;虽然使用了类型行参，但因为类型定义是 &lt;code&gt;type Wow[T int | string] int&lt;/code&gt;，所以无论传入什么类型实参，实例化后的新类型的底层类型都是int。&lt;/p&gt;
-&lt;h4 id=&#34;泛型类型的嵌套&#34;&gt;泛型类型的嵌套&lt;/h4&gt;
-&lt;p&gt;泛型和普通的类型一样，可以互相嵌套定义出更加复杂的新类型。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 先定义个泛型类型 Slice[T]
-type Slice[T int|string|float32|float64] []T
-
-// ✗ 错误。泛型类型Slice[T]的类型约束中不包含uint, uint8
-type UintSlice[T uint|uint8] Slice[T]  
-
-// ✓ 正确。基于泛型类型Slice[T]定义了新的泛型类型 FloatSlice[T] 。FloatSlice[T]只接受float32和float64两种类型
-type FloatSlice[T float32|float64] Slice[T] 
-
-// ✓ 正确。基于泛型类型Slice[T]定义的新泛型类型 IntAndStringSlice[T]
-type IntAndStringSlice[T int|string] Slice[T]  
-// ✓ 正确 基于IntAndStringSlice[T]套娃定义出的新泛型类型
-type IntSlice[T int] IntAndStringSlice[T] 
-
-// 在map中套一个泛型类型Slice[T]
-type WowMap[T int|string] map[string]Slice[T]
-// 在map中套Slice[T]的另一种写法
-type WowMap2[T Slice[int] | Slice[string]] map[string]T
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;类型约束的两种选择&#34;&gt;类型约束的两种选择&lt;/h4&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type WowStruct[T int|string] struct {
-    Name string
-    Data []T
-}
-
-type WowStruct2[T []int|[]string] struct {
-    Name string
-    Data T
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这两种写法与实现的功能差不多，实例化之后结构体相同，但像下面这种情况，这样写会更好：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type WowStruct3[T int | string] struct {
-    Data     []T
-    MaxValue T
-    MinValue T
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;匿名结构体不支持泛型&#34;&gt;匿名结构体不支持泛型&lt;/h4&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;testCase := struct {
-        caseName string
-        got      int
-        want     int
-    }{
-        caseName: &amp;#34;test OK&amp;#34;,
-        got:      100,
-        want:     100,
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在定义好匿名结构体后，直接初始化。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;匿名结构体不能使用泛型&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;泛型receiver&#34;&gt;泛型receiver&lt;/h1&gt;
-&lt;p&gt;定义了新的普通类型后可以给类型添加方法，可以给泛型类型添加方法：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MySlice[T int | float32] []T
-
-func (s MySlice[T]) Sum() T {
-    var sum T
-    for _, value := range s {
-        sum += value
-    }
-    return sum
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
-&lt;li&gt;首先&lt;code&gt;s MySlice[T]&lt;/code&gt;，所以直接把类型名称 &lt;code&gt;MySlice[T]&lt;/code&gt; 写入了receiver中&lt;/li&gt;
-&lt;li&gt;方法的返回参数使用了类型行参T（若有需要，方法的接收参数也可以使用类型行参）&lt;/li&gt;
-&lt;li&gt;在方法定义中，也可以使用类型行参T（通过 &lt;code&gt;var sum T&lt;/code&gt;定义一个新的变量 sum）&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;code&gt;MySlice[T]&lt;/code&gt;这个泛型类型如何用呢？泛型类型无论如何都需要首先进行类型实参实例化：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var s MySlice[int] = []int{1, 2, 3, 4}
-fmt.Println(s.Sum()) // 输出：10
-
-var s2 MySlice[float32] = []float32{1.0, 2.0, 3.0, 4.0}
-fmt.Println(s2.Sum()) // 输出：10.0
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;首先用类型实参int实例化了泛型类型&lt;code&gt;MySlice[T]&lt;/code&gt;，所以泛型类型定义中的所有 T 都被替换成 int，最终可以把代码看作这样：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MySlice[int] []int // 实例化后的类型名叫 MyIntSlice[int]
-
-// 方法中所有类型形参 T 都被替换为类型实参 int
-func (s MySlice[int]) Sum() int {
-    var sum int 
-    for _, value := range s {
-        sum += value
-    }
-    return sum
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;通过泛型receiver，泛型实用性得到了扩展，没有泛型之前，想实现通用的数据结构，比如：堆、栈、队列、链表之类，只有两个选择：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;为每种类型写一个实现&lt;/li&gt;
-&lt;li&gt;使用 接口+反射&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;有了泛型后，就能很简单创建通用数据结构。&lt;/p&gt;
-&lt;h4 id=&#34;基于泛型的队列&#34;&gt;基于泛型的队列&lt;/h4&gt;
-&lt;p&gt;队列是一种先入先出的数据结构，和现实中排队一样，数据只能从队尾放入，从队首取出。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 这里类型约束使用了空接口，代表的意思是所有类型都可以用来实例化泛型类型 Queue[T]
-type Queue[T interface{}] struct {
-    elements []T
-}
-
-// 将数据放入队列尾部
-func (q *Queue[T]) Put(value T) {
-    q.elements = append(q.elements, value)
-}
-
-// 从队列头部取出并从头部删除对应数据
-func (q *Queue[T]) Pop() (T, bool) {
-    var value T
-    if len(q.elements) == 0 {
-        return value, true
-    }
-
-    value = q.elements[0]
-    q.elements = q.elements[1:]
-    return value, len(q.elements) == 0
-}
-
-// 队列大小
-func (q Queue[T]) Size() int {
-    return len(q.elements)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Queue[T] 是泛型类型，要使用必须实例化，实例化与使用方式：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var q1 Queue[int]  // 可存放int类型数据的队列
-q1.Put(1)
-q1.Put(2)
-q1.Put(3)
-q1.Pop() // 1
-q1.Pop() // 2
-q1.Pop() // 3
-
-var q2 Queue[string]  // 可存放string类型数据的队列
-q2.Put(&amp;#34;A&amp;#34;)
-q2.Put(&amp;#34;B&amp;#34;)
-q2.Put(&amp;#34;C&amp;#34;)
-q2.Pop() // &amp;#34;A&amp;#34;
-q2.Pop() // &amp;#34;B&amp;#34;
-q2.Pop() // &amp;#34;C&amp;#34;
-
-var q3 Queue[struct{Name string}] 
-var q4 Queue[[]int] // 可存放[]int切片的队列
-var q5 Queue[chan int] // 可存放int通道的队列
-var q6 Queue[io.Reader] // 可存放接口的队列
-// ......
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;动态判断变量类型&#34;&gt;动态判断变量类型&lt;/h4&gt;
-&lt;p&gt;使用接口时经常会用到类型断言或type switch 来确定接口具体类型，然后对不同类型做不同处理：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var i interface{} = 123
-i.(int) // 类型断言
-
-// type switch
-switch i.(type) {
-    case int:
-        // do something
-    case string:
-        // do something
-    default:
-        // do something
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;对于 &lt;code&gt;value T&lt;/code&gt; 这样通过类型行参定义的变量，不允许判断具体类型然后对不同类型做出不同处理：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (q *Queue[T]) Put(value T) {
-    value.(int) // 错误。泛型类型定义的变量不能使用类型断言
-
-    // 错误。不允许使用type switch 来判断 value 的具体类型
-    switch value.(type) {
-    case int:
-        // do something
-    case string:
-        // do something
-    default:
-        // do something
-    }
-    
-    // ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;虽然type switch和类型断言不能用，但可以通过反射实现：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (receiver Queue[T]) Put(value T) {
-    // Printf() 可输出变量value的类型(底层就是通过反射实现的)
-    fmt.Printf(&amp;#34;%T&amp;#34;, value) 
-
-    // 通过反射可以动态获得变量value的类型从而分情况处理
-    v := reflect.ValueOf(value)
-
-    switch v.Kind() {
-    case reflect.Int:
-        // do something
-    case reflect.String:
-        // do something
-    }
-
-    // ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;为了避免使用反射而选择泛型，结果为了一些功能在泛型中使用反射。当出现这种情况需要重新思考，需求是不是真的要用泛型。&lt;/p&gt;
-&lt;h1 id=&#34;泛型函数&#34;&gt;泛型函数&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func Add[T int | float32 | float64](a T, b T) T {
-    return a + b
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;带类型行参的函数称为&lt;code&gt;泛型函数&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;与泛型类型一样，泛型函数不能直接调用，要使用泛型函数必须传入类型实参。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Add[int](1,2) // 传入类型实参int，计算结果为 3
-Add[float32](1.0, 2.0) // 传入类型实参float32, 计算结果为 3.0
-
-Add[string](&amp;#34;hello&amp;#34;, &amp;#34;world&amp;#34;) // 错误。因为泛型函数Add的类型约束中并不包含string
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go也支持类型实参自动推导，这是编译器帮助推导了类型实参，实际上传入实参步骤还是实际发生的。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Add(1, 2)  // 1，2是int类型，编译请自动推导出类型实参T是int
-Add(1.0, 2.0) // 1.0, 2.0 是浮点，编译请自动推导出类型实参T是float32
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;匿名函数不支持泛型&#34;&gt;匿名函数不支持泛型&lt;/h4&gt;
-&lt;p&gt;匿名函数：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn := func(a, b int) int {
-    return a + b 
-}  // 定义了一个匿名函数并赋值给 fn 
-
-fmt.Println(fn(1, 2)) // 输出: 3
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;匿名函数不能自己定义类型行参.&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 错误，匿名函数不能自己定义类型实参
-fnGeneric := func[T int | float32](a, b T) T {
-        return a + b
-} 
-
-fmt.Println(fnGeneric(1, 2))
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是匿名函数可以使用已经定义好的类型实参：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func MyFunc[T int | float32 | float64](a, b T) {
-
-    // 匿名函数可使用已经定义好的类型形参
-    fn2 := func(i T, j T) T {
-        return i*2 - j*2
-    }
-
-    fn2(a, b)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;泛型方法&#34;&gt;泛型方法&lt;/h4&gt;
-&lt;p&gt;目前Go的方法不支持泛型。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type A struct {
-}
-
-// 不支持泛型方法
-func (receiver A) Add[T int | float32 | float64](a T, b T) T {
-    return a + b
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是因为receiver支持泛型：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type A[T int | float32 | float64] struct {
-}
-
-// 方法可以使用类型定义中的形参 T 
-func (receiver A[T]) Add(a T, b T) T {
-    return a + b
-}
-
-// 用法：
-var a A[int]
-a.Add(1, 2)
-
-var aa A[float32]
-aa.Add(1.0, 2.0)
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;小结&#34;&gt;小结&lt;/h1&gt;
-&lt;p&gt;Go泛型（类型行参）目前可使用在3个地方：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;泛型类型 - 类型定义中带类型行参的类型&lt;/li&gt;
-&lt;li&gt;泛型receiver - 泛型类型的receiver&lt;/li&gt;
-&lt;li&gt;泛型函数 - 带类型行参的函数&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;为实现泛型，Go引入新概念：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;类型行参&lt;/li&gt;
-&lt;li&gt;类型行参列表&lt;/li&gt;
-&lt;li&gt;类型实参&lt;/li&gt;
-&lt;li&gt;类型约束&lt;/li&gt;
-&lt;li&gt;实例化 - 泛型类型不能直接使用，必须传入类型实参进行实例化&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&#34;变得复杂的接口&#34;&gt;变得复杂的接口&lt;/h1&gt;
-&lt;p&gt;有时使用泛型时，可能会写很长的类型约束，但是Go支持将类型约束单独拿出来定义到接口中，让代码更好看：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type IntUintFloat interface {
-    int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64 | float32 | float64
-}
-
-type Slice[T IntUintFloat] []T
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这段代码把类型约束给单独拿出来，写入了接口类型 IntUintFloat 当中。需要指定类型约束的时候直接使用接口 IntUintFloat 即可。&lt;/p&gt;
-&lt;p&gt;接口和接口、接口和普通类型之间也是可以通过 &lt;code&gt;|&lt;/code&gt; 进行组合：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Int interface {
-    int | int8 | int16 | int32 | int64
-}
-
-type Uint interface {
-    uint | uint8 | uint16 | uint32
-}
-
-type Float interface {
-    float32 | float64
-}
-
-type Slice[T Int | Uint | Float] []T  // 使用 &amp;#39;|&amp;#39; 将多个接口类型组合
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在接口里也能直接组合其他接口：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type SliceElement interface {
-    Int | Uint | Float | string // 组合了三个接口类型并额外增加了一个 string 类型
-}
-
-type Slice[T SliceElement] []T 
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;指定底层类型&#34;&gt;指定底层类型&lt;/h4&gt;
-&lt;p&gt;&lt;code&gt;~&lt;/code&gt;:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Int interface {
-    ~int | ~int8 | ~int16 | ~int32 | ~int64
-}
-
-type Uint interface {
-    ~uint | ~uint8 | ~uint16 | ~uint32
-}
-type Float interface {
-    ~float32 | ~float64
-}
-
-type Slice[T Int | Uint | Float] []T 
-
-var s Slice[int] // 正确
-
-type MyInt int
-var s2 Slice[MyInt]  // MyInt底层类型是int，所以可以用于实例化
-
-type MyMyInt MyInt
-var s3 Slice[MyMyInt]  // 正确。MyMyInt 虽然基于 MyInt ，但底层类型也是int，所以也能用于实例化
-
-type MyFloat32 float32  // 正确
-var s4 Slice[MyFloat32]
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用 &lt;code&gt;~&lt;/code&gt; 的限制：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;~&lt;/code&gt; 后面类型不能为接口&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;~&lt;/code&gt; 后面类型必须为基本类型&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyInt int
-
-type _ interface {
-    ~[]byte  // 正确
-    ~MyInt   // 错误，~后的类型必须为基本类型
-    ~error   // 错误，~后的类型不能为接口
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;从方法集到类型集&#34;&gt;从方法集到类型集&lt;/h4&gt;
-&lt;p&gt;Go1.18后，接口定义：An interface type defines a type set&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Float interface {
-    ~float32 | ~float64
-}
-
-type Slice[T Float] []T 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;接口类型Float代表了一个 类型集合，所有以 float32 或 float64 为底层类型的类型，都在这一类型集中。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;type Slice[T Float] []T&lt;/code&gt;中，类型约束真正的意思是：&lt;strong&gt;类型约束&lt;/strong&gt;指定了类型行参可接受的类型集合，只有属于这个集合中的类型才能替换行参用于实例化。&lt;/p&gt;
-&lt;h4 id=&#34;接口实现定义的变化&#34;&gt;接口实现定义的变化&lt;/h4&gt;
-&lt;p&gt;&lt;code&gt;接口实现implement&lt;/code&gt;：&lt;br&gt;
-当满足以下条件时，可以说&lt;strong&gt;类型T实现了接口I&lt;/strong&gt;：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;T不是接口时：类型T是接口I代表的类型集中的一个成员&lt;/li&gt;
-&lt;li&gt;T是接口时，T接口代表的类型集是I代表的类型集的子集&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h4 id=&#34;类型的并集&#34;&gt;类型的并集&lt;/h4&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Uint interface {  // 类型集 Uint 是 ~uint 和 ~uint8 等类型的并集
-    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;类型的交集&#34;&gt;类型的交集&lt;/h4&gt;
-&lt;p&gt;如果一个接口有多行类型定义，那么取它们之间的交集。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type AllInt interface {
-    ~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint32
-}
-
-type Uint interface {
-    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
-}
-
-type A interface { // 接口A代表的类型集是 AllInt 和 Uint 的交集
-    AllInt
-    Uint
-}
-
-type B interface { // 接口B代表的类型集是 AllInt 和 ~int 的交集
-    AllInt
-    ~int
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
-&lt;li&gt;接口A代表的是AllInt 与 Uint 的 交集，即 ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64&lt;/li&gt;
-&lt;li&gt;接口 B 代表的则是 AllInt 和 ~int 的交集，即 ~int&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;还有一种交集：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type C interface {
-    ~int
-    int
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;~int 和int 交集只有 int 一种类型。&lt;/p&gt;
-&lt;h4 id=&#34;空集&#34;&gt;空集&lt;/h4&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Bad interface {
-    int
-    float32 
-} // 类型 int 和 float32 没有相交的类型，所以接口 Bad 代表的类型集为空
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Bad这个接口代表的类型集为一个空集。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;没有一种类型属于空集&lt;/strong&gt;&lt;/p&gt;
-&lt;h4 id=&#34;空接口和any&#34;&gt;空接口和any&lt;/h4&gt;
-&lt;p&gt;&lt;code&gt;空接口代表了所有类型的集合&lt;/code&gt;&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;虽然空接口内没有写入任何的类型，但它代表的是所有类型的集合，而非一个 空集&lt;/li&gt;
-&lt;li&gt;类型约束中指定 空接口 的意思是指定了一个包含所有类型的类型集，并不是类型约束限定了只能使用 空接口 来做类型形参&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 空接口代表所有类型的集合。写入类型约束意味着所有类型都可拿来做类型实参
-type Slice[T interface{}] []T
-
-var s1 Slice[int]    // 正确
-var s2 Slice[map[string]string]  // 正确
-var s3 Slice[chan int]  // 正确
-var s4 Slice[interface{}]  // 正确
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go1.18开始提供了一个空接口 interface{} 等价的新关键词 &lt;code&gt;any&lt;/code&gt;：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Slice[T any] []T // 代码等价于 type Slice[T interface{}] []T
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go1.18开始，所有用到空接口的地方都可以直接替换为any：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var s []any // 等价于 var s []interface{}
-var m map[string]any // 等价于 var m map[string]interface{}
-
-func MyPrint(value any){
-    fmt.Println(value)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;事实上，Go源码中，any 实际上就是 interface{} 的别名:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type any = interface{}
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;comparable-和-ordered&#34;&gt;comparable 和 ordered&lt;/h4&gt;
-&lt;p&gt;Go内置了一个叫 &lt;code&gt;comparable&lt;/code&gt;的接口，代表了所有可用&lt;code&gt;!=&lt;/code&gt;和&lt;code&gt;==&lt;/code&gt;对比的类型：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyMap[KEY comparable, VALUE any] map[KEY]VALUE // 正确
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;comparable&lt;/code&gt;可比较指的是可以执行&lt;code&gt;!=&lt;/code&gt;和&lt;code&gt;==&lt;/code&gt;操作的类型，并不是这个类型可以执行大小比较&lt;code&gt;&amp;gt;,&amp;lt;,&amp;lt;=,&amp;gt;=&lt;/code&gt;：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type OhMyStruct struct {
-    a int
-}
-
-var a, b OhMyStruct
-
-a == b // 正确。结构体可使用 == 进行比较
-a != b // 正确
-
-a &amp;gt; b // 错误。结构体不可比大小
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可进行大小比较的类型称为&lt;code&gt;ordered&lt;/code&gt; ，Go没有内置它，想用的话，需要自己来定义：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Ordered 代表所有可比大小排序的类型
-type Ordered interface {
-    Integer | Float | ~string
-}
-
-type Integer interface {
-    Signed | Unsigned
-}
-
-type Signed interface {
-    ~int | ~int8 | ~int16 | ~int32 | ~int64
-}
-
-type Unsigned interface {
-    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
-}
-
-type Float interface {
-    ~float32 | ~float64
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;虽然可以直接使用，但是属于实验，不推荐使用。&lt;/p&gt;
-&lt;h4 id=&#34;接口两种类型&#34;&gt;接口两种类型&lt;/h4&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type ReadWriter interface {
-    ~string | ~[]rune
-
-    Read(p []byte) (n int, err error)
-    Write(p []byte) (n int, err error)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;接口类型 ReadWriter 代表了一个类型集合，所有以 string 或 []rune 为底层类型，并且实现了 Read() Write() 这两个方法的类型都在 ReadWriter 代表的类型集当中.&lt;/p&gt;
-&lt;p&gt;当定义一个接口变量时，不光要考虑方法的实现，还必须考虑具体底层类型，Go1.18开始将接口分为了两种类型：&lt;strong&gt;基本接口&lt;/strong&gt;和&lt;strong&gt;一般接口&lt;/strong&gt;&lt;/p&gt;
-&lt;h4 id=&#34;基本接口&#34;&gt;基本接口&lt;/h4&gt;
-&lt;p&gt;接口定义中如果只有方法，那么这种接口称为 &lt;strong&gt;基本接口&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;应用场景：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyError interface { // 接口中只有方法，所以是基本接口
-    Error() string
-}
-
-// 用法和 Go1.18之前保持一致
-var err MyError = fmt.Errorf(&amp;#34;hello world&amp;#34;)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;基本接口因为代表了一个类型集，所以也可以用在类型约束中。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// io.Reader 和 io.Writer 都是基本接口，也可以用在类型约束中
-type MySlice[T io.Reader | io.Writer]  []Slice
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;一般接口&#34;&gt;一般接口&lt;/h4&gt;
-&lt;p&gt;如果接口内不光有方法，还有类型的话，这种接口被称为&lt;strong&gt;一般接口&lt;/strong&gt;：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Uint interface { // 接口 Uint 中有类型，所以是一般接口
-    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
-}
-
-type ReadWriter interface {  // ReadWriter 接口既有方法也有类型，所以是一般接口
-    ~string | ~[]rune
-
-    Read(p []byte) (n int, err error)
-    Write(p []byte) (n int, err error)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;一般接口类型不能用来定义变量，只能用于泛型的类型约束中&lt;/strong&gt;：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Uint interface {
-    ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
-}
-
-var uintInf Uint // 错误。Uint是一般接口，只能用于类型约束，不得用于变量定义
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这个限制保证了一般接口的使用被限定在了泛型中，不会影响以前老版本的代码。&lt;/p&gt;
-&lt;h4 id=&#34;泛型接口&#34;&gt;泛型接口&lt;/h4&gt;
-&lt;p&gt;所有类型的定义都可以使用类型行参，所以接口定义也可以使用类型行参：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type DataProcessor[T any] interface {
-    Process(oriData T) (newData T)
-    Save(data T) error
-}
-
-type DataProcessor2[T any] interface {
-    int | ~struct{ Data interface{} }
-
-    Process(data T) (newData T)
-    Save(data T) error
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;因为引入了类型行参，所以这两个接口是泛型类型，&lt;strong&gt;泛型类型要使用必须传入类型实参实例化&lt;/strong&gt;，所以来尝试实例化一下：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;DataProcessor[string]
-
-// 实例化之后的接口定义相当于如下所示：
-type DataProcessor[string] interface {
-    Process(oriData string) (newData string)
-    Save(data string) error
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;实例化之后就好理解了，DataProcessor[string] 因为只有方法，所以它实际上是一个 基本接口 ， 这个接口包含两个能处理string类型的方法，下面这样实现了这两个能处理string类型的方法就算是实现了这个接口：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type CSVProcessor struct {
-}
-
-// 注意，方法中 oriData 等的类型是 string
-func (c CSVProcessor) Process(oriData string) (newData string) {
-    ....
-}
-
-func (c CSVProcessor) Save(oriData string) error {
-    ...
-}
-
-// CSVProcessor实现了接口 DataProcessor[string] ，所以可赋值
-var processor DataProcessor[string] = CSVProcessor{}  
-processor.Process(&amp;#34;name,age\nbob,12\njack,30&amp;#34;)
-processor.Save(&amp;#34;name,age\nbob,13\njack,31&amp;#34;)
-
-// 错误。CSVProcessor没有实现接口 DataProcessor[int]
-var processor2 DataProcessor[int] = CSVProcessor{}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;用同样的方式实例化 DataProcessor2[T] :&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;DataProcessor2[string]
-
-// 实例化后的接口定义可视为
-type DataProcessor2[T string] interface {
-    int | ~struct{ Data interface{} }
-
-    Process(data string) (newData string)
-    Save(data string) error
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;DataProcessor2[string] 因为带有类型并集所以它是 一般接口(General interface)，所以实例化之后的这个接口代表的意思是：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;只有实现了 Process(string) string 和 Save(string) error 这两个方法，并且以 int 或 struct{ Data interface{} } 为底层类型的类型才算实现了这个接口.&lt;/li&gt;
-&lt;li&gt;一般接口(General interface) 不能用于变量定义只能用于类型约束，所以接口 DataProcessor2[string] 只是定义了一个用于类型约束的类型集&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// XMLProcessor 虽然实现了接口 DataProcessor2[string] 的两个方法，但是因为它的底层类型是 []byte，所以依旧是未实现 DataProcessor2[string]
-type XMLProcessor []byte
-func (c XMLProcessor) Process(oriData string) (newData string) {
-}
-func (c XMLProcessor) Save(oriData string) error {
-}
-
-// JsonProcessor 实现了接口 DataProcessor2[string] 的两个方法，同时底层类型是 struct{ Data interface{} }。所以实现了接口 DataProcessor2[string]
-type JsonProcessor struct {
-    Data interface{}
-}
-func (c JsonProcessor) Process(oriData string) (newData string) {
-}
-func (c JsonProcessor) Save(oriData string) error {
-}
-
-// 错误。DataProcessor2[string]是一般接口不能用于创建变量
-var processor DataProcessor2[string]
-
-// 正确，实例化之后的 DataProcessor2[string] 可用于泛型的类型约束
-type ProcessorList[T DataProcessor2[string]] []T
-
-// 正确，接口可以并入其他接口
-type StringProcessor interface {
-    DataProcessor2[string]
-
-    PrintString()
-}
-
-// 错误，带方法的一般接口不能作为类型并集的成员
-type StringProcessor interface {
-    DataProcessor2[string] | DataProcessor2[[]byte]
-
-    PrintString()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;接口定义的限制&#34;&gt;接口定义的限制&lt;/h4&gt;
-&lt;p&gt;1.用&lt;code&gt;|&lt;/code&gt;连接多个类型的时候，类型之间不能有相交的部分(即必须是不交集):&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyInt int
-
-// 错误，MyInt的底层类型是int,和 ~int 有相交的部分
-type _ interface {
-    ~int | MyInt
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是相交的类型中是接口的话，则不受这一限制：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyInt int
-
-type _ interface {
-    ~int | interface{ MyInt }  // 正确
-}
-
-type _ interface {
-    interface{ ~int } | MyInt // 也正确
-}
-
-type _ interface {
-    interface{ ~int } | interface{ MyInt }  // 也正确
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;2.类型的并集中不能有类型形参&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyInf[T ~int | ~string] interface {
-    ~float32 | T  // 错误。T是类型形参
-}
-
-type MyInf2[T ~int | ~string] interface {
-    T  // 错误
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;3.接口不能直接或间接地并入自己&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Bad interface {
-    Bad // 错误，接口不能直接并入自己
-}
-
-type Bad2 interface {
-    Bad1
-}
-type Bad1 interface {
-    Bad2 // 错误，接口Bad1通过Bad2间接并入了自己
-}
-
-type Bad3 interface {
-    ~int | ~string | Bad3 // 错误，通过类型的并集并入了自己
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;4.接口的并集成员个数大于一的时候不能直接或间接并入 &lt;code&gt;comparable&lt;/code&gt; 接口&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type OK interface {
-    comparable // 正确。只有一个类型的时候可以使用 comparable
-}
-
-type Bad1 interface {
-    []int | comparable // 错误，类型并集不能直接并入 comparable 接口
-}
-
-type CmpInf interface {
-    comparable
-}
-type Bad2 interface {
-    chan int | CmpInf  // 错误，类型并集通过 CmpInf 间接并入了comparable
-}
-type Bad3 interface {
-    chan int | interface{comparable}  // 理所当然，这样也是不行的
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;5.带方法的接口（&lt;strong&gt;无论是基本接口还是一般接口&lt;/strong&gt;），都不能写入接口的并集中：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type _ interface {
-    ~int | ~string | error // 错误，error是带方法的接口(一般接口) 不能写入并集中
-}
-
-type DataProcessor[T any] interface {
-    ~string | ~[]byte
-
-    Process(data T) (newData T)
-    Save(data T) error
-}
-
-// 错误，实例化之后的 DataProcessor[string] 是带方法的一般接口，不能写入类型并集
-type _ interface {
-    ~int | ~string | DataProcessor[string] 
-}
-
-type Bad[T any] interface {
-    ~int | ~string | DataProcessor[T]  // 也不行
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;最后&#34;&gt;最后&lt;/h1&gt;
-&lt;p&gt;泛型并不取代Go1.18之前用接口+反射实现的动态类型，应用场景：当需要针对不同类型书写同样的逻辑，使用泛型来简化代码是最好的 (比如想写个队列，写个链表、栈、堆之类的数据结构）&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>14.其余的东东</title>
-      <link>https://tinklespring.com/posts/14.%E5%85%B6%E4%BD%99%E7%9A%84%E4%B8%9C%E4%B8%9C/</link>
-      <pubDate>Tue, 22 Aug 2023 18:47:20 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/14.%E5%85%B6%E4%BD%99%E7%9A%84%E4%B8%9C%E4%B8%9C/</guid>
-      <description>&lt;h1 id=&#34;if的初始化语句&#34;&gt;if的初始化语句&lt;/h1&gt;
-&lt;p&gt;有个saveString函数，返回一个error值（如没有错误，返回nil），在main函数中，可以在处理它之前将返回值存储在一个err变量中：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func saveString(fileName string, str string) error {
-	err := ioutil.WriteFile(fileName, []byte(str), 0600)
-	return err
-}
-
-func main() {
-	err := saveString(&amp;#34;hindi.txt&amp;#34;, &amp;#34;Namaste&amp;#34;)  //调用saveString并存储返回值
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;现在假设main中添加了另一个对saveString的调用，也使用了一个err变量，必须记住，在第一次使用err时使用一个短变量声明，以后更改为使用赋值，否则将得到一个编译错误。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-	err := saveString(&amp;#34;english.txt&amp;#34;, &amp;#34;Hello&amp;#34;)  //使用了名为 err 的变量
-	if err != nil {
-		log.Fatal(err)
-	}
-	err := saveString(&amp;#34;hindi.txt&amp;#34;, &amp;#34;Namaste&amp;#34;)  //如果忘记将原始代码从短变量声明转换为赋值，将报错
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;实际上，只是在if语句及其块中使用err变量，是否有一种方式可以限制变量的作用域，这样可以将每个事件当作一个单独的变量来处理呢？&lt;/p&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/14-%e5%85%b6%e4%bd%99%e7%9a%84%e4%b8%9c%e4%b8%9c/for%e5%be%aa%e7%8e%af.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;p&gt;for循环它们可以包含一个初始化语句，可以在这里使用初始化变量，这些变量只在for循环块的作用域内。&lt;/p&gt;
-&lt;p&gt;与for循环类似，Go允许在if语句中的条件之前添加初始化语句，初始化语句通常用于初始化一个或多个变量，以便在if块中使用。&lt;/p&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/14-%e5%85%b6%e4%bd%99%e7%9a%84%e4%b8%9c%e4%b8%9c/if%e5%be%aa%e7%8e%af.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if count := 5, count &amp;gt; 4 {
-	fmt.Println(&amp;#34;count is&amp;#34;, count)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;初始化语句中声明的变量的作用域仅限于if语句的条件表达式及其块。每个err变量被限制在if语句的条件和块中，将有两个独立的err变量，不用担心报错。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if err := saveString(&amp;#34;english.txt&amp;#34;, &amp;#34;Hello&amp;#34;); err != nil {  //第一个err变量的作用域
-	log.Fatal(err)
-}
-if err := saveString(&amp;#34;hindi.txt&amp;#34;, &amp;#34;Namaste&amp;#34;); err != nil {  //第二个err变量的作用域
-	log.Fatal(err)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这种对作用域的限制是双向的，如果一个函数有多个返回值，需要其中一个在if语句中，另一个在if语句外，那么可能无法在if初始化语句中调用它，会发现需要的在if块之外的值超出了作用域。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;if number, err := strconv.ParseFloat(&amp;#34;3.14&amp;#34;, 64); err != nil {
-	log.Fatal(err)
-}
-fmt.Println(number * 2) //超出了作用域
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;相反，需要像往常一样在if语句前调用函数，这样它的返回值就在if语句的内部和外部的作用域之内：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;number, err := strconv.ParseFloat(&amp;#34;3.14&amp;#34;, 64)  //在if语句前声明变量
-if err != nil {  //仍在作用域内
-	log.Fatal(err)
-}
-fmt.Println(number * 2)  //number 仍在作用域内
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;switch语句&#34;&gt;switch语句&lt;/h1&gt;
-&lt;p&gt;当需要根据表达式的值执行几个操作之一时，可能会导致if语句和else子句的混乱，&lt;code&gt;switch&lt;/code&gt;语句是表达这些选择的更有效的方式。&lt;/p&gt;
-&lt;p&gt;switch关键字，然后是条件表达式，再添加几个case表达式，每个case表达式都有一个条件表达式可能有的值，选择其值与条件表达式匹配的第一个case，并运行其所包含的代码，其他case表达式被忽略，还可以提供一个default语句，如果没有匹配的case，将运行该语句。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;math/rand&amp;#34;
-	&amp;#34;time&amp;#34;
-)
-
-func awardPrize() {
-	switch rand.Intn(3) + 1 { //条件表达式
-	case 1: //如果结果是1
-		fmt.Println(&amp;#34;you win a cruise!&amp;#34;) //打印这条消息
-	case 2:
-		fmt.Println(&amp;#34;you win a car!&amp;#34;)
-	case 3:
-		fmt.Println(&amp;#34;you win a goat!&amp;#34;)
-	default: //如果结果不是以上任何一个
-		panic(&amp;#34;invalid door number&amp;#34;) //那么产生panic
-	}
-}
-
-func main() {
-	rand.Seed(time.Now().Unix())
-	awardPrize()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-&lt;p&gt;问：其他语言，在每个case的末尾有个 break 语句，否则也会运行下一个case，Go不需要这样？&lt;br&gt;
-答：Go会在case代码末尾自动退出switch，如果希望下一个case代码也能运行，那么可以在一个case中使用&lt;code&gt;fallthrough&lt;/code&gt;关键字。&lt;/p&gt;
-&lt;hr&gt;
-&lt;p&gt;&lt;code&gt;switch&lt;/code&gt; &lt;code&gt;case&lt;/code&gt; &lt;code&gt;default&lt;/code&gt; &lt;code&gt;fallthrough&lt;/code&gt; 这四个是结合使用的，表达式或类型说明符与switch中的case相比较从而决定执行哪一个。如果存在一个且最多只能存在一个 default 默认分支，所有的 case 分支都不满足时将执行 default 分支，且 default 分支不一定要放在最后的位置。Go switch 语句在执行完某个 case 子句后，不会再顺序地执行后面的 case 子句，而是结束当前 switch 语句。&lt;/p&gt;
-&lt;p&gt;使用 fallthrough 可以继续执行下一个 case 或 default 子句。case 表达式可以提供多个待匹配的值，使用逗号分隔。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;switch {		// 缺失的表达式为 true
-case x &amp;lt; y: f1()
-fallthrough		// 强制执行下一个 case 子句
-case x &amp;lt; z: f2()
-// 此处没有 fallthrough，switch 执行流在此终止	
-case x == 4: f3()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;switch tag {
-default: s3()		// default 子句可以出现在任意位置，不一定是最后一个
-case 0, 1, 2, 3: s1()	// case 表达式可以提供多个待匹配的值，使用逗号分隔
-case 4, 5, 6, 7: s2()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;switch x := f() {	// 缺省表达式试为 true 且前面存在一条短变量申明语句
-case x &amp;lt; 0: return -x	// case 表达式无需为常量
-default: return x
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;表达式选择可以没有表达式，缺省为true，这种写法也习惯的取代 if-else-if-else 语句链，表达式可以不是常量，表达式前面可以有简单语句，比如短变量声明语句。&lt;/p&gt;
-&lt;p&gt;类型选择：&lt;br&gt;
-类型选择比较类型而不是值，类似于表达式选择，由一个特殊的表达式表示类型，该表达式的形式是使用&lt;code&gt;type&lt;/code&gt;的类型断言而不是实际类型。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;switch x.(type) {
-	// case
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用实际类型T与表达式x的动态类型进行匹配，与类型断言一样，x必须是接口类型，列出的每个非接口类型T必须实现x且不能相同。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;switch i := x.(type) {
-case int:
-	printInt(i)                            // i 类型为 int
-case float64:
-	printFloat64(i)                        // i 类型为 float64
-case func(int) float64:
-	printFunction(i)                       // i 类型为 func(int) float64
-case bool, string:
-	printString(&amp;#34;type is bool or string&amp;#34;)  // i 类型为 bool or string
-default:
-	printString(&amp;#34;don&amp;#39;t know the type&amp;#34;)     // i 类型未知
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;更多基本类型&#34;&gt;更多基本类型&lt;/h1&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;类型&lt;/th&gt;
-&lt;th style=&#34;text-align:left&#34;&gt;描述&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;int&lt;br&gt;int16&lt;br&gt;int32&lt;br&gt;int64&lt;/td&gt;
-&lt;td style=&#34;text-align:left&#34;&gt;这些保存整数，与int一样，但是它们在内存中是特定的大小（类型名称中的数字以位为单位指定大小）。更少的位消耗更少的内存或其他存储，更多的位意味着可以存储更多的数字，应该使用int，除非有特定的理由使用其他的。&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;uint&lt;/td&gt;
-&lt;td style=&#34;text-align:left&#34;&gt;像int一样，但它只包含无符号整数，不能包含负数。这意味着可以在相同的内存中放入更大的数字，只要确定这些值永远不会为负。&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;uint8&lt;br&gt;uint16&lt;br&gt;uint32&lt;br&gt;uint64&lt;/td&gt;
-&lt;td style=&#34;text-align:left&#34;&gt;它们包含无符号整数，与int一样，它们在内存中消耗特定数量的位&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;float32&lt;/td&gt;
-&lt;td style=&#34;text-align:left&#34;&gt;float64类型保存浮点数并消耗64位内存，这是它较小的32位的表兄弟（浮点数没有8位或16位的变量）&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h1 id=&#34;更多关于符文&#34;&gt;更多关于符文&lt;/h1&gt;
-&lt;p&gt;&lt;code&gt;rune&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;现代操作系统出现前，大多数计算都使用不带重音的英文字母来完成，共有26个字母（大小写），数量太少，一个字符可以用一个字节表示（还有1位可用），使用一种称为&lt;code&gt;ASCII&lt;/code&gt;的标准来确保在不同的系统上将相同的字节值转换为相同的字母。&lt;/p&gt;
-&lt;p&gt;英文字母并不是唯一的书写系统；Unicode标准试图创建一组4字节的值，这些值可以表示这些不同书写系统中的每个字符（以及许多其他字符）。&lt;/p&gt;
-&lt;p&gt;Go使用&lt;code&gt;rune&lt;/code&gt;类型的值来表示Unicode值，通常，一个符文代表一个字符。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;rune&lt;/code&gt;是&lt;code&gt;int32&lt;/code&gt;的类型别名，用于表示一个Unicode码点。&lt;/p&gt;
-&lt;p&gt;Go使用 UTF-8 ，这是一种表示Unicode字符的标准，每个字符使用1到4个字节，旧ASCII字符集中的字符仍然可以用一个字节表示，其他字符可能需要2到4个字节。&lt;/p&gt;
-&lt;p&gt;通常，无需担心字符如何存储的细节，也就是说，直到尝试将字符串转换为其组件字节并返回，例如，用两个字符串调用len函数，会得到不同结果：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;asciiString := &amp;#34;ABCDE&amp;#34;
-utf8String := &amp;#34;БГДЖИ&amp;#34;
-fmt.Println(len(asciiString))
-fmt.Println(len(utf8String))
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;5  //这个字符占用5个字节
-10  //占用10个字节
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当将字符串传递给len函数时，将返回以字节（而不是符文）为单位的长度，英文字母可以占用5个字节&amp;ndash;每个符文只需1个字节，应为它来自旧的ASCII字符集，但是俄文需要10个字节&amp;ndash;每个符文需要2个字节存储。&lt;/p&gt;
-&lt;p&gt;若需要字符串的字符长度，应该使用 unicode/utf8 包的 RuneCountInString 函数，此函数将返回正确的字符数，而不用考虑用于存储每个字符的字节数。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(utf8.RuneCountInString(asciiString))
-fmt.Println(utf8.RuneCountInString(utf8String))
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;5   //这个字符串有5个符文
-5  //这个字符串也有5个符文
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;安全地使用部分字符串意味着将字符串转换为符文，而不是字节。&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;Go支持将字符串转换为rune值的切片，并将符文切片转换回字符串，要使用部分字符串，应该将它们转换为rune值的切片，而不是byte值的切片，这样就不会意外抓取符文的部分字节。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;asciiRunes := []rune(asciiString)  //将字符串转换为符文切片
-utf8Runes := []rune(utf8String)  //将字符串转换为符文切片
-asciiRunesPartial := asciiRunes[3:]  //省略每个切片中的前3个符文
-utf8RunesPartial := utf8Runes[3:]  //省略每个切片中的前3个符文
-fmt.Println(string(asciiRunesPartial))
-fmt.Println(string(utf8RunesPartial))  //将这个符文切片转换成字符串
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go允许对字符串使用for&amp;hellip;range循环，一次处理一个符文，而不是一个字节，这是一种更安全的方式。提供的第一个变量将被分配给字符串中的当前字节索引（而不是rune索引），第二个变量将被分配给当前的符文。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;s := &amp;#34;Hello, 世界&amp;#34;
-for _, r := range s {
-	fmt.Println(&amp;#34;%c &amp;#34;, r)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Go的符文可以很容易处理部分字符串，而不必担心它们是否包含Unicode字符。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;任何时候想要处理字符串的一部分，就把它转换成符文，而不是字节！&lt;/code&gt;&lt;/p&gt;
-&lt;h1 id=&#34;有缓冲的channel&#34;&gt;有缓冲的channel&lt;/h1&gt;
-&lt;p&gt;Go有两种channel：有缓冲的和无缓冲的。&lt;/p&gt;
-&lt;p&gt;当goroutine在无缓冲的channel上发送值时，会立即阻塞，直到另一个goroutine接收到该值。&lt;/p&gt;
-&lt;p&gt;有缓冲的channel可以在导致发送的goroutine阻塞之前保存一定数量的值。&lt;/p&gt;
-&lt;p&gt;在创建channel时，可以通过给make传递第二个参数来创建有缓冲的channel，该参数包含channel应该能够在其缓冲区中保存的值的数量。&lt;/p&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/14-%e5%85%b6%e4%bd%99%e7%9a%84%e4%b8%9c%e4%b8%9c/%e5%88%9b%e5%bb%ba%e7%bc%93%e5%86%b2channel.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;channel := make(chan string, 3)  //“3”此参数指定channel缓冲区的大小
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当goroutine通过channel发送一个值时，该值被添加到缓冲区中，发送的goroutine将继续运行，而不被阻塞。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;channel &amp;lt;- &amp;#34;a&amp;#34;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/14-%e5%85%b6%e4%bd%99%e7%9a%84%e4%b8%9c%e4%b8%9c/%e7%bc%93%e5%86%b2%e7%9a%84channel.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;p&gt;发送的goroutine可以继续在channel上发送值，直到缓冲区被填满，只有这时，额外的发送操作才会导致goroutine阻塞。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;channel &amp;lt;- &amp;#34;b&amp;#34;
-channel &amp;lt;- &amp;#34;c&amp;#34;
-channel &amp;lt;- &amp;#34;d&amp;#34;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/14-%e5%85%b6%e4%bd%99%e7%9a%84%e4%b8%9c%e4%b8%9c/%e7%bc%93%e5%86%b2%e5%a1%ab%e6%bb%a1.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;p&gt;当另一个goroutine从channel接收一个值时，它从缓冲区提取最早添加的值。&lt;/p&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/14-%e5%85%b6%e4%bd%99%e7%9a%84%e4%b8%9c%e4%b8%9c/%e6%8f%90%e5%8f%96%e5%80%bc.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;p&gt;额外的接收操作将继续清空缓冲区，而额外的发送操作将填充缓冲区。&lt;/p&gt;
-&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/14-%e5%85%b6%e4%bd%99%e7%9a%84%e4%b8%9c%e4%b8%9c/%e6%8f%90%e5%8f%96%e5%92%8c%e5%a1%ab%e5%85%85.png&#34;
-        alt/&gt;&lt;/p&gt;
-&lt;hr&gt;
-&lt;p&gt;例：&lt;br&gt;
-用一个无缓冲的channel运行一个程序，然后更新为带缓冲的channel，比较区别。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;time&amp;#34;
-)
-
-func sendLetters(channel chan string) {
-	time.Sleep(1 * time.Second) //发送4个值，每个值前休眠1秒
-	channel &amp;lt;- &amp;#34;a&amp;#34;
-	time.Sleep(1 * time.Second)
-	channel &amp;lt;- &amp;#34;b&amp;#34;
-	time.Sleep(1 * time.Second)
-	channel &amp;lt;- &amp;#34;c&amp;#34;
-	time.Sleep(1 * time.Second)
-	channel &amp;lt;- &amp;#34;d&amp;#34;
-}
-
-func main() {
-	fmt.Println(time.Now())            //打印程序开始的时间
-	channel := make(chan string)       //创建一个无缓冲的channel
-	go sendLetters(channel)            //在新的goroutine上启动sendLetters
-	time.Sleep(5 * time.Second)        //主goroutine休眠5秒
-	fmt.Println(&amp;lt;-channel, time.Now()) //接收并打印4个值以及当前的时间
-	fmt.Println(&amp;lt;-channel, time.Now())
-	fmt.Println(&amp;lt;-channel, time.Now())
-	fmt.Println(&amp;lt;-channel, time.Now())
-	fmt.Println(time.Now()) //打印程序结束的时间
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2023-08-23 15:12:28.402341 +0800 CST m=+0.000126414
-a 2023-08-23 15:12:33.403655 +0800 CST m=+5.001530631  //当主goroutine醒来时，第一个值已经在等待接收
-b 2023-08-23 15:12:34.404896 +0800 CST m=+6.002790206  //但sendLetters goroutine在收到第一个值前一直被阻塞，所以必须等待后面的值发送出去
-c 2023-08-23 15:12:35.405858 +0800 CST m=+7.003769905
-d 2023-08-23 15:12:36.406175 +0800 CST m=+8.004105594
-2023-08-23 15:12:36.406232 +0800 CST m=+8.004162602  //程序运行花费8s
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当main goroutine醒来时，从channel接收4个值，但sendLetters goroutine被阻塞了，等待main接收第一个值，因此，当sendLetters goroutine恢复时，main goroutine必须在每个剩余值之间等待1秒。&lt;/p&gt;
-&lt;p&gt;更新为带缓冲的channel：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-	channel := make(chan string, 1)  //创建一个有缓冲的channel，在阻塞前可以保存一个值
-	// ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当sendLetter将它的第一个值发送到channel时，不会阻塞，直到主goroutine接收到它，所发送的值将进入channel的缓冲区，只有当第二个值被发送（但还没有任何值被接收）时，channel的缓冲区才会被填满，sendLetters goroutine才会被阻塞，向channel中添加一个单值缓冲区可减少1秒的时间。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-	channel := make(chan string, 3)  //创建一个有缓冲的channel，在阻塞前可以保存三个值
-	// ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;将缓冲区大小增加到3，这允许sendLetters在不阻塞的情况下发送三个值，在最后一次发送时阻塞，但这是在它的所有1秒Sleep调用完成之后，因此，当主goroutine在5秒后醒来时，它立即接收到在有缓冲channel中等待的三个值，以及导致sendLetters阻塞的值。这让程序只需5秒完成。&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>13.goroutine和channel</title>
-      <link>https://tinklespring.com/posts/13.goroutine%E5%92%8Cchannel/</link>
-      <pubDate>Sat, 19 Aug 2023 16:25:28 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/13.goroutine%E5%92%8Cchannel/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;一次只做一件事并不总是完成任务最快的方法。goroutine可以让程序同时处理几个不同的任务，goroutine可以使用channel来协调它们的工作，channel允许goroutine互相发送数据并同步，这样一个goroutine就不会领先与另一个goroutine。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;检索网页&#34;&gt;检索网页&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;io/ioutil&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;net/http&amp;#34;
-)
-
-func main() {
-	responseSize(&amp;#34;https://example.com/&amp;#34;)
-	responseSize(&amp;#34;https://golang.org/&amp;#34;)
-	responseSize(&amp;#34;https://golang.org/doc&amp;#34;)
-}
-
-func responseSize(url string) { //将url作为参数，将获取页面的代码移动到单独的函数
-	fmt.Println(&amp;#34;Getting&amp;#34;, url)    //打印正在检索的url
-	response, err := http.Get(url) //获取给定的url
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(len(body)) //字符切片的大小与页面的大小相同
-
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;多任务&#34;&gt;多任务&lt;/h1&gt;
-&lt;p&gt;通过同时执行多个任务来找到加快程序运行速度的方式。&lt;/p&gt;
-&lt;p&gt;程序对responseSize进行几次调用，每次一个，对responseSize的每次调用都建立到网站的网络连接，等待网站响应，打印响应大小并返回，只有一个调用响应返回时，下一个调用才能开始。&lt;/p&gt;
-&lt;p&gt;如果有一种方式能同时运行所有三个responseSize调用，这个程序只需三分之一的时间即可完成。&lt;/p&gt;
-&lt;h1 id=&#34;使用goroutine的并发性&#34;&gt;使用goroutine的并发性&lt;/h1&gt;
-&lt;p&gt;当responseSize调用http.Get时，程序必须在等待网站的响应，只能干等没有别的事情做。&lt;/p&gt;
-&lt;p&gt;另一个程序可能需要等待用户输入，再另一个可能需要等待数据从文件中读取，很多情况下，程序只能等待。&lt;/p&gt;
-&lt;p&gt;并发性允许程序暂停一个任务并处理其他任务：等待用户输入的程序可能在后台执行其他处理，读取文件时更新进度条，responseSize程序可能在等待第一个请求完成时发出其他网络请求。&lt;/p&gt;
-&lt;p&gt;并行：同时运行任务，一台只有一个处理器的计算机一次只能运行一个任务，但现代计算机都有多个处理器，计算机可能在不同的处理器之间分配并发任务，以便于同时运行。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;goroutine允许并发：暂停一个任务来处理其他任务；在某些情况下，它们允许并行：同时处理多个任务！&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;在Go中，并发称为 &lt;code&gt;goroutine&lt;/code&gt; ，其他语言有类似的概念，叫做线程，但是 goroutine 比线程需要更少的计算机内存，启动和停止时间更少，这意味着可以同时运行更多的goroutine。&lt;/p&gt;
-&lt;p&gt;启动一个goroutine，可以使用&lt;code&gt;go&lt;/code&gt;语句，只是一个普通的函数或方法调用，前面有go关键字：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;go myFunction()  //go关键字+函数调用
-go otherFunction(&amp;#34;arguments&amp;#34;)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=#0099ff size=2 face=&#34;黑体&#34;&gt;注意&lt;/font&gt;，我们说的是另一个goroutine，每个Go程序的main函数都是使用goroutine启动，因此每个Go程序至少运行一个goroutine。&lt;/p&gt;
-&lt;h1 id=&#34;使用goroutine&#34;&gt;使用goroutine&lt;/h1&gt;
-&lt;p&gt;这里有个程序，一次调用一个函数，a函数使用循环打印字符串 a 50次，b函数打印字符串 b 50次，main函数调用a，然后调用b，最后在退出时打印一条消息。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import &amp;#34;fmt&amp;#34;
-
-func a() {
-	for i := 0, i &amp;lt; 50; i++ {
-		fmt.Print(&amp;#34;a&amp;#34;)
-	}
-}
-
-func b() {
-	for i := 0, i &amp;lt; 50; i++ {
-		fmt.Print(&amp;#34;b&amp;#34;)
-	}
-}
-
-func main() {
-	a()
-	b()
-	fmt.Println(&amp;#34;end main()&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;就像main函数包含了a函数所有代码，然后是b函数所有代码，最后是自己的代码。要在新的goroutine中启动a和b函数，只需在函数调用前添加go关键字，这能让新的goroutine与main函数同时运行：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-	go a()
-	go b()
-	fmt.Println(&amp;#34;end main()&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是运行这个程序，将只能看到来自main函数末尾的Println调用的输出，不会看到来自a或b函数的任何内容。&lt;/p&gt;
-&lt;p&gt;Go程序在main goroutine（调用main函数的goroutine）结束后立即停止运行，即使其他goroutine仍在运行，main函数在a和b函数中的代码运行之前就完成了。&lt;/p&gt;
-&lt;p&gt;需要保持main goroutine运行，知道aheb函数goroutine完成，需要暂停main goroutine一段时间，这样其他goroutine就可以运行。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-	go a()
-	go b()
-	time.Sleep(time.Second)  //暂停main goroutine1秒
-	fmt.Println(&amp;#34;end main()&amp;#34;)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当程序在两个goroutine之间切换时，两个输出将混合在一起，当main goroutine唤醒时，会调用fmt.Println并退出。&lt;/p&gt;
-&lt;h1 id=&#34;不能直接控制goroutine何时运行&#34;&gt;不能直接控制goroutine何时运行&lt;/h1&gt;
-&lt;p&gt;每次运行程序时，可能会看到 goroutine 以不同的顺序运行，也无法知道上一个程序何时会在两个goroutine之间切换。&lt;/p&gt;
-&lt;p&gt;正常情况下，Go不能保证何时在goroutine之间切换，或者切换多长时间，这允许goroutine以最有效的方式运行，若需要运行顺序，那么需要使用channel来同步它们。&lt;/p&gt;
-&lt;h1 id=&#34;go语句不能使用返回值&#34;&gt;go语句不能使用返回值&lt;/h1&gt;
-&lt;p&gt;切换到goroutine带来了另一个需要解决的问题：不能在go语句中使用函数返回值。假设想要改变responseSize来返回页面大小，而不是直接打印它：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-	var size int
-	size = go responseSize(&amp;#34;https://example.com/&amp;#34;)  //此段代码无效
-	fmt.Println(size)  //此段代码无效
-	size = go responseSize(&amp;#34;https://golang.org/&amp;#34;)  //此段代码无效
-	fmt.Println(size)  //此段代码无效
-	size = go responseSize(&amp;#34;https://golang.org/doc/&amp;#34;)  //此段代码无效
-	fmt.Println(size)  //此段代码无效
-	time.Sleep(5 * time.Second)
-}
-
-func responseSize(url string) int {  //添加返回值
-	fmt.Println(&amp;#34;Getting&amp;#34;, url)
-	response, err := http.Get(url)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return len(body)  //返回响应大小，而不是打印它
-
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;会编译错误，编译器阻止尝试从使用go语句调用的函数中获取返回值。这实际上是好事，当将responseSize作为go语句的一部分调用时，会说“在单独的goroutine中运行responseSize，将一直运行此函数中的指令。” responseSize函数不会立即返回值，必须等待网页响应，但是 main goroutine 中的代码会立即期望一个返回值，但目前还没有返回值。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;size = go responseSize(&amp;#34;https://example.com/&amp;#34;)  //去运行这个，不会再等了
-fmt.Println(size)  //那么返回什么呢
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在go语句中调用的任何函数都是这样，而不仅仅是像responseSize这样的长时间运行函数，不能指望返回值会及时准备好，因此Go编译器会阻止任何使用它们的尝试。&lt;/p&gt;
-&lt;p&gt;Go不允许使用go语句调用的函数的返回值，因为在尝试使用它之前，不能保证返回值已经准备好。&lt;/p&gt;
-&lt;h3 id=&#34;channel&#34;&gt;channel&lt;/h3&gt;
-&lt;p&gt;但是goroutine之间有一种交流方式：&lt;code&gt;channel&lt;/code&gt;，channel不仅允许将值从一个goroutine发送到另一个goroutine，还确保在接收的goroutine尝试使用该值之前，发送的goroutine已经发送了该值。&lt;/p&gt;
-&lt;p&gt;使用channel的唯一方法是从一个goroutine到另一个goroutine的通信。&lt;/p&gt;
-&lt;p&gt;为了演示channel，需要：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;创建一个channel&lt;/li&gt;
-&lt;li&gt;编写一个函数，该函数接收一个channel作为参数，我们将在一个单独的goroutine中运行这个函数，并使用它通过channel发送值。&lt;/li&gt;
-&lt;li&gt;在初始的goroutine中接收发送的值&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;每个channel只携带特定类型的值，因此可能有一个channle用于int值，另一个channel用于struct类型的值，要声明包含channel的变量，可以使用&lt;code&gt;chan&lt;/code&gt;关键字，然后是channel将携带的值的类型。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var myChannel chan float64
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;要实际创建channel，需要调用内置 &lt;code&gt;make&lt;/code&gt; 函数（与创建映射和切片的函数相同）。传递make要创建的channel的类型（应该与要赋值给它的变量的类型相同）。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var myChannel chan float64  //声明一个变量来保存channel
-myChannel =  make(chan float64)  //实际创建channel
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不是单独声明channel变量，在大多数情况下，使用一个短变量声明更容易：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;myChannel := make(chan float64)  //创建一个channel并立即声明一个变量
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用channel发送和接收值&#34;&gt;使用channel发送和接收值&lt;/h1&gt;
-&lt;p&gt;要在channel上发送值，使用&lt;code&gt;&amp;lt;-&lt;/code&gt;运算符，从发送的值指向发送该值的channel。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;myChannel &amp;lt;- 3.14   //向名为 &amp;#34;myChannel&amp;#34; 的channel发送一个值&amp;#34;3.14&amp;#34;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;还可以使用 &amp;lt;- 接收来自channel的值，但是位置不同：将箭头放在接收channel的左侧，看起来像从channel中取出一个值。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;&amp;lt;-myChannel
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;例：&lt;br&gt;
-向greeting添加一个myChannel参数，接受一个包含字符串值的channel，greeting现在不是返回一个字符串值，而是通过myChannel发送一个字符串。&lt;/p&gt;
-&lt;p&gt;在main函数中，使用内置的make函数创建要传递给greeting的channel，然后调用greeting来作为一个新的goroutine，使用单独的goroutine很重要，因为channel应该只用于goroutine之间的通信。然后从传递给greeting的channel中接收一个值，并打印返回字符串。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func greeting(myChannel chan string) { //将channel作为参数
-	myChannel &amp;lt;- &amp;#34;hi&amp;#34;  //通过channel发送给一个值
-}
-
-func main() {
-	myChannel := make(chan string)  //创建一个新的channel
-	go greeting(myChannel)  //将channel传递给在新goroutine中运行的函数
-	fmt.Println(&amp;lt;-myChannel)  //从channel接收值
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不必将从channel接收的值直接传递给Println，可以在任何需要值的上下文中从channel接收（在任何可以使用变量或函数的返回值的地方）。比如可以先将接收到的值赋给一个变量：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;receiveValue := &amp;lt;-myChannel  //也可以将接收的值存储在一个变量中
-fmt.Println(receiveValue)
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;同步goroutine与channel&#34;&gt;同步goroutine与channel&lt;/h1&gt;
-&lt;p&gt;channel确保发送的goroutine在接收channel尝试使用该值前已经发送了该值，channel通过&lt;code&gt;blocking&lt;/code&gt;(阻塞)&amp;mdash;暂停当前goroutine中的所有进一步操作来实现。发送操作阻塞发送goroutine，直到另一个goroutine在同一cahnnel上执行了接收操作，反之亦然，接收操作阻塞接收goroutine，直到另一个goroutine在同一channel上执行了发送操作，这个行为允许goroutine同步它们的动作，协调它们的时间。&lt;/p&gt;
-&lt;p&gt;例：&lt;br&gt;
-创建两个channel并将它们传递给两个新goroutine中的函数，然后main goroutine从这些channel接收值并打印它们。与goroutine反复打印“a”或“b”的程序不同，可以预测这个程序的输出：总是按顺序打印“a”，然后打印“d” “b” “e” “c” “f”。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func abc(channel chan string) {
-	channel &amp;lt;- &amp;#34;a&amp;#34;
-	channel &amp;lt;- &amp;#34;b&amp;#34;
-	channel &amp;lt;- &amp;#34;c&amp;#34;
-}
-
-func def(channel chan string) {
-	channel &amp;lt;- &amp;#34;d&amp;#34;
-	channel &amp;lt;- &amp;#34;e&amp;#34;
-	channel &amp;lt;- &amp;#34;f&amp;#34;
-}
-
-func main() {
-	channel1 := make(chan string)  //创建channel
-	channel2 := make(chan string)  //创建channel
-	go abc(channel1)  //将channel传递给新goroutine中运行的函数
-	go def(channel2)  //将channel传递给新goroutine中运行的函数
-	fmt.Print(&amp;lt;-channel1)  //从channel接收和打印值
-	fmt.Print(&amp;lt;-channel2)
-	fmt.Print(&amp;lt;-channel1)
-	fmt.Print(&amp;lt;-channel2)
-	fmt.Print(&amp;lt;-channel1)
-	fmt.Print(&amp;lt;-channel2)
-	fmt.Println()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;adbecf
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;abc goroutine每次向channel发送一个值时都会阻塞，直到main goroutine接收到它为止，def goroutine也是如此。main goroutine称为abc goroutine和def goroutine的协调器，只有当它准备读取它们发送的值时，才允许它们继续。&lt;/p&gt;
-&lt;p&gt;abc 和 def 函数都在单独的goroutine并发启动，abc 函数尝试将 “a” 发送到 channel1，由于channel1是无缓冲的，abc 会阻塞，直到main goroutine 从该通道上接收数据。main goroutine 使用 fmt.Print(&amp;lt;-channel1) 接收并打印“a”，此时 abc 函数中的阻塞解除，它会尝试将“b”发送到channel1，但同样会阻塞，因为需要一个接收操作。def 函数与 abc 函数类似，它尝试将“d”发送到 channel2，并在main goroutine接收并打印“d”之后继续执行，以此类推，main goroutine会交替从两个通道接收并打印数据，这就是为什么顺序是 “adbecf”。&lt;/p&gt;
-&lt;h1 id=&#34;观察goroutine同步&#34;&gt;观察goroutine同步&lt;/h1&gt;
-&lt;p&gt;abc goroutine 和 def goroutine 通过它们的channel发送它们的值的速度很快，所以看不到发生了什么，下边这个程序可以减慢速度，方便观察阻塞：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;time&amp;#34;
-)
-
-func reportNap(name string, delay int) { //休眠goroutine名字、时间
-	for i := 0; i &amp;lt; delay; i++ {
-		fmt.Println(name, &amp;#34;sleeping&amp;#34;)
-		time.Sleep(1 * time.Second)
-	}
-	fmt.Println(name, &amp;#34;wakes up!&amp;#34;)
-}
-
-func send(myChannel chan string) {
-	reportNap(&amp;#34;sending goroutine&amp;#34;, 2)
-	fmt.Println(&amp;#34;***sending value***&amp;#34;)
-	myChannel &amp;lt;- &amp;#34;a&amp;#34; //在main 仍处于休眠状态时阻塞此发送
-	fmt.Println(&amp;#34;***sending value***&amp;#34;)
-	myChannel &amp;lt;- &amp;#34;b&amp;#34;
-}
-
-func main() {
-	myChannel := make(chan string)
-	go send(myChannel)
-	reportNap(&amp;#34;receiving goroutine&amp;#34;, 5)
-	fmt.Println(&amp;lt;-myChannel)
-	fmt.Println(&amp;lt;-myChannel)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;从reportNap函数开始，该函数当前goroutine休眠指定的秒数，goroutine休眠时，每一秒会打印一个通知，说它在休眠。&lt;/p&gt;
-&lt;p&gt;添加一个send函数，将在goroutine中运行，并将两个值发送到一个channel，在发送任何东西之前，首先调用reportNap，这样它的goroutine会休眠2秒。&lt;/p&gt;
-&lt;p&gt;在main goroutine中，创建一个channel并将其传递给send，然后再次调用reportNap，使此goroutine休眠5秒（比send goroutine长3秒），最后在channel上执行两个接收操作。&lt;/p&gt;
-&lt;p&gt;当运行这个程序时，会看到两个goroutine在前2秒都处于休眠状态，然后send goroutine醒来并发送它的值，但它没有做任何进一步的事情，发送操作阻塞了send goroutine，直到main goroutine接收到该值。&lt;/p&gt;
-&lt;p&gt;这不会马上发生，因为main goroutine仍然需要再休眠3秒，当它醒来时，从channel接收值，此时，send goroutine才能解除阻塞，才能发送第二个值。&lt;/p&gt;
-&lt;p&gt;输出：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;receiving goroutine sleeping  //发送和接收goroutine都休眠了
-sending goroutine sleeping  //发送和接收goroutine都休眠了
-receiving goroutine sleeping  //发送和接收goroutine都休眠了
-sending goroutine sleeping  //发送和接收goroutine都休眠了
-sending goroutine wakes up!  //发送goroutine醒来，并发送一个值
-***sending value***  //发送goroutine醒来，并发送一个值
-receiving goroutine sleeping  //接收goroutine还在休眠
-receiving goroutine sleeping  //接收goroutine还在休眠
-receiving goroutine sleeping
-receiving goroutine wakes up!  //接收goroutine醒来，并接收一个值
-a  //接收goroutine醒来，并接收一个值
-***sending value***  //此时，发送goroutine才能解除阻塞，然后发送第二个值
-b
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-&lt;p&gt;下面是之前的演示代码，进行如下的更改：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func greeting(myChannel chan string) {
-	myChannel &amp;lt;- &amp;#34;hi&amp;#34;
-}
-func main() {
-	myChannel := make(chan string)
-	go greeting(myChannel)
-	fmt.Println(&amp;lt;-myChannel)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;如果这样&lt;/th&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;会失败，因为&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;myChannel &amp;lt;- &amp;ldquo;hi from main&amp;rdquo;&lt;pre&gt;从main函数中发送一个值到channel&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;会得到一个“all goroutine are sleep-deadlock!”的错误，因为main goroutine阻塞了，还在等待另一个goroutine从channel接收，但是另一个goroutine没有做任何接收操作，所以main goroutine保持阻塞状态&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;&lt;del&gt;go&lt;/del&gt; greetine(myChannel)&lt;pre&gt;在调用greeting之前删除go关键字&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;这将导致greeting函数在main goroutine中运行，也会因为死锁错误而失败，原因与上面一样：greeting中的发送操作导致main goroutine阻塞，但是没有其他goroutine执行接收操作，所以会保持阻塞状态&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;&lt;del&gt;myChannel &amp;lt;- &amp;ldquo;hi&amp;rdquo;&lt;/del&gt;&lt;pre&gt;删除向channel发送值的行&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;这也会导致死锁，原因是main goroutine试图接收一个值，但现在没有任何东西可以发送值&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;&lt;pre&gt;&lt;del&gt;fmt.Println(&amp;lt;-myChannel)&lt;/del&gt;&lt;pre&gt;删除从channel接收值的行&lt;/td&gt;
-&lt;td style=&#34;text-align:center&#34;&gt;greeting中的发送操作会导致goroutine阻塞，但是由于没有接收操作使main goroutine阻塞，所以main立即完成，程序结束时不产生任何输出&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h1 id=&#34;使用channel修复程序&#34;&gt;使用channel修复程序&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import ( //不使用time.Sleep，删除time包
-	&amp;#34;fmt&amp;#34;
-	&amp;#34;io/ioutil&amp;#34;
-	&amp;#34;log&amp;#34;
-	&amp;#34;net/http&amp;#34;
-)
-
-func responseSize(url string, channel chan int) { //将向responseSize传递一个channel，以便发送页面大小
-	fmt.Println(&amp;#34;Getting&amp;#34;, url)
-	response, err := http.Get(url)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		log.Fatal()
-	}
-	channel &amp;lt;- len(body) //不返回页面大小，通过channel发送
-}
-
-func main() {
-	sizes := make(chan int)                        //创建一个int值channel
-	go responseSize(&amp;#34;https://example.com/&amp;#34;, sizes) //每次调用responseSize时都将channel传递过去
-	go responseSize(&amp;#34;https://golang.org/&amp;#34;, sizes)
-	go responseSize(&amp;#34;https://golang.org/doc&amp;#34;, sizes)
-	fmt.Println(&amp;lt;-sizes) //channel上将有三个发送，所以要做三个接收
-	fmt.Println(&amp;lt;-sizes)
-	fmt.Println(&amp;lt;-sizes)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在main函数中，调用make创建int值的channel，更新对responseSize的每个调用，来添加channel作为参数，最后，在channel上执行三个接收操作，每个对应一个responseSize发送的值。&lt;/p&gt;
-&lt;p&gt;运行这个程序，会看到程序的完成速度与网站响应速度一样快。&lt;/p&gt;
-&lt;p&gt;接下来继续优化，为使代码更干净，可以将要检索的url列表存储在一个切片中，然后使用循环来调用responseSize，并从channel接收值。&lt;/p&gt;
-&lt;p&gt;responseSize无需改变，只需更改main函数，用想要的url创建一个字符串切片，然后对切片进行循环，并使用当前url和channel来调用responseSize，最后执行第二个单独的循环，对切片中的每个url运行一次，并从channel接收和打印一个值。（在单独的循环中做很重要，若在启动responseSize goroutine的同一个循环中接收值，将导致main goroutine阻塞，直到接收完成，将返回一次一个页面的请求。）&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
-	sizes := make(chan int)
-	urls := []string{ //将url移动到一个切片中
-		&amp;#34;https://example.com/&amp;#34;,
-		&amp;#34;https://golang.org/&amp;#34;,
-		&amp;#34;https://golang.org/doc&amp;#34;,
-	}
-	for _, url := range urls {
-		go responseSize(url, sizes) //对每个url调用responseSize
-	}
-	for i := 0; i &amp;lt; len(urls); i++ { //对每一个responseSize发送，都从channel接收一次
-		fmt.Println(&amp;lt;-sizes)
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;更新channel以携带一个struct&#34;&gt;更新channel以携带一个struct&lt;/h1&gt;
-&lt;p&gt;ressponseSize函数还有一个问题，我们不知道输出的顺序，因为没有把页面url与响应大小放在一起，所以不知道它们之间的关系。&lt;/p&gt;
-&lt;p&gt;channel可以像携带基础类型一样携带切片、映射和struct等复合类型，我们可以创建一个struct类型，它将存储一个页面url及其大小，这样就可以通过channel将两者一起发送了。&lt;/p&gt;
-&lt;p&gt;将使用底层的struct类型声明一个新的Page类型，Page将有一个URL字段来记录页面的URL，以及一个Size字段来记录页面大小。&lt;/p&gt;
-&lt;p&gt;将更新responseSize上的channel参数以保存新的Page类型，而不仅仅是int页面大小，让responseSize使用当前URL和页面大小创建一个新的Page值，并将其发送到channel。&lt;/p&gt;
-&lt;p&gt;在main中，将更新channel在调用中保存的类型，当从channel接收一个值时，将是一个Page值，因此将同时打印它的URL和Size字段。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Page struct { //声明一个带有需要的字段的struct类型
-	URL  string
-	Size int
-}
-
-func responseSize(url string, channel chan Page) { //传递给responseSize的channel将携带Page，而不是int
-	fmt.Println(&amp;#34;Getting&amp;#34;, url)
-	response, err := http.Get(url)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		log.Fatal()
-	}
-	channel &amp;lt;- Page{URL: url, Size: len(body)} //返回一个包含当前URL和页面大小的Page
-
-}
-
-func main() {
-	pages := make(chan Page) //更改channel保存的类型
-	urls := []string{
-		&amp;#34;https://example.com/&amp;#34;,
-		&amp;#34;https://golang.org/&amp;#34;,
-		&amp;#34;https://golang.org/doc&amp;#34;,
-	}
-	for _, url := range urls {
-		go responseSize(url, pages) //将channel传递给responseSize
-	}
-	for i := 0; i &amp;lt; len(urls); i++ {
-		page := &amp;lt;-pages                              //接收Page
-		fmt.Println(&amp;#34;%s: %d\n&amp;#34;, page.URL, page.Size) //将URL和大小一起打印
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;现在输出将把页面大小和URl配对，以前，我们的程序必须一次请求一个页面，goroutine让我们在等待网站响应时开始处理下一个请求，大大提高了速度。&lt;/p&gt;
-</description>
     </item>
     
   </channel>

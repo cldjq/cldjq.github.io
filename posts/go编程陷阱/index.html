@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>Go编程陷阱&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Go编程陷阱" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">Go编程陷阱</h1><p class="article date">Thursday, September 14, 2023</p></section><article class="article markdown-body"><blockquote>
+<p>Go中有一些容易让人掉进去的陷阱，本篇列出一些常见的，教你如何避免。</p>
+</blockquote>
+<h1 id="nil切片与空切片">Nil切片与空切片</h1>
+<pre tabindex="0"><code>var a []int   //nil切片
+b := []int{}  //空切片
+</code></pre><p>两者都没有元素，但行为上不同，例如，当检查长度或追加元素时：</p>
+<pre tabindex="0"><code>fmt.Println(len(a), cap(a))  //0 0
+fmt.Println(len(b), cap(b))  //0 0
+</code></pre><p>但是当某些操作时，比如JSON的序列化，两者不一样：</p>
+<pre tabindex="0"><code>dataA, _ := json.Marshal(a)
+dataB, _ := json.Marshal(b)
+fmt.Println(string(dataA))  // null
+fmt.Println(string(dataB))  // []
+</code></pre><p><strong>注意</strong>：先明确需求，若表示“不存在的切片”，使用 nil ；若需要一个空的集合，则使用空切片。</p>
+<h1 id="不初始化的map">不初始化的Map</h1>
+<p>在Go中，map必须使用 make 函数初始化，否则将是 nil 。</p>
+<pre tabindex="0"><code>var m map[string]int
+m[&#34;key&#34;] = 42  // panic: assignment to entry in nil map
+</code></pre><p><strong>注意</strong>：始终要用 <code>make</code> 初始化map。</p>
+<pre tabindex="0"><code>m := make(map[string]int)
+m[&#34;key&#34;] = 42
+</code></pre><h1 id="并发map读写">并发Map读写</h1>
+<p>Go的map在并发读写时是不安全的。</p>
+<pre tabindex="0"><code>m := make(map[string]int)
+go func() {
+    for {
+        m[&#34;key&#34;] = 42
+    }
+}()
+go func() {
+    for {
+        _ = m[&#34;key&#34;]
+    }
+}()
+</code></pre><p>上述代码会产生panic，需要使用 <code>sync.RWMutex</code> 进行锁定或考虑使用 <code>sync.Map</code> 。</p>
+<h1 id="闭包中的循环变量">闭包中的循环变量</h1>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+import &#34;sync&#34;
+
+func main() {
+    wg := sync.WaitGroup{}
+
+    for _, v := range []int{1, 2, 3, 4} {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+
+            fmt.Println(v)
+        }()
+    }
+
+    wg.Wait()
+    fmt.Println(&#34;main done&#34;)
+}
+</code></pre><p>可能希望输出 1，2，3，4，但实际上 v 的值在每个 goroutine 中都可能是 4 。</p>
+<p>解决方式：</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+import &#34;sync&#34;
+
+func main() {
+    wg := sync.WaitGroup{}
+
+    for _, v := range []int{1, 2, 3, 4} {
+        wg.Add(1)
+
+        go func(v int) {
+            defer wg.Done()
+
+            fmt.Println(v)
+        }(v)
+    }
+
+    wg.Wait()
+    fmt.Println(&#34;main done&#34;)
+}
+</code></pre><p>将循环变量作为参数传递给闭包。</p>
+<h1 id="error不被检查">Error不被检查</h1>
+<p>Go没有其他语言那样的异常机制，它使用 error 来传递错误。</p>
+<pre tabindex="0"><code>f, _ := os.Open(&#34;filename.ext&#34;)
+</code></pre><p>上述代码，错误被忽略，可能导致后续操作在文件上失败。</p>
+<p>解决方法：</p>
+<pre tabindex="0"><code>f, err := os.Open(&#34;filename.ext&#34;)
+if err != nil {
+	log.Fatal(err)
+}
+</code></pre><p>始终检查错误并处理。</p>
+<h1 id="不正确的string转换">不正确的String转换</h1>
+<p>直接将 byte 切片转换为 string 会导致不可预期的结果，特别是当 byte 切片中包含非 UTF-8 字符时。</p>
+<p>解决方式： 使用正确的转换方法，如 utf8.Valid 检查是否为有效的 UTF-8。</p>
+<h1 id="失效的goroutine">失效的Goroutine</h1>
+<p>若主goroutine结束，其他goroutine也会立即停止。</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+	&#34;time&#34;
+)
+
+func main() {
+	go func() {
+		time.Sleep(2 * time.Second)
+		fmt.Println(&#34;This will never get printed&#34;)
+	}()
+	fmt.Println(&#34;main done&#34;)
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>main done
+</code></pre><p>解决方法：使用 <code>sync.WaitGroup</code> 或其他同步机制来确保所有goroutine完成。</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+	&#34;sync&#34;
+	&#34;time&#34;
+)
+
+func main() {
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		time.Sleep(2 * time.Second)
+		fmt.Println(&#34;This will never get printed&#34;)
+	}()
+
+	wg.Wait()
+	fmt.Println(&#34;main done&#34;)
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>This will never get printed
+main done
+</code></pre><h1 id="变量阴影">变量阴影</h1>
+<p>可能会不小心创建了一个同名的局部变量，从而“阴影”了外部的变量。</p>
+<pre tabindex="0"><code>x := 5
+func f() {
+    x, err := doSomething() // 这里 unintentionally 阴影了外部的 x
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(x) // 这可能不是你期望的 x 的值
+}
+</code></pre><p><strong>注意</strong>：始终注意变量的作用域，使用 go vet 来识别此类问题。</p>
+<h1 id="使用--比较复杂的数组和结构">使用 == 比较复杂的数组和结构</h1>
+<p>Go允许使用 == 来比较数组和结构，但若它们本身包含不可比较的字段（如map或函数），则会导致编译错误。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+type Person struct {
+    Name string
+    Ages map[string]int
+}
+
+func main() {
+    p1 := Person{Name: &#34;Alice&#34;, Ages: map[string]int{&#34;Bob&#34;: 30}}
+    p2 := Person{Name: &#34;Alice&#34;, Ages: map[string]int{&#34;Bob&#34;: 30}}
+    fmt.Println(p1 == p2) // 编译错误
+}
+</code></pre><p>解决：为复杂的数据结构实现自己的比较函数或者使用第三方库。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+import &#34;reflect&#34;
+
+type Person struct {
+    Name string
+    Ages map[string]int
+}
+
+func main() {
+    p1 := Person{Name: &#34;Alice&#34;, Ages: map[string]int{&#34;Bob&#34;: 30}}
+    p2 := Person{Name: &#34;Alice&#34;, Ages: map[string]int{&#34;Bob&#34;: 30}}
+    fmt.Println(reflect.DeepEqual(p1,p2)) // 正确比较
+}
+</code></pre><h1 id="非显式的接口实现">非显式的接口实现</h1>
+<p>Go 使用非显式的接口实现，这意味着只要类型实现了接口的所有方法，它就被认为实现了该接口。这可能导致意外实现了某个接口。</p>
+<p>解决方法：虽然这是 Go 的特性，但是在可能的情况下，为类型提供明确的文档，说明它实现了哪些接口。</p>
+<h1 id="小心defer使用">小心defer使用</h1>
+<p>虽然 defer 是处理资源清理的好方法，但使用它时仍然需要注意。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+func main() {
+    for i := 0; i &lt; 10; i++ {
+        defer fmt.Println(i)
+    }
+}
+</code></pre><p>可能期望它在循环的每次迭代后立即输出，但实际上它会在函数返回时输出，并且顺序是反的。</p>
+<p>解决： 理解 defer 的行为和用途，并仔细考虑何时使用它。</p>
+<h1 id="容易被忽视的零值">容易被忽视的零值</h1>
+<p>Go 的每种类型都有一个零值，例如，数值类型为 0，bool 类型为 false，string 为 &ldquo;&quot;。但这有时可能导致意外的行为，尤其是当结构体有复杂的嵌套时。</p>
+<p>解决方法：在初始化结构时，明确指定所有期望的值，避免依赖零值。</p>
+<h1 id="指针和零值">指针和零值</h1>
+<p>指针的零值是 nil ，而不是指向零初始化的值。</p>
+<pre tabindex="0"><code>var p *int
+fmt.Println(*p) // 这会引发 panic，因为 p 是 nil，没有值可以解引用
+</code></pre><p>解决： 始终确保指针已初始化并指向有效的内存地址。</p>
+<h1 id="在切片上的原位修改">在切片上的原位修改</h1>
+<p>切片其实是底层数组的一个视图。在一个切片上的修改可能影响其他引用相同底层数组的切片。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+func main() {
+    original := []int{1, 2, 3, 4, 5}
+    subset := original[1:4]
+    subset[0] = 9
+    fmt.Println(original) // 输出：[1 9 3 4 5]
+}
+</code></pre><p><strong>注意</strong>：如果不想修改原始数据，要使用 copy 创建一个新的切片副本。</p>
+<h1 id="错误地使用接口类型">错误地使用接口类型</h1>
+<p>Go 中的接口是静态类型的，但它们可以持有任何值。很多新手尝试将接口值直接转换为另一种类型，而不是使用类型断言。</p>
+<pre tabindex="0"><code>func MyFunc(a interface{}) {
+    str := a.(string)
+    fmt.Println(str)
+}
+</code></pre><p>调用 MyFunc(123) 会引发panic。</p>
+<p>解决：在使用类型断言前，要检查是否成功。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+func main() {
+    MyFunc(&#34;123&#34;)
+    MyFunc(123)
+}
+
+func MyFunc(a interface{}) {
+    str := a.(string)
+    fmt.Println(str)
+}
+</code></pre><h1 id="忽略goroutine泄漏">忽略Goroutine泄漏</h1>
+<p>Goroutines 是轻量级的，但它们并非完全没有成本。未正确终止的 Goroutines 会导致内存泄漏。</p>
+<pre tabindex="0"><code>func leakyFunc() {
+    for {
+        go func() {
+            time.Sleep(time.Hour)
+        }()
+    }
+}
+</code></pre><p>解决： 确保为 Goroutines 设计合适的退出策略，例如使用 context 或 select 和 channel 机制。</p>
+<h1 id="没有初始化的结构体字段">没有初始化的结构体字段</h1>
+<p>在 Go 中，如果结构体的字段没有显式初始化，它们将被赋予零值。这可能导致意外的行为，尤其是当你期望它们有一个非零的默认值时。</p>
+<pre tabindex="0"><code>type Config struct {
+    Timeout time.Duration
+}
+
+c := Config{}
+fmt.Println(c.Timeout) // 输出：0s，可能不是你期望的默认超时值
+</code></pre><p>解决： 创建返回正确初始化的结构体的工厂函数或构造函数。</p>
+<h1 id="忽略channel的返回值">忽略channel的返回值</h1>
+<p>当从已关闭的 channel 读取时，你将接收该类型的零值，而不会得到任何明确的“channel 已关闭”的错误。</p>
+<pre tabindex="0"><code>ch := make(chan int)
+close(ch)
+val := &lt;-ch
+fmt.Println(val) // 输出：0，可能误导你认为 channel 传递了一个 0
+</code></pre><p>解决： 使用两个返回值的形式来检查 channel 是否已关闭：</p>
+<pre tabindex="0"><code>val, ok := &lt;-ch
+if !ok {
+    fmt.Println(&#34;Channel is closed&#34;)
+}
+</code></pre><pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+func main() {
+	ch := make(chan int)
+	close(ch)
+	val := &lt;-ch
+	fmt.Println(val) // 输出：0，可能误导你认为 channel 传递了一个 0
+
+	ch1 := make(chan int)
+	close(ch1)
+	val1, ok := &lt;-ch
+	if !ok {
+		fmt.Println(&#34;Channel is closed&#34;) // 检查 channel 是否已关闭
+	} else {
+		fmt.Println(val1) // 输出正确的值
+	}
+}
+</code></pre><h1 id="非法的字符串操作">非法的字符串操作</h1>
+<p>Go 的字符串是不可变的，尝试修改字符串会导致编译错误。</p>
+<pre tabindex="0"><code>str := &#34;hello&#34;
+str[0] = &#39;H&#39; // 编译错误
+</code></pre><p>解决： 使用切片和 string 转换函数来实现字符串的变化。</p>
+<h1 id="range循环的陷阱">range循环的陷阱</h1>
+<p>在 for … range 循环中，范围变量的值在每次迭代中都会被重用，这可能会导致意外的闭包行为。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+func main() {
+    funcs := []func(){}
+    for _, val := range []int{1, 2, 3} {
+        funcs = append(funcs, func() {
+            fmt.Println(val)
+        })
+    }
+    for _, f := range funcs {
+        f() // 会三次打印 3，而不是 1, 2, 3
+    }
+}
+</code></pre><p>正确的写法：</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+func main() {
+    funcs := []func(){}
+    for _, val := range []int{1, 2, 3} {
+        v := val
+        funcs = append(funcs, func() {
+            fmt.Println(v)
+        })
+    }
+
+    for _, f := range funcs {
+        f() // 会三次打印 3，而不是 1, 2, 3
+    }
+}
+</code></pre><p>解决： 在循环体内部为范围变量创建一个新的局部变量。</p>
+<h1 id="对nil切片和nil-map的误解">对nil切片和nil map的误解</h1>
+<p>虽然 nil 切片和 nil map 都表示“没有元素”的集合，但它们在使用时的行为是不同的。</p>
+<pre tabindex="0"><code>var s []int
+var m map[string]int
+
+s = append(s, 1) // 正确的，你可以 append 到 nil 切片
+m[&#34;key&#34;] = 1     // 运行时 panic，不能直接赋值给 nil map
+</code></pre><p>解决：在使用 map 之前，确保使用 make 初始化它。</p>
+<h1 id="小心map并发访问">小心map并发访问</h1>
+<p>Go的map不是并发安全的，多个goroutine同时读写map时可能导致运行时错误。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+import &#34;sync&#34;
+
+func main() {
+    m := make(map[string]int)
+    wg := sync.WaitGroup{}
+
+
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+
+        m[&#34;key&#34;] = 1
+        fmt.Printf(&#34;1: %v \n&#34;,m)
+    }()
+
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+
+        m[&#34;key&#34;] = 2
+        fmt.Printf(&#34;2: %v \n&#34;,m)
+    }()
+
+    wg.Wait()
+
+    fmt.Println(m)
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>2: map[key:2] 
+1: map[key:1] 
+map[key:1]
+</code></pre><p>解决：使用互斥锁（如：sync.Mutex）来同步对map的访问，或考虑使用并发安全的数据结构，如 sync.Map 。</p>
+<h1 id="方法和指针接收者">方法和指针接收者</h1>
+<p>当定义方法时，区分值接收者和指针接收者是很重要的，特别是当你想修改接收者中的值时。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+type Counter struct {
+	count int
+}
+
+func (c Counter) Add() {
+	c.count++
+}
+
+func (c *Counter) AddPtr() {
+	c.count++
+}
+func main() {
+
+	counter := Counter{}
+	counter.Add()
+	fmt.Println(counter.count) // 输出 0，因为 Add() 没有改变原值
+
+	counter.AddPtr()
+	fmt.Println(counter.count) // 输出 1，因为 AddPtr() 修改了原值
+}
+</code></pre></article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E4%BF%AE%E7%82%BC/>修炼</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/go%E8%AF%BB%E5%8F%96%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84%E6%96%B9%E5%BC%8F/"><span class="iconfont icon-article"></span>Go读取配置文件的方式</a></p><p><a class="link" href="/posts/go%E4%B8%AD%E7%9A%84json%E5%BA%8F%E5%88%97%E5%8C%96%E4%B8%8E%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/"><span class="iconfont icon-article"></span>Go中的JSON序列化与反序列化</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script><script src="/js/hljs.min.6f979583f61e4ec5f0b94f94eab2e130ee628032474d374414dba4e33cc12097a0d01fe65b33378b23f6d3b053b95445.js" integrity="sha384-b5eVg/YeTsXwuU&#43;U6rLhMO5igDJHTTdEFNuk4zzBIJeg0B/mWzM3iyP207BTuVRF"></script><script>hljs.initHighlightingOnLoad();</script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>
