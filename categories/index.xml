@@ -270,11 +270,11 @@ func (rw *RWMutex) RUnlock() {
     </item>
     
     <item>
-      <title>反射biubiubiu~</title>
-      <link>https://tinklespring.com/posts/%E5%8F%8D%E5%B0%84biubiubiu~/</link>
+      <title>反射biubiubiu</title>
+      <link>https://tinklespring.com/posts/%E5%8F%8D%E5%B0%84biubiubiu/</link>
       <pubDate>Thu, 14 Sep 2023 11:06:00 +0800</pubDate>
       
-      <guid>https://tinklespring.com/posts/%E5%8F%8D%E5%B0%84biubiubiu~/</guid>
+      <guid>https://tinklespring.com/posts/%E5%8F%8D%E5%B0%84biubiubiu/</guid>
       <description>&lt;blockquote&gt;
 &lt;p&gt;go的反射是一种强大且复杂的特性，允许创造更灵活、更动态的代码。&lt;/p&gt;
 &lt;/blockquote&gt;

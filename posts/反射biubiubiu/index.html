@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>反射biubiubiu&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="反射biubiubiu" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">反射biubiubiu</h1><p class="article date">Thursday, September 14, 2023</p></section><article class="article markdown-body"><blockquote>
+<p>go的反射是一种强大且复杂的特性，允许创造更灵活、更动态的代码。</p>
+</blockquote>
+<h1 id="反射基本概念">反射基本概念</h1>
+<p>什么是反射？</p>
+<ul>
+<li>反射是检查自身结构的机制</li>
+<li>反射是困惑的源泉</li>
+</ul>
+<h2 id="测验题目">测验题目</h2>
+<p>如何判断 Person 结构中的两个变量是否相等？是否可以使用“==”操作符进行比较？</p>
+<pre tabindex="0"><code>type Person struct {
+    Name string
+    Age int
+    extra interface{}
+}
+</code></pre><p>答：使用“==”操作符可以比较两个结构体变量，但仅限于结构体成员类型是简单类型，不能比较诸如 slice、map 等不可比较类型。</p>
+<p>实际项目中常使用<code>reflect.DeepEqual()</code>函数来比较两个结构体变量，支持任意两个结构体变量的比较：</p>
+<pre tabindex="0"><code>package main
+
+import (
+    &#34;fmt&#34;
+    &#34;reflect&#34;
+)
+
+type Person struct {
+    Name  string
+    Age   int
+    extra interface{}
+}
+
+func main() {
+    p1 := &amp;Person{
+        Name:  &#34;姓名1&#34;,
+        Age:   20,
+        extra: &#34;{}&#34;,
+    }
+    p2 := p1
+    p3 := &amp;Person{
+        Name:  &#34;姓名1&#34;,
+        Age:   20,
+        extra: &#34;{}&#34;,
+    }
+
+    // 内存地址相同：true
+    fmt.Println(&#34;p1 == p2 :&#34;, p1 == p2)
+    // reflect.DeepEqual 支持任意两个结构体变量的比较，结构体每个值都相同，所以为 true
+    fmt.Println(&#34;p1 DeepEqual p2 :&#34;, reflect.DeepEqual(p1, p2))
+
+    // 内存地址不相同：false
+    fmt.Println(&#34;p1 == p3 :&#34;, p1 == p3)
+    // reflect.DeepEqual 支持任意两个结构体变量的比较，结构体每个值都相同，所以为 true
+    fmt.Println(&#34;p1 DeepEqual p3 :&#34;, reflect.DeepEqual(p1, p3))
+}
+</code></pre><h2 id="接口概念">接口概念</h2>
+<p>反射在计算机科学中是一种程序在运行时查看和修改自身结构和行为的能力，在Go中，<code>reflect</code>包提供了一组函数，用于在运行时查看类型和值，修改值，以及调用方法。</p>
+<p><strong>类型</strong><br>
+我们知道 Go 语言是静态类型语言，比如 int、float32、[]byte 等等，每个变量都有一个静态类型，在代码编译时就已经确定了。</p>
+<p>例如，下面这个示例中，变量 i 和 j 是相同的类型吗？</p>
+<pre tabindex="0"><code>type Myint int 
+
+var i int 
+var j Myint
+</code></pre><p>答：变量 i 和 j 是不同的类型，二者拥有不同的静态类型，尽管二者底层类型都是int，但在没有类型转换的情况下是不可以互相赋值的。</p>
+<p><strong>interface类型</strong><br>
+每一个 interface 类型代表一个特定的方法集，方法集 中的方法被称为接口。比如：Person 就是一个接口类型，其中包含了一个 Speak() 方法。</p>
+<pre tabindex="0"><code>type Person interface {
+	Speak() string
+}
+</code></pre><p><strong>interface变量</strong><br>
+和其他类型一样，也可以声明interface类型变量，比如：</p>
+<pre tabindex="0"><code>//没给wj赋值，nil
+var wj Person
+</code></pre><p><strong>实现接口</strong><br>
+任何类型只要实现了interface类型的所有方法，就可以称该类型实现了该接口，该类型的变量就可以存储到interface类型的变量中。</p>
+<pre tabindex="0"><code>type Teacher struct {
+
+}
+
+func (c Teacher) Speak() string {
+	return &#34;teach teach&#34;
+}
+</code></pre><p>此时，结构体 Teacher 就可以存储到 wj 变量中：</p>
+<pre tabindex="0"><code>var wj Person
+var teacher Teacher
+wj = teacher
+</code></pre><p>In fact, interface变量可以存储任意实现了该接口类型的变量。</p>
+<p><strong>复合类型</strong><br>
+为什么 interface 变量可以存储任意实现了该接口类型的变量？</p>
+<p>答：interface类型的变量在存储某个变量时会同时保存变量类型和变量值，Go运行时会将interface类型表示成这样：</p>
+<pre tabindex="0"><code>type iface struct {
+	tab *itab            //保存变量类型及方法集
+	data unsafe.Pointer  //变量值位于堆栈的指针
+}
+</code></pre><p>暂时只需要明白：interface变量同时保存了变量值和变量类型。</p>
+<p>Go的反射就是在运行时操作 interface 中的值和类型的特性，这是理解反射的前提。</p>
+<p><strong>特殊空interface</strong><br>
+空interface是一种特殊的interface类型，因为没有指定任何方法集，如此一来，任意类型都可以声称实现了空接口，那么该接口类型就可以存储任意类型的值了。</p>
+<pre tabindex="0"><code>var emptyIf interface {}
+</code></pre><h1 id="反射原理">反射原理</h1>
+<h2 id="type和value">type和value</h2>
+<p>在Go的反射机制中，最重要的两个概念是 <code>Type(类型)</code> 和 <code>Value(值)</code>。每个在Go语言中声明的变量都有一个类型和值，可以通过<code>reflect.TypeOf</code>和<code>reflect.ValueOf</code>函数来获取变量的类型和值。</p>
+<pre tabindex="0"><code>package main
+
+import (
+    &#34;fmt&#34;
+    &#34;reflect&#34;
+)
+
+func main() {
+    var x int = 7
+    t := reflect.TypeOf(x)
+    v := reflect.ValueOf(x)
+    fmt.Printf(&#34;Type: %v\n&#34;, t)  // Type: int
+    fmt.Printf(&#34;Value: %v\n&#34;, v) // Value: 7
+}
+</code></pre><p>在这个例子中，我们首先声明了一个 int 类型的变量 x，然后使用 reflect.TypeOf 和 reflect.ValueOf 函数获取 x 的类型和值，并打印出来。</p>
+<p>reflect 包中同时提供了两个方法来提取interface的value和type：</p>
+<pre tabindex="0"><code>func ValueOf(i interface) Value
+func TypeOf(i interface) Type
+</code></pre><p><img  src="/img/Golang/%e5%8f%8d%e5%b0%84biubiubiu/Type%e5%92%8cValue.png"
+        alt/></p>
+<p>由此可知，Go的反射基于两种类型：Type和Value。每个Type表示一个Go语言的类型，它是一个接口，有许多方法用于检查类型的属性，例如它是不是一个指针，它的元素类型等等，Value类型表示一个Go语言的值，是一个结构体，包含了一个表示值的接口和一个表示值类型的Type。</p>
+<p>当通过 reflect.TypeOf 和 reflect.ValueOf 函数获取一个变量的类型和值时，实际上是创建了一个 Type 或 Value 的实例，这个实例包含了变量的类型信息或值信息。然后，我们可以通过 Type 或 Value 的方法来操作这个变量。</p>
+<h2 id="反射定律">反射定律</h2>
+<p><code>第一定律：反射可以将interface类型变量转换为反射对象。</code></p>
+<p>例：通过反射获取interface变量的值和类型</p>
+<pre tabindex="0"><code>package main
+
+import (
+    &#34;fmt&#34;
+    &#34;reflect&#34;
+)
+
+func main() {
+    var x float64 = 7.1
+
+    // 变量 x 在传入 reflect.TypeOf 函数时，实际上做了一次类型转换，x 被转换成空接口传入
+    t := reflect.TypeOf(x)
+
+    //  reflect.ValueO 函数亦是如此
+    v := reflect.ValueOf(x)
+
+    fmt.Printf(&#34;Type: %v\n&#34;, t)  // Type: float64
+    fmt.Printf(&#34;Value: %v\n&#34;, v) // Value:  7.1
+}
+</code></pre><p><code>第二定律：反射可以将反射对象还原成interface对象。</code></p>
+<p>之所以叫“反射”，是因为反射对象与interface对象可以互相转化：</p>
+<pre tabindex="0"><code>package main
+
+import (
+    &#34;fmt&#34;
+    &#34;reflect&#34;
+)
+
+func main() {
+    var numIf interface{}
+    numIf = 100
+
+    v := reflect.ValueOf(numIf)
+    vIf := v.Interface()
+
+    if numIf == vIf {
+        fmt.Printf(&#34;They are same!&#34;)
+    }
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>They are same!
+</code></pre><p><code>第三定律：反射对象可以修改，value值必须要先设置成可设置的。</code><br>
+通过反射对象v设置新值，会触发panic：</p>
+<pre tabindex="0"><code>package main
+
+import (
+    &#34;fmt&#34;
+    &#34;reflect&#34;
+)
+
+func main() {
+    numIf := 100
+
+    v := reflect.ValueOf(&amp;numIf)
+
+    // reflect.ValueOf 获取的是其所存储的值，而非 v 本身，即通过 v 修改其值是无法影响 x 的，无效的修改会报 panic
+    v.SetInt(1000)
+
+    fmt.Println(&#34;v=&#34;, v.Elem().Interface())
+}
+</code></pre><p>正确的写法：</p>
+<pre tabindex="0"><code>package main
+
+import (
+    &#34;fmt&#34;
+    &#34;reflect&#34;
+)
+
+func main() {
+    numIf := 100
+
+    v := reflect.ValueOf(&amp;numIf)
+
+    // Elem() 方法可以获取指向 v 的指针，可以成功设置
+    v.Elem().SetInt(1000)
+
+    fmt.Println(&#34;v=&#34;, v.Elem().Interface())
+}
+</code></pre><h1 id="反射其他使用">反射其他使用</h1>
+<p>在 Go 语言中，我们可以通过反射来实现许多灵活和动态的功能。例如，我们可以通过反射来动态创建对象，动态调用方法，或者遍历和修改结构体的字段。</p>
+<h2 id="动态创建对象">动态创建对象</h2>
+<p>可以通过 reflect.New 函数来动态创建对象。reflect.New 函数接受一个 Type 参数，返回一个 Value，这个 Value 包含了一个指向新创建的对象的指针。</p>
+<pre tabindex="0"><code>// 创建一个 int 的实例
+t := reflect.TypeOf(int(0))
+v := reflect.New(t)
+fmt.Println(v.Elem().Int()) // 输出 0
+</code></pre><p>在这个例子中，我们首先获取 int 类型的 Type，然后通过 reflect.New 函数创建一个新的 int 实例，并打印出它的值。</p>
+<h2 id="动态调用方法">动态调用方法</h2>
+<p>可以通过 reflect.Value 的 Method 方法来获取一个方法的 Value，然后通过 Call 方法来调用这个方法。</p>
+<pre tabindex="0"><code>type MyStruct struct {
+}
+
+func (m *MyStruct) MyMethod() {
+    fmt.Println(&#34;MyMethod was called&#34;)
+}
+
+func main() {
+    m := &amp;MyStruct{}
+    v := reflect.ValueOf(m)
+    method := v.MethodByName(&#34;MyMethod&#34;)
+    method.Call(nil)
+}
+</code></pre><p>在这个例子中，我们首先定义了一个结构体 MyStruct 和它的方法 MyMethod，然后通过反射获取 MyMethod 的 Value，并调用它。</p>
+<h2 id="遍历和修改结构体的字段">遍历和修改结构体的字段</h2>
+<p>可以通过 reflect.Value 的 NumField 和 Field 方法来遍历一个结构体的所有字段，并通过 Set 方法来修改字段的值。</p>
+<pre tabindex="0"><code>type MyStruct struct {
+    Field1 int
+    Field2 string
+}
+
+func main() {
+    m := &amp;MyStruct{Field1: 1, Field2: &#34;hello&#34;}
+    v := reflect.ValueOf(m).Elem()
+
+    for i := 0; i &lt; v.NumField(); i++ {
+        field := v.Field(i)
+        fmt.Printf(&#34;Field %d: %v\n&#34;, i, field.Interface())
+
+        if field.Kind() == reflect.Int {
+            field.SetInt(2)
+        } else if field.Kind() == reflect.String {
+            field.SetString(&#34;world&#34;)
+        }
+    }
+
+    fmt.Printf(&#34;m: %v\n&#34;, m)  // 输出：m: &amp;{2 world}
+}
+</code></pre><p>在这个例子中，我们首先定义了一个结构体 MyStruct，然后通过反射遍历 MyStruct 的所有字段，打印出字段的值，并修改它们的值。</p>
+<h1 id="常见的陷阱和提示">常见的陷阱和提示</h1>
+<p>虽然反射是一个强大的工具，但是它也有一些陷阱和限制。</p>
+<ul>
+<li>对于不可导出的字段和方法，反射不能访问或修改它们。例如，我们不能通过反射来修改一个结构体的小写字段。</li>
+<li>使用反射会有一些性能开销。因为反射操作涉及到一些动态类型检查和方法调用，所以它通常比普通的静态类型操作要慢。</li>
+<li>反射代码通常比较难以理解和维护。因为反射操作往往涉及到一些动态类型和方法，所以它的代码往往比较难以理解和维护。</li>
+</ul>
+</article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E4%BF%AE%E7%82%BC/>修炼</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/go%E8%AF%AD%E8%A8%80rwmutex%E8%AF%BB%E5%86%99%E4%BA%92%E6%96%A5%E9%94%81/"><span class="iconfont icon-article"></span>Go语言RWMutex读写互斥锁</a></p><p><a class="link" href="/posts/go%E8%AF%BB%E5%8F%96%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84%E6%96%B9%E5%BC%8F/"><span class="iconfont icon-article"></span>Go读取配置文件的方式</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script><script src="/js/hljs.min.6f979583f61e4ec5f0b94f94eab2e130ee628032474d374414dba4e33cc12097a0d01fe65b33378b23f6d3b053b95445.js" integrity="sha384-b5eVg/YeTsXwuU&#43;U6rLhMO5igDJHTTdEFNuk4zzBIJeg0B/mWzM3iyP207BTuVRF"></script><script>hljs.initHighlightingOnLoad();</script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>
