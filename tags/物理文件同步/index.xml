@@ -291,7 +291,253 @@ func (rw *RWMutex) RUnlock() {
     Age int
     extra interface{}
 }
-&lt;/code&gt;&lt;/pre&gt;</description>
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;答：使用“==”操作符可以比较两个结构体变量，但仅限于结构体成员类型是简单类型，不能比较诸如 slice、map 等不可比较类型。&lt;/p&gt;
+&lt;p&gt;实际项目中常使用&lt;code&gt;reflect.DeepEqual()&lt;/code&gt;函数来比较两个结构体变量，支持任意两个结构体变量的比较：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;reflect&amp;#34;
+)
+
+type Person struct {
+    Name  string
+    Age   int
+    extra interface{}
+}
+
+func main() {
+    p1 := &amp;amp;Person{
+        Name:  &amp;#34;姓名1&amp;#34;,
+        Age:   20,
+        extra: &amp;#34;{}&amp;#34;,
+    }
+    p2 := p1
+    p3 := &amp;amp;Person{
+        Name:  &amp;#34;姓名1&amp;#34;,
+        Age:   20,
+        extra: &amp;#34;{}&amp;#34;,
+    }
+
+    // 内存地址相同：true
+    fmt.Println(&amp;#34;p1 == p2 :&amp;#34;, p1 == p2)
+    // reflect.DeepEqual 支持任意两个结构体变量的比较，结构体每个值都相同，所以为 true
+    fmt.Println(&amp;#34;p1 DeepEqual p2 :&amp;#34;, reflect.DeepEqual(p1, p2))
+
+    // 内存地址不相同：false
+    fmt.Println(&amp;#34;p1 == p3 :&amp;#34;, p1 == p3)
+    // reflect.DeepEqual 支持任意两个结构体变量的比较，结构体每个值都相同，所以为 true
+    fmt.Println(&amp;#34;p1 DeepEqual p3 :&amp;#34;, reflect.DeepEqual(p1, p3))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;接口概念&#34;&gt;接口概念&lt;/h2&gt;
+&lt;p&gt;反射在计算机科学中是一种程序在运行时查看和修改自身结构和行为的能力，在Go中，&lt;code&gt;reflect&lt;/code&gt;包提供了一组函数，用于在运行时查看类型和值，修改值，以及调用方法。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;类型&lt;/strong&gt;&lt;br&gt;
+我们知道 Go 语言是静态类型语言，比如 int、float32、[]byte 等等，每个变量都有一个静态类型，在代码编译时就已经确定了。&lt;/p&gt;
+&lt;p&gt;例如，下面这个示例中，变量 i 和 j 是相同的类型吗？&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Myint int 
+
+var i int 
+var j Myint
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;答：变量 i 和 j 是不同的类型，二者拥有不同的静态类型，尽管二者底层类型都是int，但在没有类型转换的情况下是不可以互相赋值的。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;interface类型&lt;/strong&gt;&lt;br&gt;
+每一个 interface 类型代表一个特定的方法集，方法集 中的方法被称为接口。比如：Person 就是一个接口类型，其中包含了一个 Speak() 方法。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Person interface {
+	Speak() string
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;interface变量&lt;/strong&gt;&lt;br&gt;
+和其他类型一样，也可以声明interface类型变量，比如：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//没给wj赋值，nil
+var wj Person
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;实现接口&lt;/strong&gt;&lt;br&gt;
+任何类型只要实现了interface类型的所有方法，就可以称该类型实现了该接口，该类型的变量就可以存储到interface类型的变量中。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Teacher struct {
+
+}
+
+func (c Teacher) Speak() string {
+	return &amp;#34;teach teach&amp;#34;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;此时，结构体 Teacher 就可以存储到 wj 变量中：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var wj Person
+var teacher Teacher
+wj = teacher
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;In fact, interface变量可以存储任意实现了该接口类型的变量。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;复合类型&lt;/strong&gt;&lt;br&gt;
+为什么 interface 变量可以存储任意实现了该接口类型的变量？&lt;/p&gt;
+&lt;p&gt;答：interface类型的变量在存储某个变量时会同时保存变量类型和变量值，Go运行时会将interface类型表示成这样：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type iface struct {
+	tab *itab            //保存变量类型及方法集
+	data unsafe.Pointer  //变量值位于堆栈的指针
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;暂时只需要明白：interface变量同时保存了变量值和变量类型。&lt;/p&gt;
+&lt;p&gt;Go的反射就是在运行时操作 interface 中的值和类型的特性，这是理解反射的前提。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;特殊空interface&lt;/strong&gt;&lt;br&gt;
+空interface是一种特殊的interface类型，因为没有指定任何方法集，如此一来，任意类型都可以声称实现了空接口，那么该接口类型就可以存储任意类型的值了。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var emptyIf interface {}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;反射原理&#34;&gt;反射原理&lt;/h1&gt;
+&lt;h2 id=&#34;type和value&#34;&gt;type和value&lt;/h2&gt;
+&lt;p&gt;在Go的反射机制中，最重要的两个概念是 &lt;code&gt;Type(类型)&lt;/code&gt; 和 &lt;code&gt;Value(值)&lt;/code&gt;。每个在Go语言中声明的变量都有一个类型和值，可以通过&lt;code&gt;reflect.TypeOf&lt;/code&gt;和&lt;code&gt;reflect.ValueOf&lt;/code&gt;函数来获取变量的类型和值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;reflect&amp;#34;
+)
+
+func main() {
+    var x int = 7
+    t := reflect.TypeOf(x)
+    v := reflect.ValueOf(x)
+    fmt.Printf(&amp;#34;Type: %v\n&amp;#34;, t)  // Type: int
+    fmt.Printf(&amp;#34;Value: %v\n&amp;#34;, v) // Value: 7
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这个例子中，我们首先声明了一个 int 类型的变量 x，然后使用 reflect.TypeOf 和 reflect.ValueOf 函数获取 x 的类型和值，并打印出来。&lt;/p&gt;
+&lt;p&gt;reflect 包中同时提供了两个方法来提取interface的value和type：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func ValueOf(i interface) Value
+func TypeOf(i interface) Type
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/%e5%8f%8d%e5%b0%84biubiubiu/Type%e5%92%8cValue.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;由此可知，Go的反射基于两种类型：Type和Value。每个Type表示一个Go语言的类型，它是一个接口，有许多方法用于检查类型的属性，例如它是不是一个指针，它的元素类型等等，Value类型表示一个Go语言的值，是一个结构体，包含了一个表示值的接口和一个表示值类型的Type。&lt;/p&gt;
+&lt;p&gt;当通过 reflect.TypeOf 和 reflect.ValueOf 函数获取一个变量的类型和值时，实际上是创建了一个 Type 或 Value 的实例，这个实例包含了变量的类型信息或值信息。然后，我们可以通过 Type 或 Value 的方法来操作这个变量。&lt;/p&gt;
+&lt;h2 id=&#34;反射定律&#34;&gt;反射定律&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;第一定律：反射可以将interface类型变量转换为反射对象。&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;例：通过反射获取interface变量的值和类型&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;reflect&amp;#34;
+)
+
+func main() {
+    var x float64 = 7.1
+
+    // 变量 x 在传入 reflect.TypeOf 函数时，实际上做了一次类型转换，x 被转换成空接口传入
+    t := reflect.TypeOf(x)
+
+    //  reflect.ValueO 函数亦是如此
+    v := reflect.ValueOf(x)
+
+    fmt.Printf(&amp;#34;Type: %v\n&amp;#34;, t)  // Type: float64
+    fmt.Printf(&amp;#34;Value: %v\n&amp;#34;, v) // Value:  7.1
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;第二定律：反射可以将反射对象还原成interface对象。&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;之所以叫“反射”，是因为反射对象与interface对象可以互相转化：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;reflect&amp;#34;
+)
+
+func main() {
+    var numIf interface{}
+    numIf = 100
+
+    v := reflect.ValueOf(numIf)
+    vIf := v.Interface()
+
+    if numIf == vIf {
+        fmt.Printf(&amp;#34;They are same!&amp;#34;)
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;They are same!
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;第三定律：反射对象可以修改，value值必须要先设置成可设置的。&lt;/code&gt;&lt;br&gt;
+通过反射对象v设置新值，会触发panic：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;reflect&amp;#34;
+)
+
+func main() {
+    numIf := 100
+
+    v := reflect.ValueOf(&amp;amp;numIf)
+
+    // reflect.ValueOf 获取的是其所存储的值，而非 v 本身，即通过 v 修改其值是无法影响 x 的，无效的修改会报 panic
+    v.SetInt(1000)
+
+    fmt.Println(&amp;#34;v=&amp;#34;, v.Elem().Interface())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;正确的写法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;reflect&amp;#34;
+)
+
+func main() {
+    numIf := 100
+
+    v := reflect.ValueOf(&amp;amp;numIf)
+
+    // Elem() 方法可以获取指向 v 的指针，可以成功设置
+    v.Elem().SetInt(1000)
+
+    fmt.Println(&amp;#34;v=&amp;#34;, v.Elem().Interface())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;反射其他使用&#34;&gt;反射其他使用&lt;/h1&gt;
+&lt;p&gt;在 Go 语言中，我们可以通过反射来实现许多灵活和动态的功能。例如，我们可以通过反射来动态创建对象，动态调用方法，或者遍历和修改结构体的字段。&lt;/p&gt;
+&lt;h2 id=&#34;动态创建对象&#34;&gt;动态创建对象&lt;/h2&gt;
+&lt;p&gt;可以通过 reflect.New 函数来动态创建对象。reflect.New 函数接受一个 Type 参数，返回一个 Value，这个 Value 包含了一个指向新创建的对象的指针。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 创建一个 int 的实例
+t := reflect.TypeOf(int(0))
+v := reflect.New(t)
+fmt.Println(v.Elem().Int()) // 输出 0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这个例子中，我们首先获取 int 类型的 Type，然后通过 reflect.New 函数创建一个新的 int 实例，并打印出它的值。&lt;/p&gt;
+&lt;h2 id=&#34;动态调用方法&#34;&gt;动态调用方法&lt;/h2&gt;
+&lt;p&gt;可以通过 reflect.Value 的 Method 方法来获取一个方法的 Value，然后通过 Call 方法来调用这个方法。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyStruct struct {
+}
+
+func (m *MyStruct) MyMethod() {
+    fmt.Println(&amp;#34;MyMethod was called&amp;#34;)
+}
+
+func main() {
+    m := &amp;amp;MyStruct{}
+    v := reflect.ValueOf(m)
+    method := v.MethodByName(&amp;#34;MyMethod&amp;#34;)
+    method.Call(nil)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这个例子中，我们首先定义了一个结构体 MyStruct 和它的方法 MyMethod，然后通过反射获取 MyMethod 的 Value，并调用它。&lt;/p&gt;
+&lt;h2 id=&#34;遍历和修改结构体的字段&#34;&gt;遍历和修改结构体的字段&lt;/h2&gt;
+&lt;p&gt;可以通过 reflect.Value 的 NumField 和 Field 方法来遍历一个结构体的所有字段，并通过 Set 方法来修改字段的值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyStruct struct {
+    Field1 int
+    Field2 string
+}
+
+func main() {
+    m := &amp;amp;MyStruct{Field1: 1, Field2: &amp;#34;hello&amp;#34;}
+    v := reflect.ValueOf(m).Elem()
+
+    for i := 0; i &amp;lt; v.NumField(); i++ {
+        field := v.Field(i)
+        fmt.Printf(&amp;#34;Field %d: %v\n&amp;#34;, i, field.Interface())
+
+        if field.Kind() == reflect.Int {
+            field.SetInt(2)
+        } else if field.Kind() == reflect.String {
+            field.SetString(&amp;#34;world&amp;#34;)
+        }
+    }
+
+    fmt.Printf(&amp;#34;m: %v\n&amp;#34;, m)  // 输出：m: &amp;amp;{2 world}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这个例子中，我们首先定义了一个结构体 MyStruct，然后通过反射遍历 MyStruct 的所有字段，打印出字段的值，并修改它们的值。&lt;/p&gt;
+&lt;h1 id=&#34;常见的陷阱和提示&#34;&gt;常见的陷阱和提示&lt;/h1&gt;
+&lt;p&gt;虽然反射是一个强大的工具，但是它也有一些陷阱和限制。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;对于不可导出的字段和方法，反射不能访问或修改它们。例如，我们不能通过反射来修改一个结构体的小写字段。&lt;/li&gt;
+&lt;li&gt;使用反射会有一些性能开销。因为反射操作涉及到一些动态类型检查和方法调用，所以它通常比普通的静态类型操作要慢。&lt;/li&gt;
+&lt;li&gt;反射代码通常比较难以理解和维护。因为反射操作往往涉及到一些动态类型和方法，所以它的代码往往比较难以理解和维护。&lt;/li&gt;
+&lt;/ul&gt;
+</description>
     </item>
     
     <item>
