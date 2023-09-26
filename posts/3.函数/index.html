@@ -242,7 +242,7 @@ func main() {
 </thead>
 <tbody>
 <tr>
-<td style="text-align:center"><pre>func paintNeeded(width float64, height float64) float64 {<br>        area := width * height<br>}<br>删除return 语句<pre></td>
+<td style="text-align:center"><pre>func paintNeeded(width float64, height float64) float64 {<br>        area := width * height<br>        <del>return area / 10.0</del><br>}<br>删除return 语句<pre></td>
 <td style="text-align:center">如果函数声明了返回类型，go要求包含一个return语句</td>
 </tr>
 <tr>
@@ -250,7 +250,7 @@ func main() {
 <td style="text-align:center">如果函数声明了返回类型，go要求最后一个语句是return语句</td>
 </tr>
 <tr>
-<td style="text-align:center"><pre>func paintNeeded(width float64, height float64) {<br>        area := width * height<br>        return area / 10.0<br>}<br>删除返回类型声明<pre></td>
+<td style="text-align:center"><pre>func paintNeeded(width float64, height float64) <del>float64</del> {<br>        area := width * height<br>        return area / 10.0<br>}<br>删除返回类型声明<pre></td>
 <td style="text-align:center">go不允许返回未声明的值</td>
 </tr>
 <tr>
