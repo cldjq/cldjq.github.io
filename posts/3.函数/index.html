@@ -280,6 +280,9 @@ log.Fatal(err)   //再次打印错误信息，然后退出程序
 <pre tabindex="0"><code>err := fmt.Errorf(&#34;a height of %0.2f is invalid&#34;, -2.33333)
 fmt.Println(err.Error())
 fmt.Println(err)
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>a height of -2.33 is invalid
+a height of -2.33 is invalid
 </code></pre><h1 id="声明多个返回值">声明多个返回值</h1>
 <p>要声明函数的多个返回值，需将返回值类型放在函数声明的第二组圆括号内（在函数参数的圆括号之后），用逗号分隔。（当只有一个返回值时，返回值周围的圆括号是可选的，但是若有多个返回值，则必须使用圆括号。）当调用该函数时，需要考虑额外的返回值，通常通过将它们分配给额外的变量来实现。</p>
 <pre tabindex="0"><code>package main
@@ -311,6 +314,7 @@ func main() {
 }
 </code></pre><h1 id="在paintneeded函数中使用多个返回值">在paintNeeded函数中使用多个返回值</h1>
 <p>如上所见，可以返回任何类型的多个返回值，但是对于多个返回值，常见的做法是返回一个主返回值，后跟一个额外值，表示函数是否遇到错误，若无问题，通常将额外值设置为nil，若发生错误，则设置为错误值。</p>
+<p>下面代码，将声明其返回两个值，一个 float64 和一个 error （错误值有一种 <code>error类型</code>），在函数块中要做的第一件事是检查参数是否有效，若 width 或 height 参数小于0，将返回 0（这样无意义，但必须返回），以及通过调用 fmt.Errorf 产生的错误值，在函数开始的地方检查错误，若有问题，允许通过调用 return 轻松跳过函数的其余代码。若参数无问题，会像之前那样继续计算并返回，函数代码唯一不同之处在于，返回第二个值 nil 以及油漆量，表示没有错误。</p>
 <pre tabindex="0"><code>package main
 
 import &#34;fmt&#34;
@@ -332,26 +336,32 @@ func main() {
 }
 </code></pre><p>在 main 函数中，添加第二个变量记录 paintNeeded 中的错误值，若将一个无效的参数传递给paintNeeded，将得到一个错误返回值，并打印该错误。</p>
 <h1 id="始终处理错误">始终处理错误</h1>
-<p>当将一个无效的参数传递给paintNeeded时，得到一个错误返回值，并将其打印出，但也打印了一个无效信息。</p>
-<p>当函数返回一个错误值时，通常也必须返回一个主返回值，但伴随错误值的任何其他返回值都应被认为不可靠，被忽略。当调用返回错误值的函数时，在继续运行前测试该值是否为 nil 是重要的，若不是 nil ，则意味着有一个错误必须进行处理。</p>
-<p>如何处理错误取决于具体情况，对与 paintNeeded 函数，也许最好是简单跳过当前计算，并继续执行程序其余部分：</p>
+<p>当将一个无效的参数传递给paintNeeded时，得到一个错误返回值，并将其打印出来，但也得到了一个无效的值。</p>
+<pre tabindex="0"><code>func main() {
+	amount, err := paintNeeded(4.2, -3.0)   //amount将被设置为0，err将被设置为一个错误值
+	fmt.Println(err)   //打印错误
+	fmt.Printf(&#34;%0.2f liters needed\n&#34;, amount)  //打印无意义的值
+}
+</code></pre><p>当函数返回一个错误值时，通常也必须返回一个主返回值，但伴随错误值的任何其他返回值都应被认为不可靠，被忽略。当调用返回错误值的函数时，在继续运行前测试该值是否为 nil 是重要的，若不是 nil ，则意味着有一个错误必须进行处理。</p>
+<p>如何处理错误取决于具体情况，对于 paintNeeded 函数，也许最好是简单跳过当前计算，并继续执行程序其余部分：</p>
 <pre tabindex="0"><code>func main() {
 	amount, err := paintNeeded(4.2, -3.0)
-	if err != nil {
+	if err != nil {   //若不是nil，则一定有问题
 		fmt.Println(err)
-	} else {
-		fmt.Printf(&#34;%0.2f liters needed\n&#34;, amount)
+	} else {  //否则，错误值为nil
+		fmt.Printf(&#34;%0.2f liters needed\n&#34;, amount)  //因此可以打印我们得到的数量
 	}
 }
-</code></pre><p>可以调用 Log.Fatal 来显示错误信息并退出程序。</p>
+</code></pre><p>可以调用 Log.Fatal 来显示错误信息并退出程序，因为这个程序比较简短。</p>
 <pre tabindex="0"><code>func main() {
 	amount, err := paintNeeded(4.2, -3.0)
 	if err != nil {
-		Log.Fatal(err)
+		log.Fatal(err)  //打印错误并退出程序
 	}
-        fmt.Printf(&#34;%0.2f liters needed\n&#34;, amount)
+        fmt.Printf(&#34;%0.2f liters needed\n&#34;, amount)  //若有错误，则永远不会执行这里
 }
-</code></pre><p>如下是一个计算一个数字平方根的程序，若一个负数传递给 squareRoot 函数，将返回一个错误：</p>
+</code></pre><p><code>要记住，应该始终检查返回值以查看是否存在错误。</code></p>
+<p>如下是一个计算一个数字平方根的程序，若一个负数传递给 squareRoot 函数，将返回一个错误：</p>
 <pre tabindex="0"><code>package main
 
 import (
@@ -399,13 +409,44 @@ func main() {
 <p>当调用一个声明了行参的函数时，需要为调用提供实参，每个实参中的值被复制到相应的行参变量。（执行此操作的编程语言有时称为“值传递”）。这在大多数情况是可以的，但如果想把一个变量的值传递给一个函数并让它以某种方式改变这个值，就会遇到麻烦。</p>
 <p>函数只能更改行参中的该值的副本，而不能更改原始值，因此，在函数内部所做的任何更改在函数外部都将不可见。</p>
 <p><code>Go是一种“值传递”语言；函数行参从函数调用中接收实参的副本。</code></p>
-<h1 id="指针">指针</h1>
+<p>下面代码，接受一个数字，将其乘以2，然后输出结果。（使用<code>*=</code>运算符，工作方式与<code>+=</code>类似，但它会乘以变量所保存的值，而不是将其想加。）</p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+func double(number int) {  //行参设置为实参的一个副本
+	number *= 2
+	fmt.Println(number)
+}
+
+func main() {
+	amount := 6
+	double(amount)   //向函数传递一个实参
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>12
+</code></pre><p>此时，将打印双倍值的语句从double函数移动回调用它的函数，它就不会工作，因为double函数只会更改其值的副本。回到调用函数中，当尝试打印时，将得到原始值，而不是双倍值。</p>
+<pre tabindex="0"><code>func double(number int) { //行参设置为实参的一个副本
+	number *= 2   //更改副本值，而不是原始值
+}
+
+func main() {
+	amount := 6
+	double(amount) //向函数传递一个实参
+	fmt.Println(amount)  //打印原始值
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>6   //未变化
+</code></pre><h1 id="指针">指针</h1>
 <p>需要一种方法来允许函数改变变量所保存的原始值，而不是副本。</p>
 <p>可以使用 <code>&amp;</code> 符号来获取变量的地址，是go的“地址”运算符。<br>
 例如：</p>
 <pre tabindex="0"><code>amount := 6
-fmt.Println(amount)
-fmt.Println(&amp;amount)
+fmt.Println(amount)   //得到变量的值
+fmt.Println(&amp;amount)  //得到变量的地址
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>6  //变量的值
+0x1040a124  //变量的地址
 </code></pre><p>可以获得任何类型变量的地址，每个变量的地址不同。</p>
 <p>计算机为程序留出的内存是一个拥挤的地方，其充满了变量值：布尔值、整数、字符串等，如果有变量的地址，可以用其找到变量所包含的值。</p>
 <p><code>表示变量地址的值称为指针</code>，它指向可以找到变量的位置。</p>
