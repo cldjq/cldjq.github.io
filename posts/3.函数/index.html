@@ -269,31 +269,31 @@ import (
 )
 
 func main() {
-      err := errors.New(&#34;height can&#39;t be negative&#34;)
-      fmt.Println(err.Error())
+      err := errors.New(&#34;height can&#39;t be negative&#34;)  //创建一个新的错误值
+      fmt.Println(err.Error())  //返回错误信息
 }
 </code></pre><p>若将错误值传递给fmt或log包中的函数，则可能不需要调用它的Error方法。fmt和log中的函数已经被编写成能够检查是否传递给它们的值有Error方法，若有，则打印Error的返回值。</p>
 <pre tabindex="0"><code>err := errors.New(&#34;height can&#39;t be negative&#34;)
-fmt.Println(err)
-log.Fatal(err)
-</code></pre><p>若需要格式化数字或其他值以便在错误信息中使用，可以使用 fmt.Error 函数，就像 fmt.Printf 或 fmt.Sprintf 一样，将值插入格式字符串中，但是不会打印或返回一个字符串，而是返回一个错误值。</p>
-<pre tabindex="0"><code>err := fmt.Error(&#34;a height of %0.2f is invalid&#34;, -2.33333)
+fmt.Println(err)  //打印错误信息
+log.Fatal(err)   //再次打印错误信息，然后退出程序
+</code></pre><p>若需要格式化数字或其他值以便在错误信息中使用，可以使用 fmt.Errorf 函数，就像 fmt.Printf 或 fmt.Sprintf 一样，将值插入格式字符串中，但是不会打印或返回一个字符串，而是返回一个错误值。</p>
+<pre tabindex="0"><code>err := fmt.Errorf(&#34;a height of %0.2f is invalid&#34;, -2.33333)
 fmt.Println(err.Error())
 fmt.Println(err)
 </code></pre><h1 id="声明多个返回值">声明多个返回值</h1>
-<p>要声明函数的多个返回值，需将返回值类型放在函数声明的第二组圆括号内（在函数参数的圆括号之后），用都好分隔。（当只有一个返回值时，返回值周围的圆括号是可选的，但是若有多个返回值，则必须使用圆括号。）当调用该函数时，需要考虑额外的返回值，通常通过将它们分配给额外的变量来实现。</p>
+<p>要声明函数的多个返回值，需将返回值类型放在函数声明的第二组圆括号内（在函数参数的圆括号之后），用逗号分隔。（当只有一个返回值时，返回值周围的圆括号是可选的，但是若有多个返回值，则必须使用圆括号。）当调用该函数时，需要考虑额外的返回值，通常通过将它们分配给额外的变量来实现。</p>
 <pre tabindex="0"><code>package main
 
 import &#34;fmt&#34;
 
-func manyReturns() (int, bool, string) {
+func manyReturns() (int, bool, string) {   //返回一个整数，一个布尔值，一个字符串
 	return 1, true, &#34;hello&#34;
 }
 func main() {
-	myInt, myBool, myString := manyReturns()
+	myInt, myBool, myString := manyReturns()  //将每个返回值存储在一个变量中
 	fmt.Println(myInt, myBool, myString)
 }
-</code></pre><p>若要使返回值目的更清楚，可以将每个返回值提供名称，类似于参数名称，命名返回值的主要用途是作为程序员阅读代码的文档。</p>
+</code></pre><p>若要使返回值目的更清楚，可以<code>为每个返回值提供名称</code>，类似于参数名称，命名返回值的主要用途是作为程序员阅读代码的文档。</p>
 <pre tabindex="0"><code>package main
 
 import (
