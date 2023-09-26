@@ -181,6 +181,8 @@ func main() {
 <p>与条件块和循环块一样，在函数外部声明的变量将在该函数块的作用域内，这意味着可以在包级别上声明一个变量，并且可以在包中的任何函数内访问。</p>
 <h1 id="函数返回值">函数返回值</h1>
 <p>函数总是返回特定类型的值（只返回该类型），若要声明函数返回值，在函数声明中的参数后面添加该返回值类型，在函数块中使用 <code>return</code> 关键字，后面跟要返回的值。函数的调用者可以将返回值分配给一个变量，直接将它传递给另一个函数，或用它做任何其他需要做的事。</p>
+<p><img  src="/img/Golang/3-%e5%87%bd%e6%95%b0/%e5%87%bd%e6%95%b0%e8%bf%94%e5%9b%9e%e5%80%bc.png"
+        alt/></p>
 <pre tabindex="0"><code>package main
 
 import &#34;fmt&#34;
@@ -189,22 +191,22 @@ func double(number float64) float64 {
 	return number * 2
 }
 func main() {
-	dozen := double(6.0)
+	dozen := double(6.0) //将返回值赋给一个变量
 	fmt.Println(dozen)
-	fmt.Println(double(4.2))
+	fmt.Println(double(4.2))  //将返回值传递给另一个函数
 }
 </code></pre><p>当 return 语句运行时，函数立即退出，不运行它后面的任何代码，可以将其与if语句一起使用，在没有必要运行剩余代码的情况下（由于一些错误或其他情况）退出函数。</p>
 <pre tabindex="0"><code>func status(grade float64) string {
 	if grade &lt; 60.0 {
-            return &#34;failing&#34;
+            return &#34;failing&#34;  //若不合格，立即返回
 	}
-        return &#34;passing&#34;
+        return &#34;passing&#34;  //只有当&gt;=60时才运行
 }
 func main() {
         fmt.Println(status(60.1))
         fmt.Println(status(59))
 }
-</code></pre><p>若包含一个不属于 if 块的 return 语句，有可能使代码在任何情况都不会运行，go要求声明了返回类型的任何函数都必须以 return 语句结束，以任何其他语句结束都将导致编译错误。</p>
+</code></pre><p>若包含一个不属于 if 块的 return 语句，有可能使代码在任何情况都不会运行，go要求<code>声明了返回类型的任何函数都必须以 return 语句结束</code>，以任何其他语句结束都将导致编译错误。</p>
 <p>若返回值类型与声明的返回类型不匹配，也将编译错误。</p>
 <h1 id="使用返回值">使用返回值</h1>
 <pre tabindex="0"><code>package main
