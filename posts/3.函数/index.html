@@ -453,7 +453,7 @@ fmt.Println(&amp;amount)  //得到变量的地址
 <h1 id="指针类型">指针类型</h1>
 <p>指针的类型可以写为一个 <code>*</code> 符号，后面跟着指针指向的变量的类型。</p>
 <p>例如，指向一个 int 变量的指针的类型写为 *int ，可以大声读作：“指向int的指针”。</p>
-<p>可以使用 <code>reflect.Type()</code> 函数来显示之前程序中指针的类型：</p>
+<p>可以使用 <code>reflect.TypeOf</code> 函数来显示之前程序中指针的类型：</p>
 <pre tabindex="0"><code>package main
 
 import (
@@ -463,12 +463,16 @@ import (
 
 func main() {
 	var myInt int
-	fmt.Println(reflect.TypeOf(&amp;myInt))
+	fmt.Println(reflect.TypeOf(&amp;myInt))  //得到指向myInt的指针并打印该指针的类型
 	var myFloat float64
-	fmt.Println(reflect.TypeOf(&amp;myFloat))
+	fmt.Println(reflect.TypeOf(&amp;myFloat))  //得到指向myFloat的指针并打印该指针的类型
 	var myBool bool
-	fmt.Println(reflect.TypeOf(&amp;myBool))
+	fmt.Println(reflect.TypeOf(&amp;myBool))  //得到指向myBool的指针并打印该指针的类型
 }
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>*int
+*float64
+*bool
 </code></pre><p>可以声明保存指针的变量，指针变量只能保存指向一种类型值的指针，因此变量可能只保存 *int 指针，只保存 *float64 指针。。。。</p>
 <pre tabindex="0"><code>var myInt int
 var myIntPointer *int  //声明一个指向int的指针变量
@@ -479,16 +483,16 @@ var myFloat float64
 var myFloatPointer *float64  //声明一个指向float64的指针变量
 myFloatPointer = &amp;myFloat    //给变量分配一个指针
 fmt.Println(myFloatPointer)
-</code></pre><p>与其他类型一样，若要立即为指针变量复制，可以使用短变量声明：</p>
+</code></pre><p>与其他类型一样，若要立即为指针变量赋值，可以使用短变量声明：</p>
 <pre tabindex="0"><code>var myBool bool
 myBoolPointer := &amp;myBool
 fmt.Println(myBoolPointer)
 </code></pre><h1 id="获取和更改指针的值">获取和更改指针的值</h1>
-<p>通过在代码中的指针之前输入 <code>*</code> 来获得指针饮用的变量的值。 *myIntPointer 可以读作：“myIntPointer 处的值”</p>
+<p>通过在代码中的指针之前输入 <code>*</code> 运算符来获得指针引用的变量的值。 *myIntPointer 可以读作：“myIntPointer 处的值”</p>
 <pre tabindex="0"><code>myInt := 4
 myIntPointer := &amp;myInt
-fmt.Println(myIntPointer)
-fmt.Println(*myIntPointer)
+fmt.Println(myIntPointer)  //打印指针本身
+fmt.Println(*myIntPointer)  //打印指针处的值
 
 myFloat := 98.6
 myFloatPointer := &amp;myFloat
@@ -528,6 +532,8 @@ func main() {
         var myFloatPointer *float64 = createPointer()   //将返回的指针赋给一个变量
         fmt.Println(*myFloatPointer)    //打印指针处的值
 }
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>98.5
 </code></pre><p>在go中，返回一个指向函数局部变量的指针是可以的，即使该变量不在作用域内，只要仍然拥有指针，go将确保仍然可以访问该值。</p>
 <p>还可以将指针作为参数传递给函数，只需说明一个或多个参数的类型是指针。</p>
 <pre tabindex="0"><code>func printPointer(myBoolPointer *bool) {    //为该参数使用一个指针类型
@@ -537,8 +543,16 @@ func main() {
         var myBool bool = true
         printPointer(&amp;myBool)    //向函数传递一个指针
 }
-</code></pre><p>确保只使用指针作为参数，若函数声明它将使用指针，若试图将值传递给期望指针的函数，，将会编译错误。</p>
-<h1 id="使用指针修复double函数">使用指针修复<code>double</code>函数</h1>
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>true
+</code></pre><p>确保只使用指针作为参数，若函数声明它将使用指针，若试图将值传递给期望指针的函数，将会编译错误。</p>
+<pre tabindex="0"><code>func main() {
+	var myBool bool = true
+	printPointer(myBool)
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>cannot use myBool (type bool) as type *bool in argument to printPointer
+</code></pre><h1 id="使用指针修复double函数">使用指针修复<code>double</code>函数</h1>
 <p>有一个double函数，接受一个 int 值并将其乘以2，希望能传入一个值并使该值加倍。但 go 是一种值传递语言，意味着函数参数从调用方接收任何参数的副本，函数将值的副本加倍，原始值不变。</p>
 <pre tabindex="0"><code>func main() {
         amount := 6
