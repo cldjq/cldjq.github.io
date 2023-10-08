@@ -107,8 +107,8 @@ fmt.Println(slice3, slice4)
 <p>go 提供一个内建的函数 <code>append</code> 来将一个或多个值追加到切片的末尾，它返回一个与原始切片元素完全相同的并且在尾部追加了新元素的新的更大的切片。</p>
 <pre tabindex="0"><code>slice := []string{&#34;a&#34;, &#34;b&#34;}
 fmt.Println(slice, len(slice))
-slice = append(slice, &#34;c&#34;)      //在切片末尾追加一个元素
-fmt.Println(slice, len(slice))  //将append返回值赋回相同的切片变量
+slice = append(slice, &#34;c&#34;)      //在切片末尾追加一个元素，并将append返回值赋回相同的切片变量
+fmt.Println(slice, len(slice))
 slice = append(slice, &#34;d&#34;, &#34;e&#34;)
 fmt.Println(slice, len(slice))
 </code></pre><p>输出：</p>
@@ -129,6 +129,8 @@ fmt.Println(floatSlice[9], boolSlice[5])
 <pre tabindex="0"><code>var intSlice []int
 var stringSlice []string
 fmt.Printf(&#34;intSlice: %#v, stringSlice: %#v\n&#34;, intSlice, stringSlice)   //&#34;%#v&#34;把值格式化为它在go代码中呈现的样子
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>intSlice: []int(nil), stringSlice: []string(nil)
 </code></pre><p>在其他语言中，需要在使用切片变量前先测试是否包含切片，但在go中，函数有意被写成对待nil的切片就像它是一个空切片一样。</p>
 <pre tabindex="0"><code>fmt.Println(len(intSlice))  //把nil切片传递给len函数，返回0，就像传入一个空的切片
 </code></pre><p>append函数也会把nil切片看作是一个空的切
@@ -142,7 +144,7 @@ fmt.Printf(&#34;intSlice: %#v\n&#34;, intSlice)
 if len(slice) == 0 {   //len函数返回0
        slice = append(slice, &#34;first item&#34;)   //append函数会返回一个元素的切片
 }
-fmt.Printf(&#34;%#v\n&#34;, slce)
+fmt.Printf(&#34;%#v\n&#34;, slice)
 </code></pre><p>输出：</p>
 <pre tabindex="0"><code>[]string{&#34;first item&#34;}
 </code></pre><h1 id="使用切片和append读取额外的文件行">使用切片和&quot;append&quot;读取额外的文件行</h1>
