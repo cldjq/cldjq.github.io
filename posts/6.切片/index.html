@@ -105,7 +105,7 @@ fmt.Println(slice3, slice4)
 <p>由于这些问题，通常我们会使用 <code>make</code> 和 <code>切片字面量</code> 来创建切片，而不是创建一个数组，再用一个切片在上面操作。  使用了 make 和 切片字面量 就不用关心底层数组了。</p>
 <h1 id="使用append函数在切片上添加数据">使用&quot;append&quot;函数在切片上添加数据</h1>
 <p>go 提供一个内建的函数 <code>append</code> 来将一个或多个值追加到切片的末尾，它返回一个与原始切片元素完全相同的并且在尾部追加了新元素的新的更大的切片。</p>
-<pre tabindex="0"><code>slice := []string{&#34;a&#34;, &#34;b&#34;, &#34;c&#34;}
+<pre tabindex="0"><code>slice := []string{&#34;a&#34;, &#34;b&#34;}
 fmt.Println(slice, len(slice))
 slice = append(slice, &#34;c&#34;)      //在切片末尾追加一个元素
 fmt.Println(slice, len(slice))  //将append返回值赋回相同的切片变量
