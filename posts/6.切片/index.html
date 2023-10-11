@@ -288,7 +288,7 @@ func main() {
 }
 </code></pre><p><code>可变长参数函数的最后一个参数接收一个切片类型的变长参数</code>，这个切片可以被函数当作普通切片来处理。</p>
 <pre tabindex="0"><code>func severalInts(numbers ...int) {
-       fmt.Println(numbers)
+       fmt.Println(numbers)  //numbers变量被存储在作为参数的切片中
 }
 
 func main() {
@@ -296,16 +296,32 @@ func main() {
        severalInts(1, 2, 3)
 }
 </code></pre><p>有一个带有字符串参数的函数，若不提供变长参数，不会返回错误，会收到一个空切片。</p>
-<pre tabindex="0"><code>func severalStrings(strings ...string) {
+<pre tabindex="0"><code>func severalStrings(strings ...string) {  //strings变量保存了一个所有参数的切片
        fmt.Println(strings)
 }
 
 func main() {
        severalStrings(&#34;a&#34;, &#34;b&#34;)
+       severalStrings(&#34;a&#34;, &#34;b&#34;, &#34;c&#34;, &#34;d&#34;, &#34;e&#34;)
        severalStrings()   //若没有参数，会收到一个空的切片
 }
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>[a b]
+[a b c d e]
+[]
 </code></pre><p>函数也可以接收一个或多个非可变长参数，即使一个函数调用可以忽略可变长参数，其中的非可变长参数是不可忽略的，若忽略会导致编译失败。</p>
-<p><code>只有函数定义中的最后一个参数是可变长参数</code> ，不能放到其他必需参数前。</p>
+<pre tabindex="0"><code>func mix(num int, flag bool, strings ...string) {  //首先需要一个int参数，其次需要一个boolean参数，其余剩下的参数必须是string且会被保存成切片
+	fmt.Println(num, flag, strings)
+}
+
+func main() {
+	mix(1, true, &#34;a&#34;, &#34;b&#34;)
+	mix(2, false, &#34;a&#34;, &#34;b&#34;, &#34;c&#34;, &#34;d&#34;, &#34;e&#34;)
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>1 true [a b]
+2 false [a b c d e]
+</code></pre><p><code>只有函数定义中的最后一个参数是可变长参数</code> ，不能放到其他必需参数前。</p>
 <h1 id="使用可变长参数函数">使用可变长参数函数</h1>
 <p>maximum 函数会接收任意个数的float64参数并会返回其中的最大值，这个函数的所有参数被保存在一个切片类型的参数 numbers 中，初始设置当前最大值为 -Inf ，一个代表了负无穷的特殊值，通过调用math.Inf获得。（可以使用当前最大值0，但这个最大值可能是负数），然后使用 for&hellip;range 来处理 numbers 上的每个值，将其与最大值比较。若大于最大值，将其设置为最大值，处理完所有参数后剩下的最大值就是要返回的。</p>
 <pre tabindex="0"><code>package main
@@ -329,6 +345,9 @@ func main() {
 	fmt.Println(maximum(71.8, 56.2, 89.5))
 	fmt.Println(maximum(90.7, 89.7, 98.5, 92.3))
 }
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>89.5
+98.5
 </code></pre><p>&ldquo;inRange&quot;函数，接收一个最小值，一个最大值和任何个数的float64参数，丢弃在给定最小值和给定最大值范围之外的参数，返回一个在范围之内的参数值的切片。</p>
 <pre tabindex="0"><code>package main
 
@@ -348,6 +367,9 @@ func main() {
 	fmt.Println(inRange(1, 100, -12.5, 3.2, 0, 50, 103.5))   //寻找&gt;=1且&lt;=100的参数
 	fmt.Println(inRange(-10, 10, 4.1, 12, -12, -5.2))   //寻找&gt;=-10且&lt;=10的参数
 }
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>[3.2 50]
+[4.1 -5.2]
 </code></pre><h1 id="使用可变长参数函数计算平均值">使用可变长参数函数计算平均值</h1>
 <p>来创造一个可以接收任意多个float64类型参数，并返回它们的平均值的可变长参数函数。</p>
 <pre tabindex="0"><code>package main
@@ -401,13 +423,13 @@ func average(numbers ...float64) float64 {
 func main() {
         arguments := os.Args[1:]
         var numbers []float64  //该切片保存了将要被计算平均值的数字
-	for _, argument := range arguments {
+        for _, argument := range arguments {
                number, err := strconv.ParseFloat(argument, 64)
-	       if err != nil {
+               if err != nil {
                       log.Fatal(err)
-	       }
+               }
                numbers = append(numbers, number)
-	}
+        }
         fmt.Printf(&#34;Average: %0.2f\n&#34;, average(numbers...))  //向可变参数函数传入切片
 }
 </code></pre><p>会把命令行参数转换为float64的切片，然后传递给可变参数的average函数。</p>
