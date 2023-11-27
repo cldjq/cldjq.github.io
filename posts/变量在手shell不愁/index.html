@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>变量在手shell不愁&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="变量在手shell不愁" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">变量在手shell不愁</h1><p class="article date">Tuesday, March 24, 2020</p></section><article class="article markdown-body"><h3 id="指定脚本要使用的shell">指定脚本要使用的Shell</h3>
+<p>第一行 <code>#!/bin/bash</code> ,<code>#!</code>叫做She-bang。
+Shell 脚本注释以 <code>#</code> 开头。</p>
+<h3 id="以调试模式运行">以调试模式运行</h3>
+<pre tabindex="0"><code>bash -x test.sh
+</code></pre><p>会把脚本运行时的细节打印出来，在出现错误时可以帮助我们排查问题所在。</p>
+<h3 id="定义变量">定义变量</h3>
+<p>vim varable.sh</p>
+<pre tabindex="0"><code>#!/bin/bash
+message=&#39;hello world&#39;
+</code></pre><p>变量名是message<br>
+变量值是 hello world<br>
+注意：等号两边不加空格。</p>
+<h3 id="echo--显示内容">echo : 显示内容</h3>
+<p>插入换行符，<code>-e</code> 参数。<code>\n</code>表示换行。</p>
+<pre tabindex="0"><code>echo -e &#34;hello world\nHello world&#34;
+</code></pre><h3 id="显示变量">显示变量</h3>
+<p>在bash脚本中，若要显示一个变量，echo后接变量名还不够，必须在变量名前加上美元符号 <code>$</code></p>
+<pre tabindex="0"><code>#!/bin/bash
+message=&#39;hello world&#39;
+echo $message
+</code></pre><p>定义变量的时候不需要加美元符号，使用变量时，要加上美元符号。</p>
+<h3 id="引号">引号</h3>
+<p>单引号：变量被包含在单引号里，变量不会被解析。单引号忽略被它括起来的所有特殊字符。<br>
+双引号：双引号忽略大多数特殊字符，不包括<code>$</code>   <code>`</code>   <code>\</code>  这三个不被忽略。Shell在双引号内部可以进行变量名替换。</p>
+<p>反引号：<br>
+例如：</p>
+<pre tabindex="0"><code>#!/bin/bash
+message=`pwd`
+echo &#34;you are in the directory $message&#34;
+</code></pre><p>输出：<code>you are in the directory /Users/wei</code><br>
+可以看到pwd的命令被执行了，结果被赋值给message变量。</p>
+<h3 id="read-请求输入">read 请求输入</h3>
+<p>请求用户输入文本时，用到 <code>read</code> 命令。<br>
+read命令读取到的文本会立即储存在一个变量里。</p>
+<p>read最简单的用法是后接一个变量名。<br>
+例如：</p>
+<pre tabindex="0"><code>#!/bin/bash
+read name
+echo &#34;Hello $name&#34;
+</code></pre><p>执行时，什么都没显示，可以输入文本，然后回车。<br>
+read读取了在终端的输入，将这个字符串赋值给name变量，才有后面输出。</p>
+<h4 id="同时给几个变量赋值">同时给几个变量赋值</h4>
+<p>可以用read命令一次性给多个变量赋值。<br>
+例如：</p>
+<pre tabindex="0"><code>#!/bin/bash
+read firstname lastname
+echo &#34;hello $firstname $lastname&#34;
+</code></pre><p>read 命令一个单词一个单词读取输入的参数，并且把每个参数赋值给对应的变量。</p>
+<h4 id="-p-显示提示信息">-p 显示提示信息</h4>
+<p>例如：</p>
+<pre tabindex="0"><code>#!/bin/bash
+read -p &#39;please enter your name:&#39; name
+echo &#34;hello $name&#34;
+</code></pre><h4 id="-n-限制字符数">-n 限制字符数</h4>
+<p>加上 -n 参数可以限制用户输入的字符串的最大长度。<br>
+例如：</p>
+<pre tabindex="0"><code>#!/bin/bash
+read -p &#39;please enter your name (5 characters max):&#39; -n 5 name
+echo &#34;\nHello world $name&#34;
+</code></pre><h4 id="-t-限制输入时间">-t 限制输入时间</h4>
+<p>用 -t 参数，可以限制用户的输入时间，意思就是超过这个时间，就不读取输入了。<br>
+例如：</p>
+<pre tabindex="0"><code>#!/bin/bash
+read -p &#39;please enter the code to defuse the bomb (you hava 5 seconds):&#39; -t 5 code
+echo -e &#34;\nBoom!&#34;
+</code></pre><h4 id="-s-隐藏输入内容">-s 隐藏输入内容</h4>
+<p>-s 参数可以隐藏输入内容</p>
+<pre tabindex="0"><code>#!/bin/bash
+read -p &#39;please enter your password:&#39; -s password
+echo -e &#34;\nThanks,your password is $password&#34;
+</code></pre><h3 id="数学运算">数学运算</h3>
+<blockquote>
+<p>在bash中，所有的变量都是字符串。</p>
+</blockquote>
+<p>bash本身不会操纵数字，也不会运算，可以用命令的方式来达到目的。需要用到<code>let</code>命令。<br>
+例如：</p>
+<pre tabindex="0"><code>#!/bin/bash
+let &#34;a = 5&#34;
+let &#34;b = 2&#34;
+let &#34;c = a + b&#34;
+echo &#34;c = $c&#34;
+</code></pre><p>可用的运算符：<code>加+  减-   乘*   除/   幂**   余%</code></p>
+<h3 id="参数变量">参数变量</h3>
+<p>比如：<code>./test.sh 参数1 参数2 参数3 。。。</code> 参数被成为“参数变量”。</p>
+<p>$# 包含参数的数目。<br>
+$0 包含被运行的脚本的名称。<br>
+$1 包含第一个参数。<br>
+$2 包含第二个参数。<br>
+&hellip;
+$8 包含第八个参数。</p>
+<pre tabindex="0"><code>#!/bin/bash
+echo &#34;you have executed $0,there are $# parameters&#34;
+echo &#34;the first parameter is $1&#34;
+</code></pre><p>执行结果：</p>
+<pre tabindex="0"><code>./1.sh a b c d
+you have executed ./1.sh,there are 4 parameters
+the first parameter is a
+</code></pre><p>若有很多参数，可以用 “shift” 命令来挪移参数，依次处理。<br>
+例如：</p>
+<pre tabindex="0"><code>#!/bin/bash
+echo &#34;the first parameter is $1&#34;
+shift
+echo &#34;the first parameter is now $1&#34;
+shift
+echo &#34;the first parameter is now $2&#34;
+</code></pre><p>测试：</p>
+<pre tabindex="0"><code>./test.sh a b c d e
+the first parameter is a
+the first parameter is now b
+the first parameter is now d
+</code></pre><h3 id="数组">数组</h3>
+<p>数组是一种变量，可以包含多个“格子”（被称为‘数组的元素’）。<br>
+例如：</p>
+<pre tabindex="0"><code>array=(&#39;value0&#39;&#39;value1&#39;&#39;value2&#39;)
+</code></pre><p>访问value2的元素：<code>${array[2]}</code></p>
+<p>bash的数组的下标从0开始。</p>
+<p>也可以单独给数组的元素赋值，例如：<br>
+<code>array[3]='value3'</code></p>
+<pre tabindex="0"><code>#!/bin/bash
+array=(&#39;value0&#39; &#39;value1&#39; &#39;value2&#39;)
+array[5]=&#39;value5&#39;
+echo ${array[1]}
+</code></pre><p>数组可以包含任意大小的元素数目，数组的元素编号不需要是连续的</p>
+<p>可以一次性显示数组中的所有元素值，用 *</p>
+<pre tabindex="0"><code>#!/bin/bash
+array=(&#39;value0&#39; &#39;value1&#39; &#39;value2&#39;)
+array[5]=&#39;value5&#39;
+echo ${array[*]}
+</code></pre></article><section class="article labels"><a class="category" href=/categories/linux/>Linux</a><a class="tag" href=/tags/shell/>Shell</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/%E6%9D%A1%E4%BB%B6%E4%B8%80%E5%87%BAshell%E4%B8%8D%E6%9C%8D/"><span class="iconfont icon-article"></span>条件一出shell不服</a></p><p><a class="link" href="/posts/%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1/"><span class="iconfont icon-article"></span>定时任务</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script><script src="/js/hljs.min.6f979583f61e4ec5f0b94f94eab2e130ee628032474d374414dba4e33cc12097a0d01fe65b33378b23f6d3b053b95445.js" integrity="sha384-b5eVg/YeTsXwuU&#43;U6rLhMO5igDJHTTdEFNuk4zzBIJeg0B/mWzM3iyP207BTuVRF"></script><script>hljs.initHighlightingOnLoad();</script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>

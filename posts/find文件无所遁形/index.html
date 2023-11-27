@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>find文件无所遁形&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="find文件无所遁形" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">find文件无所遁形</h1><p class="article date">Wednesday, March 11, 2020</p></section><article class="article markdown-body"><p>用法：<code>find 何处 何物 做什么</code></p>
+<ul>
+<li><code>何处</code>：指定在哪个目录中查找。此目录的所有子目录也会被查找，与 locate 命令的查找所有文件数据库的所有记录不同，find 命令可以限定查找目录，比如我们可以只让 find 查找 /home 目录。默认地，假如我们没有给出&quot;何处&quot;这个参数，那么 find 命令会在当前目录及其子目录中查找；</li>
+<li><code>何物</code>：也就是要查找什么。我们可以根据文件的名字来查找，也可以根据其大小来查找，也可以根据其最近访问时间来查找等等，<strong>这个参数是必须的</strong>；</li>
+<li><code>做什么</code>：用 find 命令找到文件后，可以对每个文件做一定的操作，称为“后续处理”。默认地，假如不指定这个参数，那么 find 命令只会显示找到的文件，不会做其它事情。</li>
+</ul>
+<h4 id="示例">示例</h4>
+<pre tabindex="0"><code>find /var/log -name &#34;syslog*&#34;
+find /var -size +10M
+find -name &#34;*.jpg&#34; -atime -7
+find . -name &#34;new_file&#34; -type d
+</code></pre><h5 id="操作查找结果">操作查找结果</h5>
+<p>//<code>find -name &quot;*.jpg&quot;</code> 等价于<code>find -name &quot;*.jpg&quot; -print</code><br>
+-print 参数用来打印结果。</p>
+<h6 id="格式化打印查找结果">格式化打印查找结果</h6>
+<p><code>find . -name &quot;*.jpg&quot; -printf &quot;%p - %u\n&quot;</code></p>
+<ul>
+<li><code>%p</code> ：文件名；</li>
+<li><code>-</code> ：就是一个短横；</li>
+<li><code>%u</code> ：文件的所有者;</li>
+<li><code>\n</code> ：用于换行。</li>
+</ul>
+<h6 id="删除查找到到文件">删除查找到到文件</h6>
+<p><code>find -name &quot;*.jpg&quot; -delete</code></p>
+<h6 id="调用命令">调用命令</h6>
+<p>使用<code>-exec</code>参数可以后接一个命令，对每个查找到的文件进行操作。[exec是execute缩写]</p>
+<p>示例：
+<code>find -name &quot;*.jpg&quot; -exec chmod 600 {} \;</code></p>
+<ul>
+<li>该操作不用双引号扩起来</li>
+<li><code>{}</code>会用查找到的每个文件来替换</li>
+<li><code>\;</code>是必须对结尾</li>
+</ul>
+<p><code>-exec</code> 换成 <code>-ok</code>确认提示。</p>
+</article><section class="article labels"><a class="category" href=/categories/linux/>Linux</a><a class="tag" href=/tags/shell/>Shell</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86%E5%A4%A9%E4%B8%8B%E6%97%A0%E6%95%8C/"><span class="iconfont icon-article"></span>数据处理天下无敌</a></p><p><a class="link" href="/posts/nohup%E5%90%8E%E5%8F%B0%E5%90%AF%E5%8A%A8/"><span class="iconfont icon-article"></span>nohup后台启动</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script><script src="/js/hljs.min.6f979583f61e4ec5f0b94f94eab2e130ee628032474d374414dba4e33cc12097a0d01fe65b33378b23f6d3b053b95445.js" integrity="sha384-b5eVg/YeTsXwuU&#43;U6rLhMO5igDJHTTdEFNuk4zzBIJeg0B/mWzM3iyP207BTuVRF"></script><script>hljs.initHighlightingOnLoad();</script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>

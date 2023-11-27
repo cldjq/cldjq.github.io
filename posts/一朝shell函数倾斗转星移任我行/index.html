@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>一朝shell函数倾斗转星移任我行&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="一朝shell函数倾斗转星移任我行" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">一朝shell函数倾斗转星移任我行</h1><p class="article date">Friday, April 17, 2020</p></section><article class="article markdown-body"><h3 id="函数">函数</h3>
+<p>函数（function），可以理解为：函数是实现一定功能的代码块。<br>
+函数也是重用代码（reuse code）的很好方式。<br>
+可以把函数想象成shell脚本里的小脚本。</p>
+<p>定义（创建）shell函数有两种方式：</p>
+<pre tabindex="0"><code>函数名 () {
+    函数体
+}
+</code></pre><p>或者</p>
+<pre tabindex="0"><code>function 函数名 {
+    函数体
+}
+</code></pre><ul>
+<li>这两种方式都可以。第一种函数名后边的括号里不加任何参数。</li>
+<li>函数的完整定义必须置于函数的调用之前。</li>
+</ul>
+<p>例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+print_sth () {
+    echo &#34;hello,am a function&#34;
+}
+print_sth
+print_sth
+</code></pre><h3 id="传递参数">传递参数</h3>
+<p>在shell函数中，传递参数很想给shell脚本传递命令行参数。把参数直接置于函数名字后面。</p>
+<p>例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+
+print_something () {
+    echo Hello $1
+}
+
+print_something Matthew
+print_something Mark
+print_something Luke
+print_something John
+</code></pre><h3 id="返回值">返回值</h3>
+<p>大多数编程语言都有函数返回值的概念，可以让函数回传一些数据。<br>
+shell的函数无法做到，但是shell的函数可以返回一个状态，有点类似一个程序或命令退出时会有一个退出状态，表明是否成功。<br>
+shell函数要返回状态，也用return这个关键字。</p>
+<p>例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+print_sth () {
+    echo hello $1
+    return 1
+}
+
+print_sth lulu
+print_sth nike
+echo Return value of previous function is $?
+</code></pre><p>第四行，返回的状态不一定是被硬编码（如上例中的1），也可以是一个变量。<br>
+<code>$?</code> 包含前一次被运行的命令或函数的返回状态。</p>
+<p>例：<br>
+返回一个数值（一个计算的值）。</p>
+<pre tabindex="0"><code>#!/bin/bash
+lines_in_file () {
+    cat $1 | wc -l
+}
+line_num=$(lines_in_file $1)
+echo the file $1 has $line_num lines
+</code></pre><h3 id="变量作用范围">变量作用范围</h3>
+<p>变量的作用范围，意味着一个shell脚本的哪些部分可以访问这个变量。<br>
+默认情况，一个变量是全局的（global），在脚本的任何地方都可以访问它。<br>
+也可以创建局部（local）变量，当我们在函数中创建局部变量时，这个变量就只能在这个函数中被访问。</p>
+<p>要定义一个局部变量，只要在第一次给这个变量赋值时在变量名前加上关键字 local 即可。<br>
+定义一个局部变量有一个好处，就是可以防止被脚本当其他地方的代码意外改变数值。</p>
+<p>例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+local_global () {
+    local var1=&#39;local 1&#39;
+    echo Inside function: var1 is $var1 : var2 is $var2
+    var1=&#39;changed again&#39;   # 这里的 var1 是函数中定义的局部变量
+    var2=&#39;2 changed again&#39; # 这里的 var2 是函数外定义的全局变量
+}
+
+var1=&#39;global 1&#39;
+var2=&#39;global 2&#39;
+
+echo Before function call: var1 is $var1 : var2 is $var2
+
+local_global
+
+echo After function call: var1 is $var1 : var2 is $var2
+</code></pre><p>在函数中，尽量用局部变量，实在不行用全局变量。</p>
+<h3 id="重载命令">重载命令</h3>
+<p>可以用函数来实现命令的重载，就是说把函数的名字取成与我们通常在命令行用的命令相同的名字。<br>
+例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+ls () {
+  command ls -lh
+}
+ls
+</code></pre><p><code>command</code> 关键字，意思是命令，若不写，那么程序将会陷入无限循环。</p>
+<h3 id="函数的设计">函数的设计</h3>
+<p>设计模式（Design Pattern）中有一个原则“单一职责原则”（Single Responsibility Principle），适用于函数的设计，不要让一个函数执行很多任务。</p>
+</article><section class="article labels"><a class="category" href=/categories/linux/>Linux</a><a class="tag" href=/tags/shell/>Shell</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/rsync&#43;inotify%E6%95%B0%E6%8D%AE%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5/"><span class="iconfont icon-article"></span>Rsync+inotify数据实时同步</a></p><p><a class="link" href="/posts/%E5%BE%AA%E7%8E%AF%E5%BE%80%E5%A4%8Dshell%E5%BC%80%E8%B7%AF/"><span class="iconfont icon-article"></span>循环往复shell开路</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script><script src="/js/hljs.min.6f979583f61e4ec5f0b94f94eab2e130ee628032474d374414dba4e33cc12097a0d01fe65b33378b23f6d3b053b95445.js" integrity="sha384-b5eVg/YeTsXwuU&#43;U6rLhMO5igDJHTTdEFNuk4zzBIJeg0B/mWzM3iyP207BTuVRF"></script><script>hljs.initHighlightingOnLoad();</script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>

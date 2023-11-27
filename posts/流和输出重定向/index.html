@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>流和输出重定向&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="流和输出重定向" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">流和输出重定向</h1><p class="article date">Tuesday, March 17, 2020</p></section><article class="article markdown-body"><h3 id="重定向到文件">重定向到文件</h3>
+<p><code>&gt;</code> ：重定向到新的文件。<br>
+<code>cut -d , -f 1 notes.csv &gt; 1.txt</code><br>
+若文件不存在，则新建一个文件，若文件存在，就会把源文件内容覆盖（清楚原有内容，再写入）。</p>
+<p><strong>既不想将命令输出显示在终端，又不想存储到文件中</strong>，Linux中有个叫“黑洞”的文件，<code>/dev/null</code></p>
+<p><code>&gt;&gt;</code>：重定向到文件末尾，追加文件内容</p>
+<h3 id="重定向错误输出">重定向错误输出</h3>
+<p>stdin：标准输入流。文件描述符为0 <br>
+stdout：标准输出流。文件描述符为1 <br>
+stderr：标准错误输出流，文件描述符为2</p>
+<p>文件描述符是一个索引值，指向操作系统内核为每一个进程所维护的该进程打开文件的记录表。<br>
+window中叫做”句柄“，handle。</p>
+<p><code>&gt;</code>和<code>&gt;&gt;</code>只能将标准输出重定向到文件，并不能将标准错误输出重定向到文件。<br>
+<code>2&gt;</code>，标准错误输出的文件描述符是2，重定向标准错误输出。</p>
+<p>比如：<code>cat 1.csv &gt; results.txt 2&gt; error.log</code><br>
+若1.csv这个文件存在，将其内容写到results.txt中，不存在将错误写入到error.log文件中。</p>
+<p><code>2&gt;&gt;</code> 用于将标准错误输出重定向到文件末尾。</p>
+<p><code>2&gt;&amp;1</code> ：合并输出，将标准错误输出重定向到与标准输出相同到地方。<br>
+比如：<br>
+cat test.csv &gt; results.txt 2&gt;&amp;1<br>
+cat test.csv &raquo; results.txt 2&gt;&amp;1<br>
+不可以写成 2&raquo;&amp;1.</p>
+<ul>
+<li>2&gt;</li>
+<li>2&raquo;</li>
+<li>2&gt;&amp;1</li>
+</ul>
+</article><section class="article labels"><a class="category" href=/categories/linux/>Linux</a><a class="tag" href=/tags/shell/>Shell</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/%E8%BE%93%E5%85%A5%E9%87%8D%E5%AE%9A%E5%90%91%E5%92%8C%E7%AE%A1%E9%81%93/"><span class="iconfont icon-article"></span>输入重定向和管道</a></p><p><a class="link" href="/posts/%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86%E5%A4%A9%E4%B8%8B%E6%97%A0%E6%95%8C/"><span class="iconfont icon-article"></span>数据处理天下无敌</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script><script src="/js/hljs.min.6f979583f61e4ec5f0b94f94eab2e130ee628032474d374414dba4e33cc12097a0d01fe65b33378b23f6d3b053b95445.js" integrity="sha384-b5eVg/YeTsXwuU&#43;U6rLhMO5igDJHTTdEFNuk4zzBIJeg0B/mWzM3iyP207BTuVRF"></script><script>hljs.initHighlightingOnLoad();</script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>

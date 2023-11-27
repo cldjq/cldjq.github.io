@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>数据处理天下无敌&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="数据处理天下无敌" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">数据处理天下无敌</h1><p class="article date">Thursday, March 12, 2020</p></section><article class="article markdown-body"><h3 id="grep">grep</h3>
+<p><code>grep xx filename</code><br>
+<code>grep &quot;ur sb&quot; 2.txt</code></p>
+<p><code>grep [-cinvrABC] 'word' filename</code></p>
+<ul>
+<li>-c 行数</li>
+<li>-i 不区分大小写</li>
+<li>-n 显示行号</li>
+<li>-v 取反</li>
+<li>-r 遍历所有子目录</li>
+<li>-A 后面跟数字，过滤出符合要求的行以及下面n行</li>
+<li>-B 同上，过滤出符合要求的行以及上面n行</li>
+<li>-C 同上，同时过滤出符合要求的行以及上下各n行</li>
+</ul>
+<h3 id="sort">sort</h3>
+<p>sort 1.txt  //将1.txt文件中的行按首字母顺序排序，不区分大小写<br>
+sort -o 1.txt 2.txt //将排序后的内容重新写入新文件<br>
+sort -r 1.txt //倒序排列<br>
+sort -R 1.txt //随机排序，每次都不一样<br>
+sort -n 3.txt //对3.txt中的数字按照1-9的顺序排序。不加-n，会把数字当成字符串。</p>
+<h3 id="wc">wc</h3>
+<p>统计行数，字符数，字节数，单词数。</p>
+<pre tabindex="0"><code># wc 1.txt
+9 9 50 1.txt 
+</code></pre><p>9 9  50 分别表示:</p>
+<ul>
+<li>行数：newline counts，就是统计换行符的数目。</li>
+<li>单词数</li>
+<li>字节数：byte counts</li>
+</ul>
+<p>字符和字节的联系与区别：</p>
+<ul>
+<li>字节（Byte或Octet）是计量单位，表示数据量多少，是计算机存储容量的单位。</li>
+<li>字符（character）计算机使用的文字和符号。
+字符在不同的编码中所占的字节数是不一样的。</li>
+</ul>
+<p>wc -l 1.txt  //只统计行数<br>
+wc -w 1.txt  //统计单词数<br>
+wc -c 1.txt  //统计字节数<br>
+wc -m 1.txt  //统计字符数</p>
+<p>file 1.txt //确定1.txt的文件类型</p>
+<h3 id="uniq">uniq</h3>
+<p>删除文件中的重复内容</p>
+<p>uniq 1.txt 2.txt //把处理后的内容存储到一个新文件中。<br>
+uniq -c 1.txt    //统计重复的行数<br>
+uniq -d 2.txt    //只显示重复行的内容</p>
+<h3 id="cut">cut</h3>
+<p>cut -c 2-4 1.txt  //让1.txt的每一行只保留第2到第4个字符。<br>
+cut -d , -f 1,3 notes.csv  //指定分隔符，剪切下用分隔符分隔的第一块和第三块区域<br>
+cut -d , -f 2- notes,csv   //第二块到最后</p>
+</article><section class="article labels"><a class="category" href=/categories/linux/>Linux</a><a class="tag" href=/tags/shell/>Shell</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/%E6%B5%81%E5%92%8C%E8%BE%93%E5%87%BA%E9%87%8D%E5%AE%9A%E5%90%91/"><span class="iconfont icon-article"></span>流和输出重定向</a></p><p><a class="link" href="/posts/find%E6%96%87%E4%BB%B6%E6%97%A0%E6%89%80%E9%81%81%E5%BD%A2/"><span class="iconfont icon-article"></span>find文件无所遁形</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script><script src="/js/hljs.min.6f979583f61e4ec5f0b94f94eab2e130ee628032474d374414dba4e33cc12097a0d01fe65b33378b23f6d3b053b95445.js" integrity="sha384-b5eVg/YeTsXwuU&#43;U6rLhMO5igDJHTTdEFNuk4zzBIJeg0B/mWzM3iyP207BTuVRF"></script><script>hljs.initHighlightingOnLoad();</script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>

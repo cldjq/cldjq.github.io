@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>循环往复shell开路&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="循环往复shell开路" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">循环往复shell开路</h1><p class="article date">Friday, March 27, 2020</p></section><article class="article markdown-body"><h3 id="while-循环">while 循环</h3>
+<p>while循环的逻辑：</p>
+<pre tabindex="0"><code>while [ 条件测试 ]
+do
+    做某些事
+done
+</code></pre><p>也可以这样：</p>
+<pre tabindex="0"><code>while [ 条件测试 ]；do
+    做某些事
+done
+</code></pre><p>例子：</p>
+<pre tabindex="0"><code>#!/bin/bash
+while [ -z $response ] || [ $response != &#39;yes&#39; ]
+do
+    read -p &#39;say yes:&#39; response
+done
+</code></pre><p>若输入的字符串不是 “yes” 或者没有输入任何字符，程序会一直请求。</p>
+<h3 id="until-循环">until 循环</h3>
+<p>例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+until [ &#34;$response&#34; = &#39;yes&#39; ]
+do
+    read -p &#39;say yes:&#39; response
+done
+</code></pre><p>运行结果和上述while循环的例子一样。</p>
+<h3 id="for-循环">for 循环</h3>
+<h4 id="遍历列表">遍历列表</h4>
+<p>for循环可以遍历一个“取值列表”，基本的逻辑如下：</p>
+<pre tabindex="0"><code>for 变量 in &#39;值1&#39; &#39;值2&#39; ... &#39;值n&#39;
+do
+    做某些事
+done
+</code></pre><p>例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+for animal in &#39;dog&#39; &#39;cat&#39; &#39;pig&#39;
+do
+    echo &#34;animal being analyzed:$animal&#34;
+done
+</code></pre><p>for 循环的取值列表不一定要在代码中定义好，也可以用一个变量，如：</p>
+<pre tabindex="0"><code>#!/bin/bash
+
+for file in `ls`
+do
+    echo &#34;file found:$file&#34;
+done
+</code></pre><p>改进：当复制当前目录下以所有以<code>.sh</code>结尾的文件，并且把每个副本的名字修改为“现有名字 + &lsquo;-copy&rsquo;”的格式。</p>
+<pre tabindex="0"><code>#!/bin/bash
+for file in `ls *.sh`
+do
+    cp $file $file-copy
+done
+</code></pre><h4 id="更常规的for循环">更常规的for循环</h4>
+<p>借助seq命令，实现类似主流编程语言中的for循环用法。<br>
+seq是sequence的缩写。<br>
+例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+for i in `seq 1 10`
+do
+    echo $i
+done
+</code></pre><p><code>seq 1 10</code>会返回一个取值列表，从1到10的整数值，echo会遍历输出1到10这10个整数。</p>
+<p>可以修改默认的取值间隔（1），如下：</p>
+<pre tabindex="0"><code>#!/bin/bash
+for i in `seq 1 2 10`
+do
+    echo $i
+done
+</code></pre><p><code>seq 1 2 10</code>会返回一个取值列表，从1到10的整数值，取值间隔是2，输出1，3，5，7，9五个整数。</p>
+</article><section class="article labels"><a class="category" href=/categories/linux/>Linux</a><a class="tag" href=/tags/shell/>Shell</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/%E4%B8%80%E6%9C%9Dshell%E5%87%BD%E6%95%B0%E5%80%BE%E6%96%97%E8%BD%AC%E6%98%9F%E7%A7%BB%E4%BB%BB%E6%88%91%E8%A1%8C/"><span class="iconfont icon-article"></span>一朝shell函数倾斗转星移任我行</a></p><p><a class="link" href="/posts/%E6%9D%A1%E4%BB%B6%E4%B8%80%E5%87%BAshell%E4%B8%8D%E6%9C%8D/"><span class="iconfont icon-article"></span>条件一出shell不服</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script><script src="/js/hljs.min.6f979583f61e4ec5f0b94f94eab2e130ee628032474d374414dba4e33cc12097a0d01fe65b33378b23f6d3b053b95445.js" integrity="sha384-b5eVg/YeTsXwuU&#43;U6rLhMO5igDJHTTdEFNuk4zzBIJeg0B/mWzM3iyP207BTuVRF"></script><script>hljs.initHighlightingOnLoad();</script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>

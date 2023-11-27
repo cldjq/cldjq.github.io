@@ -1,0 +1,1816 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Shell on 承离的觉前</title>
+    <link>https://tinklespring.com/tags/shell/</link>
+    <description>Recent content in Shell on 承离的觉前</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Fri, 17 Apr 2020 15:13:51 +0800</lastBuildDate>
+    
+        <atom:link href="https://tinklespring.com/tags/shell/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Go语言RWMutex读写互斥锁</title>
+      <link>https://tinklespring.com/posts/go%E8%AF%AD%E8%A8%80rwmutex%E8%AF%BB%E5%86%99%E4%BA%92%E6%96%A5%E9%94%81/</link>
+      <pubDate>Thu, 14 Sep 2023 11:10:03 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/go%E8%AF%AD%E8%A8%80rwmutex%E8%AF%BB%E5%86%99%E4%BA%92%E6%96%A5%E9%94%81/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;RWMutex 可以说是 Mutex 的改进版，在某些场景下可以发挥出更加强大、灵活的控制能力，比如读取数据的频率远大于写数据的频率的场景。如果在 1 次写然后 N 次读的场景使用 Mutex 的话，则整个过程是串行的，因为即使 N 次读操作互相之间并不影响，但也都需要先持有 Mutex 锁后才可以操作。如果使用 RWMutex 的话，那么 N 次读操作可以同时持有锁，互相不影响，读操作都可以并行，因此并发能力将大大的提升。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;mutex与rwmutex区别与应用场景&#34;&gt;Mutex与RWMutex区别与应用场景&lt;/h1&gt;
+&lt;p&gt;Mutex 是最基本的互斥锁，在同一时间只允许一个 Goroutine 访问被保护资源。它适用于那些只有一个 Goroutine 需要修改资源或者执行临界区代码的情况。&lt;/p&gt;
+&lt;p&gt;然而，在某些场景下，我们允许多个 Goroutine 并发地读取共享资源，但同时也希望确保写操作是独占式进行的。这种情况下就可以使用 RWMutex。RWMutex 分为两种状态：读模式和写模式。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;在读模式下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;多个 Goroutine 可以同时获取锁，并且都能够安全地对共享资源进行只读操作。&lt;/li&gt;
+&lt;li&gt;如果已经有一个或多个 Goroutine 正在读取，则其它 Goroutine 仍然可以获取锁，但是不能执行写操作。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在写模式下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;只有一个 Goroutine 能够获取锁，并且能够对共享资源进行读取或写入操作。此时其它所有的读和写请求都会被阻塞。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;实现-rwmutex-锁需要解决的问题&#34;&gt;实现 RWMutex 锁需要解决的问题&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;写锁需要阻塞写锁：即一个协程拥有写锁时，其它协程的写锁需要阻塞；&lt;/li&gt;
+&lt;li&gt;写锁需要阻塞读锁：即一个协程拥有写锁时，其它协程的读锁需要阻塞；&lt;/li&gt;
+&lt;li&gt;读锁需要阻塞写锁：即一个协程拥有读锁时，其它协程的写锁需要阻塞；&lt;/li&gt;
+&lt;li&gt;读锁不能阻塞读锁：即一个协程拥有读锁时，其它协程也可以拥有读锁。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;rwmutex基本使用&#34;&gt;RWMutex基本使用&lt;/h1&gt;
+&lt;p&gt;可以通过sync包来使用RWMutex，首先创建一个新的RWMutex对象：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var rwMutex sync.RWMutex
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;然后就可以在代码中使用该对象了，要进入读模式（共享访问）或者写模式（独占访问），分别调用两个方法：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;进入读模式：&lt;code&gt;rwMutex.RLock()&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;进入写模式：&lt;code&gt;rwMutex.Lock()&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：在完成对共享资源的访问后，一定要释放锁。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;退出读模式：&lt;code&gt;rwMutex.RUnlock()&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;退出写模式：&lt;code&gt;rwMutex.Unlock()&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;示例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;sync&amp;#34;
+)
+
+// 共享资源
+var counter = 0
+
+// 创建新的RWMutex对象
+var rwMutex sync.RWMutex
+
+func main() {
+	// 使用 WaitGroup 等待所有 Goroutine 完成任务
+	wg := sync.WaitGroup{}
+
+	// 启动十个并发的 Goroutine 增加 counter 的值
+	for i := 0; i &amp;lt; 100; i++ {
+		wg.Add(1)
+		go incrementCounter(&amp;amp;wg)
+	}
+
+	// 等待所有 Goroutine 完成任务
+	wg.Wait()
+
+	// 输出最终结果
+	fmt.Println(&amp;#34;Final Counter:&amp;#34;, counter)
+}
+
+func incrementCounter(wg *sync.WaitGroup) {
+	// 进入写模式，获取锁
+	rwMutex.Lock()
+	// 在函数返回前释放锁，加锁和解锁一定要写在一起
+	defer rwMutex.Unlock()
+
+	// 对共享资源进行修改操作
+	counter++
+
+	// 通知 WaitGroup 当前 Goroutine 完成任务
+	wg.Done()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Final Counter: 100
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;rwmutex实现原理&#34;&gt;RWMutex实现原理&lt;/h1&gt;
+&lt;p&gt;源码数据结构：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type RWMutex struct {
+    w           Mutex  // 用于控制多个锁，获得写锁之前需要获取该锁
+    writerSem   uint32 // 写阻塞等待的信号量，最后一个读者释放锁时会释放信号量
+    readerSem   uint32 // 读阻塞的协程等待的信号量，持有写锁的协程释放锁后会释放信号量
+    readerCount int32  // 记录读协程的个数
+    readerWait  int32  // 记录写阻塞时读协程的个数
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;读写锁内部有一个Mutex互斥锁，用于将多个写操作隔离开，其他的几个都用于隔离读操作和写操作。&lt;/p&gt;
+&lt;p&gt;RWMutex还实现了四个接口，四个接口和上面的成员配合起来完成读写互斥锁的实现。&lt;/p&gt;
+&lt;p&gt;接口定义：&lt;br&gt;
+RWMutex提供4个简单接口：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;RLock() ：读锁定（记忆为 ReadLock）。&lt;/li&gt;
+&lt;li&gt;RUnlock()：解除读锁定（记忆为 ReadLock）。&lt;/li&gt;
+&lt;li&gt;Lock() ：写锁定，它与 Mutex 完全一致。&lt;/li&gt;
+&lt;li&gt;UnLock()：解除写锁定，与 Mutex 完全一致。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;lock实现逻辑&#34;&gt;Lock()实现逻辑：&lt;/h3&gt;
+&lt;p&gt;写锁定操作需要做两件事：&lt;br&gt;
+1.获取互斥锁Mutex&lt;br&gt;
+2.若此时有读操作的话，需要阻塞等待所有的读操作结束&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Lock locks rw for writing.
+// If the lock is already locked for reading or writing,
+// Lock blocks until the lock is available.
+func (rw *RWMutex) Lock() {
+    if race.Enabled {
+        _ = rw.w.state
+        race.Disable()
+    }
+    // 首先，解决与其它写操作的竞争。
+    rw.w.Lock()
+    
+    // 向读操作通知有一位待定的写操作。
+    r := atomic.AddInt32(&amp;amp;rw.readerCount, -rwmutexMaxReaders) + rwmutexMaxReaders
+    
+    // 等待活跃的读操作结束。
+    if r != 0 &amp;amp;&amp;amp; atomic.AddInt32(&amp;amp;rw.readerWait, r) != 0 {
+        runtime_SemacquireMutex(&amp;amp;rw.writerSem, false, 0)
+    }
+    if race.Enabled {
+        race.Enable()
+        race.Acquire(unsafe.Pointer(&amp;amp;rw.readerSem))
+        race.Acquire(unsafe.Pointer(&amp;amp;rw.writerSem))
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80RWMutex%e8%af%bb%e5%86%99%e4%ba%92%e6%96%a5%e9%94%81/%e5%86%99%e9%94%81%e5%ae%9a%e9%80%bb%e8%be%91.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h3 id=&#34;unlock实现逻辑&#34;&gt;UnLock()实现逻辑&lt;/h3&gt;
+&lt;p&gt;解除锁定需要做两件事：&lt;br&gt;
+1.唤醒因读锁定而被阻塞的协程（如果有的话）&lt;br&gt;
+2.解除互斥锁&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Unlock unlocks rw for writing. It is a run-time error if rw is
+// not locked for writing on entry to Unlock.
+//
+// As with Mutexes, a locked RWMutex is not associated with a particular
+// goroutine. One goroutine may RLock (Lock) a RWMutex and then
+// arrange for another goroutine to RUnlock (Unlock) it.
+func (rw *RWMutex) Unlock() {
+    if race.Enabled {
+        _ = rw.w.state
+        race.Release(unsafe.Pointer(&amp;amp;rw.readerSem))
+        race.Disable()
+    }
+
+    // 向读协程宣布没有活跃的写协程。
+    r := atomic.AddInt32(&amp;amp;rw.readerCount, rwmutexMaxReaders)
+    if r &amp;gt;= rwmutexMaxReaders {
+        race.Enable()
+        fatal(&amp;#34;sync: Unlock of unlocked RWMutex&amp;#34;)
+    }
+    
+    // 取消阻塞被阻塞的读协程（如果有的话）
+    for i := 0; i &amp;lt; int(r); i++ {
+        runtime_Semrelease(&amp;amp;rw.readerSem, false, 0)
+    }
+    
+    // 解除写锁，允许其它写协程继续写
+    rw.w.Unlock()
+    if race.Enabled {
+        race.Enable()
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80RWMutex%e8%af%bb%e5%86%99%e4%ba%92%e6%96%a5%e9%94%81/%e8%a7%a3%e9%99%a4%e5%86%99%e9%94%81%e5%ae%9a%e9%80%bb%e8%be%91.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h3 id=&#34;rlock实现逻辑&#34;&gt;RLock()实现逻辑&lt;/h3&gt;
+&lt;p&gt;读锁定操作需要做两件事：&lt;br&gt;
+1.增加读操作的计数，即 readerCount++&lt;br&gt;
+2.若阻塞等待写操作结束&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Happens-before relationships are indicated to the race detector via:
+// - Unlock  -&amp;gt; Lock:  readerSem
+// - Unlock  -&amp;gt; RLock: readerSem
+// - RUnlock -&amp;gt; Lock:  writerSem
+//
+// The methods below temporarily disable handling of race synchronization
+// events in order to provide the more precise model above to the race
+// detector.
+func (rw *RWMutex) RLock() {
+    if race.Enabled {
+        _ = rw.w.state
+        race.Disable()
+    }
+    if atomic.AddInt32(&amp;amp;rw.readerCount, 1) &amp;lt; 0 {
+        // A writer is pending, wait for it.
+        runtime_SemacquireMutex(&amp;amp;rw.readerSem, false, 0)
+    }
+    if race.Enabled {
+        race.Enable()
+        race.Acquire(unsafe.Pointer(&amp;amp;rw.readerSem))
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80RWMutex%e8%af%bb%e5%86%99%e4%ba%92%e6%96%a5%e9%94%81/%e8%af%bb%e9%94%81%e5%ae%9a%e5%ae%9e%e7%8e%b0%e9%80%bb%e8%be%91.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h3 id=&#34;runlock实现逻辑&#34;&gt;RUnlock()实现逻辑&lt;/h3&gt;
+&lt;p&gt;解除读锁定需要做两件事：&lt;br&gt;
+1.减少读操作计数，即 readerCount- -&lt;br&gt;
+2.唤醒等待写操作的协程，如果有的话。注意：这里只有最后一个解除读锁定的协程才会释放信号量将该协程唤醒，因为只有当所有的读操作协程释放锁后才可以唤醒写操作协程。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// RUnlock undoes a single RLock call;
+// it does not affect other simultaneous readers.
+// It is a run-time error if rw is not locked for reading
+// on entry to RUnlock.
+func (rw *RWMutex) RUnlock() {
+    if race.Enabled {
+        _ = rw.w.state
+        race.ReleaseMerge(unsafe.Pointer(&amp;amp;rw.writerSem))
+        race.Disable()
+    }
+    if r := atomic.AddInt32(&amp;amp;rw.readerCount, -1); r &amp;lt; 0 {
+        // Outlined slow-path to allow the fast-path to be inlined
+        rw.rUnlockSlow(r)
+    }
+    if race.Enabled {
+        race.Enable()
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80RWMutex%e8%af%bb%e5%86%99%e4%ba%92%e6%96%a5%e9%94%81/%e8%a7%a3%e9%99%a4%e8%af%bb%e9%94%81%e5%ae%9a%e5%ae%9e%e7%8e%b0%e9%80%bb%e8%be%91.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h1 id=&#34;rwmutex关键实现&#34;&gt;RWMutex关键实现&lt;/h1&gt;
+&lt;h3 id=&#34;写操作如何阻止写操作&#34;&gt;写操作如何阻止写操作？&lt;/h3&gt;
+&lt;p&gt;读写锁包含一个互斥锁（Mutex），写锁定必须先获取该互斥锁，如果互斥锁已被协程 1 获取（或者协程 1 在阻塞等待读结束），则意味着协程 1 已获取了互斥锁，那么协程 2 只能阻塞等待该互斥锁。&lt;/p&gt;
+&lt;p&gt;所以写操作依赖互斥锁阻止其他的写操作。&lt;/p&gt;
+&lt;h3 id=&#34;写操作如何阻止读操作&#34;&gt;写操作如何阻止读操作？&lt;/h3&gt;
+&lt;p&gt;这是 RWMutex 实现中最最最精华的技巧。&lt;/p&gt;
+&lt;p&gt;我们知道 RWMutex.readerCount 是一个整型值，用于表示读协程数量。在不考虑写操作的情况下，每次读锁定将该值 +1，每次解除读锁定将该值 -1，所以 readerCount 的取值为  [0, N]，N 为读操作的个数，实际上最大可支持 2的30次方个读操作。&lt;/p&gt;
+&lt;p&gt;当进行写锁定时，会将 readerCount 减去 2的30次方，从而让 readerCount 变成负值，此时再有读操作到来时检查 readerCount 为负值，便知道写操作在进行中，只好阻塞等待。&lt;/p&gt;
+&lt;p&gt;而真实的读操作个数却不会丢失，因为只需要将 readerCount + 2的30次方 即可恢复回来。&lt;/p&gt;
+&lt;p&gt;因此，写操作是将 readerCount 变成负值来阻止写操作的。&lt;/p&gt;
+&lt;h3 id=&#34;读操作如何阻止写操作&#34;&gt;读操作如何阻止写操作？&lt;/h3&gt;
+&lt;p&gt;读锁定会先将 RWMutex.readerCount + 1，此时写操作到来时发现读者数量不为 0，会阻塞等待所有读操作结束。&lt;/p&gt;
+&lt;p&gt;因此，读操作是通过 readerCount 来阻止写操作的。&lt;/p&gt;
+&lt;h3 id=&#34;为什么写锁定不会被-饿死&#34;&gt;为什么写锁定不会被 “饿死”？&lt;/h3&gt;
+&lt;p&gt;我们知道写操作要等待读操作结束后才可以获得锁，写操作等待期间可能还有新的读操作持续到来，如果写操作等待所有的读操作结束，则可能会被 “饿死”，RWMutex 是通过 RWMutex.readerWait 来完美解决这个问题的。&lt;/p&gt;
+&lt;p&gt;写操作到来时，会把RWMutex.readerCount 的值复制到 RWMutex.readerWait 中，用于标记排在写操作前面的读操作个数。&lt;/p&gt;
+&lt;p&gt;前面的读操作结束后，除了递减 RWMutex.readerCount 的值，还会递减 RWMutex.readerWait 的值，所以 RWMutex.readerWait 的值变为 0 的时候，可以唤醒写操作了（真巧妙）。&lt;/p&gt;
+&lt;p&gt;因此写操作相当于把一段连续的读操作划成了两部分，前面的读操作结束后唤醒写操作，写操作结束后唤醒后续的读操作。&lt;/p&gt;
+&lt;h1 id=&#34;注意事项&#34;&gt;注意事项&lt;/h1&gt;
+&lt;p&gt;RWMutex 是一种高级的并发控制机制，但相比于 Mutex 来说，它在处理读操作时会带来更小的开销。因此，在某些场景下可以使用 RWMutex 来提升程序的性能。&lt;/p&gt;
+&lt;p&gt;然而，在使用 RWMutex 时需要注意以下几点:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;不要滥用 RWMutex：只有在确实需要多个 Goroutine 并发地读取共享资源，并且同时保证独占式写入时才使用 RWMutex。&lt;/li&gt;
+&lt;li&gt;避免持有锁太久：持有锁时间过长会影响整个系统的吞吐量。所以应该尽量缩小临界区大小。&lt;/li&gt;
+&lt;li&gt;注意解决死锁问题：当多个 Goroutine 相互等待对方释放锁导致无法继续执行时，就产生了死锁。合理地设计和使用锁可以避免死锁的发生。&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>反射biubiubiu</title>
+      <link>https://tinklespring.com/posts/%E5%8F%8D%E5%B0%84biubiubiu/</link>
+      <pubDate>Thu, 14 Sep 2023 11:06:00 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/%E5%8F%8D%E5%B0%84biubiubiu/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;go的反射是一种强大且复杂的特性，允许创造更灵活、更动态的代码。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;反射基本概念&#34;&gt;反射基本概念&lt;/h1&gt;
+&lt;p&gt;什么是反射？&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;反射是检查自身结构的机制&lt;/li&gt;
+&lt;li&gt;反射是困惑的源泉&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;测验题目&#34;&gt;测验题目&lt;/h2&gt;
+&lt;p&gt;如何判断 Person 结构中的两个变量是否相等？是否可以使用“==”操作符进行比较？&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Person struct {
+    Name string
+    Age int
+    extra interface{}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;答：使用“==”操作符可以比较两个结构体变量，但仅限于结构体成员类型是简单类型，不能比较诸如 slice、map 等不可比较类型。&lt;/p&gt;
+&lt;p&gt;实际项目中常使用&lt;code&gt;reflect.DeepEqual()&lt;/code&gt;函数来比较两个结构体变量，支持任意两个结构体变量的比较：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;reflect&amp;#34;
+)
+
+type Person struct {
+    Name  string
+    Age   int
+    extra interface{}
+}
+
+func main() {
+    p1 := &amp;amp;Person{
+        Name:  &amp;#34;姓名1&amp;#34;,
+        Age:   20,
+        extra: &amp;#34;{}&amp;#34;,
+    }
+    p2 := p1
+    p3 := &amp;amp;Person{
+        Name:  &amp;#34;姓名1&amp;#34;,
+        Age:   20,
+        extra: &amp;#34;{}&amp;#34;,
+    }
+
+    // 内存地址相同：true
+    fmt.Println(&amp;#34;p1 == p2 :&amp;#34;, p1 == p2)
+    // reflect.DeepEqual 支持任意两个结构体变量的比较，结构体每个值都相同，所以为 true
+    fmt.Println(&amp;#34;p1 DeepEqual p2 :&amp;#34;, reflect.DeepEqual(p1, p2))
+
+    // 内存地址不相同：false
+    fmt.Println(&amp;#34;p1 == p3 :&amp;#34;, p1 == p3)
+    // reflect.DeepEqual 支持任意两个结构体变量的比较，结构体每个值都相同，所以为 true
+    fmt.Println(&amp;#34;p1 DeepEqual p3 :&amp;#34;, reflect.DeepEqual(p1, p3))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;接口概念&#34;&gt;接口概念&lt;/h2&gt;
+&lt;p&gt;反射在计算机科学中是一种程序在运行时查看和修改自身结构和行为的能力，在Go中，&lt;code&gt;reflect&lt;/code&gt;包提供了一组函数，用于在运行时查看类型和值，修改值，以及调用方法。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;类型&lt;/strong&gt;&lt;br&gt;
+我们知道 Go 语言是静态类型语言，比如 int、float32、[]byte 等等，每个变量都有一个静态类型，在代码编译时就已经确定了。&lt;/p&gt;
+&lt;p&gt;例如，下面这个示例中，变量 i 和 j 是相同的类型吗？&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Myint int 
+
+var i int 
+var j Myint
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;答：变量 i 和 j 是不同的类型，二者拥有不同的静态类型，尽管二者底层类型都是int，但在没有类型转换的情况下是不可以互相赋值的。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;interface类型&lt;/strong&gt;&lt;br&gt;
+每一个 interface 类型代表一个特定的方法集，方法集 中的方法被称为接口。比如：Person 就是一个接口类型，其中包含了一个 Speak() 方法。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Person interface {
+	Speak() string
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;interface变量&lt;/strong&gt;&lt;br&gt;
+和其他类型一样，也可以声明interface类型变量，比如：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//没给wj赋值，nil
+var wj Person
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;实现接口&lt;/strong&gt;&lt;br&gt;
+任何类型只要实现了interface类型的所有方法，就可以称该类型实现了该接口，该类型的变量就可以存储到interface类型的变量中。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Teacher struct {
+
+}
+
+func (c Teacher) Speak() string {
+	return &amp;#34;teach teach&amp;#34;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;此时，结构体 Teacher 就可以存储到 wj 变量中：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var wj Person
+var teacher Teacher
+wj = teacher
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;In fact, interface变量可以存储任意实现了该接口类型的变量。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;复合类型&lt;/strong&gt;&lt;br&gt;
+为什么 interface 变量可以存储任意实现了该接口类型的变量？&lt;/p&gt;
+&lt;p&gt;答：interface类型的变量在存储某个变量时会同时保存变量类型和变量值，Go运行时会将interface类型表示成这样：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type iface struct {
+	tab *itab            //保存变量类型及方法集
+	data unsafe.Pointer  //变量值位于堆栈的指针
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;暂时只需要明白：interface变量同时保存了变量值和变量类型。&lt;/p&gt;
+&lt;p&gt;Go的反射就是在运行时操作 interface 中的值和类型的特性，这是理解反射的前提。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;特殊空interface&lt;/strong&gt;&lt;br&gt;
+空interface是一种特殊的interface类型，因为没有指定任何方法集，如此一来，任意类型都可以声称实现了空接口，那么该接口类型就可以存储任意类型的值了。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var emptyIf interface {}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;反射原理&#34;&gt;反射原理&lt;/h1&gt;
+&lt;h2 id=&#34;type和value&#34;&gt;type和value&lt;/h2&gt;
+&lt;p&gt;在Go的反射机制中，最重要的两个概念是 &lt;code&gt;Type(类型)&lt;/code&gt; 和 &lt;code&gt;Value(值)&lt;/code&gt;。每个在Go语言中声明的变量都有一个类型和值，可以通过&lt;code&gt;reflect.TypeOf&lt;/code&gt;和&lt;code&gt;reflect.ValueOf&lt;/code&gt;函数来获取变量的类型和值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;reflect&amp;#34;
+)
+
+func main() {
+    var x int = 7
+    t := reflect.TypeOf(x)
+    v := reflect.ValueOf(x)
+    fmt.Printf(&amp;#34;Type: %v\n&amp;#34;, t)  // Type: int
+    fmt.Printf(&amp;#34;Value: %v\n&amp;#34;, v) // Value: 7
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这个例子中，我们首先声明了一个 int 类型的变量 x，然后使用 reflect.TypeOf 和 reflect.ValueOf 函数获取 x 的类型和值，并打印出来。&lt;/p&gt;
+&lt;p&gt;reflect 包中同时提供了两个方法来提取interface的value和type：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func ValueOf(i interface) Value
+func TypeOf(i interface) Type
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/%e5%8f%8d%e5%b0%84biubiubiu/Type%e5%92%8cValue.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;由此可知，Go的反射基于两种类型：Type和Value。每个Type表示一个Go语言的类型，它是一个接口，有许多方法用于检查类型的属性，例如它是不是一个指针，它的元素类型等等，Value类型表示一个Go语言的值，是一个结构体，包含了一个表示值的接口和一个表示值类型的Type。&lt;/p&gt;
+&lt;p&gt;当通过 reflect.TypeOf 和 reflect.ValueOf 函数获取一个变量的类型和值时，实际上是创建了一个 Type 或 Value 的实例，这个实例包含了变量的类型信息或值信息。然后，我们可以通过 Type 或 Value 的方法来操作这个变量。&lt;/p&gt;
+&lt;h2 id=&#34;反射定律&#34;&gt;反射定律&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;第一定律：反射可以将interface类型变量转换为反射对象。&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;例：通过反射获取interface变量的值和类型&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;reflect&amp;#34;
+)
+
+func main() {
+    var x float64 = 7.1
+
+    // 变量 x 在传入 reflect.TypeOf 函数时，实际上做了一次类型转换，x 被转换成空接口传入
+    t := reflect.TypeOf(x)
+
+    //  reflect.ValueO 函数亦是如此
+    v := reflect.ValueOf(x)
+
+    fmt.Printf(&amp;#34;Type: %v\n&amp;#34;, t)  // Type: float64
+    fmt.Printf(&amp;#34;Value: %v\n&amp;#34;, v) // Value:  7.1
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;第二定律：反射可以将反射对象还原成interface对象。&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;之所以叫“反射”，是因为反射对象与interface对象可以互相转化：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;reflect&amp;#34;
+)
+
+func main() {
+    var numIf interface{}
+    numIf = 100
+
+    v := reflect.ValueOf(numIf)
+    vIf := v.Interface()
+
+    if numIf == vIf {
+        fmt.Printf(&amp;#34;They are same!&amp;#34;)
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;They are same!
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;第三定律：反射对象可以修改，value值必须要先设置成可设置的。&lt;/code&gt;&lt;br&gt;
+通过反射对象v设置新值，会触发panic：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;reflect&amp;#34;
+)
+
+func main() {
+    numIf := 100
+
+    v := reflect.ValueOf(&amp;amp;numIf)
+
+    // reflect.ValueOf 获取的是其所存储的值，而非 v 本身，即通过 v 修改其值是无法影响 x 的，无效的修改会报 panic
+    v.SetInt(1000)
+
+    fmt.Println(&amp;#34;v=&amp;#34;, v.Elem().Interface())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;正确的写法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;reflect&amp;#34;
+)
+
+func main() {
+    numIf := 100
+
+    v := reflect.ValueOf(&amp;amp;numIf)
+
+    // Elem() 方法可以获取指向 v 的指针，可以成功设置
+    v.Elem().SetInt(1000)
+
+    fmt.Println(&amp;#34;v=&amp;#34;, v.Elem().Interface())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;反射其他使用&#34;&gt;反射其他使用&lt;/h1&gt;
+&lt;p&gt;在 Go 语言中，我们可以通过反射来实现许多灵活和动态的功能。例如，我们可以通过反射来动态创建对象，动态调用方法，或者遍历和修改结构体的字段。&lt;/p&gt;
+&lt;h2 id=&#34;动态创建对象&#34;&gt;动态创建对象&lt;/h2&gt;
+&lt;p&gt;可以通过 reflect.New 函数来动态创建对象。reflect.New 函数接受一个 Type 参数，返回一个 Value，这个 Value 包含了一个指向新创建的对象的指针。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 创建一个 int 的实例
+t := reflect.TypeOf(int(0))
+v := reflect.New(t)
+fmt.Println(v.Elem().Int()) // 输出 0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这个例子中，我们首先获取 int 类型的 Type，然后通过 reflect.New 函数创建一个新的 int 实例，并打印出它的值。&lt;/p&gt;
+&lt;h2 id=&#34;动态调用方法&#34;&gt;动态调用方法&lt;/h2&gt;
+&lt;p&gt;可以通过 reflect.Value 的 Method 方法来获取一个方法的 Value，然后通过 Call 方法来调用这个方法。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyStruct struct {
+}
+
+func (m *MyStruct) MyMethod() {
+    fmt.Println(&amp;#34;MyMethod was called&amp;#34;)
+}
+
+func main() {
+    m := &amp;amp;MyStruct{}
+    v := reflect.ValueOf(m)
+    method := v.MethodByName(&amp;#34;MyMethod&amp;#34;)
+    method.Call(nil)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这个例子中，我们首先定义了一个结构体 MyStruct 和它的方法 MyMethod，然后通过反射获取 MyMethod 的 Value，并调用它。&lt;/p&gt;
+&lt;h2 id=&#34;遍历和修改结构体的字段&#34;&gt;遍历和修改结构体的字段&lt;/h2&gt;
+&lt;p&gt;可以通过 reflect.Value 的 NumField 和 Field 方法来遍历一个结构体的所有字段，并通过 Set 方法来修改字段的值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyStruct struct {
+    Field1 int
+    Field2 string
+}
+
+func main() {
+    m := &amp;amp;MyStruct{Field1: 1, Field2: &amp;#34;hello&amp;#34;}
+    v := reflect.ValueOf(m).Elem()
+
+    for i := 0; i &amp;lt; v.NumField(); i++ {
+        field := v.Field(i)
+        fmt.Printf(&amp;#34;Field %d: %v\n&amp;#34;, i, field.Interface())
+
+        if field.Kind() == reflect.Int {
+            field.SetInt(2)
+        } else if field.Kind() == reflect.String {
+            field.SetString(&amp;#34;world&amp;#34;)
+        }
+    }
+
+    fmt.Printf(&amp;#34;m: %v\n&amp;#34;, m)  // 输出：m: &amp;amp;{2 world}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这个例子中，我们首先定义了一个结构体 MyStruct，然后通过反射遍历 MyStruct 的所有字段，打印出字段的值，并修改它们的值。&lt;/p&gt;
+&lt;h1 id=&#34;常见的陷阱和提示&#34;&gt;常见的陷阱和提示&lt;/h1&gt;
+&lt;p&gt;虽然反射是一个强大的工具，但是它也有一些陷阱和限制。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;对于不可导出的字段和方法，反射不能访问或修改它们。例如，我们不能通过反射来修改一个结构体的小写字段。&lt;/li&gt;
+&lt;li&gt;使用反射会有一些性能开销。因为反射操作涉及到一些动态类型检查和方法调用，所以它通常比普通的静态类型操作要慢。&lt;/li&gt;
+&lt;li&gt;反射代码通常比较难以理解和维护。因为反射操作往往涉及到一些动态类型和方法，所以它的代码往往比较难以理解和维护。&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go读取配置文件的方式</title>
+      <link>https://tinklespring.com/posts/go%E8%AF%BB%E5%8F%96%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84%E6%96%B9%E5%BC%8F/</link>
+      <pubDate>Thu, 14 Sep 2023 10:53:03 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/go%E8%AF%BB%E5%8F%96%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84%E6%96%B9%E5%BC%8F/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;go有 viper 与 configor 配置管理方案。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;viper管理配置&#34;&gt;viper管理配置&lt;/h1&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/spf13/viper&#34;target=&#34;_blank&#34; rel=&#34;noopener noreferrer&#34;&gt;https://github.com/spf13/viper&lt;/a&gt;
+&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;支持多种配置文件格式，包括 JSON,TOML,YAML,HECL,envfile，甚至还包括Java properties&lt;/li&gt;
+&lt;li&gt;支持为配置项设置默认值&lt;/li&gt;
+&lt;li&gt;可以通过命令行参数覆盖指定的配置项&lt;/li&gt;
+&lt;li&gt;支持参数别名&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;viper 按照优先级从高到低获取配置项的取值：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;explicit call to Set: 在代码逻辑中通过viper.Set()直接设置配置项的值&lt;/li&gt;
+&lt;li&gt;flag：命令行参数&lt;/li&gt;
+&lt;li&gt;env：环境变量&lt;/li&gt;
+&lt;li&gt;config：配置文件&lt;/li&gt;
+&lt;li&gt;key/value store：etcd或者consul&lt;/li&gt;
+&lt;li&gt;default：默认值&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;time&amp;#34;
+
+	&amp;#34;github.com/fsnotify/fsnotify&amp;#34;
+	&amp;#34;github.com/spf13/viper&amp;#34;
+)
+
+func main() {
+
+	loadConfig()
+}
+
+func loadConfig() {
+
+	configVar := &amp;#34;shuang-config.yaml&amp;#34;
+	configVar = &amp;#34;&amp;#34; // 这行如果注释掉，则从指定的configVar读取配置文件；否则就各种条件去找了
+
+	if configVar != &amp;#34;&amp;#34; {
+		// SetConfigFile 显式定义配置文件的路径、名称和扩展名。
+		// Viper 将使用它而不检查任何配置路径。
+		viper.SetConfigFile(configVar)
+	} else {
+
+		// 如果没有显式指定配置文件，则
+
+		// 会去下面的路径里找文件名`cui-config`的文件  name of config file (without extension)
+		// 按照 []string{&amp;#34;json&amp;#34;, &amp;#34;toml&amp;#34;, &amp;#34;yaml&amp;#34;, &amp;#34;yml&amp;#34;, &amp;#34;properties&amp;#34;, &amp;#34;props&amp;#34;, &amp;#34;prop&amp;#34;, &amp;#34;hcl&amp;#34;, &amp;#34;tfvars&amp;#34;, &amp;#34;dotenv&amp;#34;, &amp;#34;env&amp;#34;, &amp;#34;ini&amp;#34;}的顺序(居然还支持Java用的properties)
+		viper.SetConfigName(&amp;#34;cui-config&amp;#34;)
+		viper.AddConfigPath(&amp;#34;/etc/myapp&amp;#34;) // 找寻的路径
+		viper.AddConfigPath(&amp;#34;$HOME/.myapp/&amp;#34;)
+		viper.AddConfigPath(&amp;#34;.&amp;#34;)
+	}
+
+	viper.WatchConfig()
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		fmt.Printf(&amp;#34;配置文件 %s 发生了更改!!! 最新的Global.Source这个字段的值为 %s:&amp;#34;, e.Name, viper.GetString(&amp;#34;Global.Source&amp;#34;))
+	})
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf(&amp;#34;error reading config: %s&amp;#34;, err))
+	}
+
+	fmt.Printf(&amp;#34;到底用的是哪个配置文件: &amp;#39;%s&amp;#39;\n&amp;#34;, viper.ConfigFileUsed())
+
+	fmt.Printf(&amp;#34;Global.Source这个字段的值为: &amp;#39;%s&amp;#39;\n&amp;#34;, viper.GetString(&amp;#34;Global.Source&amp;#34;))
+
+	time.Sleep(10000e9)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;watch机制配置更新后热加载&#34;&gt;Watch机制（配置更新后热加载）&lt;/h3&gt;
+&lt;p&gt;该机制可以监听配置文件的修改, 这样就实现了热加载，修改配置后，无需重启服务。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;对于本地文件，是通过fsnotify实现的，然后通过一个回调函数去通知应用来reload&lt;/li&gt;
+&lt;li&gt;对于Remote KV Store，目前只支持etcd，做法比较ugly，(5秒钟)轮询一次 而不是watch api&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;configor-管理配置&#34;&gt;configor 管理配置&lt;/h1&gt;
+&lt;p&gt;Configor 支持YAML，JSON，TOML，Shell环境，支持热加载。&lt;/p&gt;
+&lt;p&gt;出自jinzhu ：https://github.com/jinzhu&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;time&amp;#34;
+
+	&amp;#34;github.com/jinzhu/configor&amp;#34;
+)
+
+type Config struct {
+	APPName string `default:&amp;#34;app name&amp;#34;`
+	DB      struct {
+		Name     string
+		User     string `default:&amp;#34;root&amp;#34;`
+		Password string `required:&amp;#34;true&amp;#34; env:&amp;#34;DBPassword&amp;#34;`
+		Port     uint   `default:&amp;#34;3306&amp;#34;`
+	}
+	Contacts []struct {
+		Name  string
+		Email string `required:&amp;#34;true&amp;#34;`
+	}
+}
+
+func main() {
+	var conf = Config{}
+
+	// reload模式,可实现热加载
+
+	err := configor.New(&amp;amp;configor.Config{
+		AutoReload:         true,
+		AutoReloadInterval: time.Second,
+		AutoReloadCallback: func(config interface{}) {
+			// config发生变化后出发什么操作
+			fmt.Printf(&amp;#34;配置文件发生了变更%#v\n&amp;#34;, config)
+		},
+	}).Load(&amp;amp;conf, &amp;#34;config.yml&amp;#34;)
+
+	// 无reload模式
+	//err := configor.Load(&amp;amp;conf, &amp;#34;config.yml&amp;#34;)
+
+	// err := configor.New(&amp;amp;configor.Config{Debug: true}).Load(&amp;amp;conf, &amp;#34;config.yml&amp;#34;)  // 测试模式，也可以通过环境变量开启测试模式(CONFIGOR_DEBUG_MODE=true go run main.go )，这样就无需修改代码
+
+	//err := configor.New(&amp;amp;configor.Config{Verbose: true}).Load(&amp;amp;conf, &amp;#34;config.yml&amp;#34;) // 模式，也可以通过环境变量开启详细模式(CONFIGOR_VERBOSE_MODE=true go run main.go )，这样就无需修改代码
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf(&amp;#34;%v \n&amp;#34;, conf)
+
+	time.Sleep(100000e9)
+}
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Go编程陷阱</title>
+      <link>https://tinklespring.com/posts/go%E7%BC%96%E7%A8%8B%E9%99%B7%E9%98%B1/</link>
+      <pubDate>Thu, 14 Sep 2023 08:27:56 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/go%E7%BC%96%E7%A8%8B%E9%99%B7%E9%98%B1/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;Go中有一些容易让人掉进去的陷阱，本篇列出一些常见的，教你如何避免。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;nil切片与空切片&#34;&gt;Nil切片与空切片&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var a []int   //nil切片
+b := []int{}  //空切片
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;两者都没有元素，但行为上不同，例如，当检查长度或追加元素时：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(len(a), cap(a))  //0 0
+fmt.Println(len(b), cap(b))  //0 0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是当某些操作时，比如JSON的序列化，两者不一样：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;dataA, _ := json.Marshal(a)
+dataB, _ := json.Marshal(b)
+fmt.Println(string(dataA))  // null
+fmt.Println(string(dataB))  // []
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：先明确需求，若表示“不存在的切片”，使用 nil ；若需要一个空的集合，则使用空切片。&lt;/p&gt;
+&lt;h1 id=&#34;不初始化的map&#34;&gt;不初始化的Map&lt;/h1&gt;
+&lt;p&gt;在Go中，map必须使用 make 函数初始化，否则将是 nil 。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var m map[string]int
+m[&amp;#34;key&amp;#34;] = 42  // panic: assignment to entry in nil map
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：始终要用 &lt;code&gt;make&lt;/code&gt; 初始化map。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;m := make(map[string]int)
+m[&amp;#34;key&amp;#34;] = 42
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;并发map读写&#34;&gt;并发Map读写&lt;/h1&gt;
+&lt;p&gt;Go的map在并发读写时是不安全的。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;m := make(map[string]int)
+go func() {
+    for {
+        m[&amp;#34;key&amp;#34;] = 42
+    }
+}()
+go func() {
+    for {
+        _ = m[&amp;#34;key&amp;#34;]
+    }
+}()
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上述代码会产生panic，需要使用 &lt;code&gt;sync.RWMutex&lt;/code&gt; 进行锁定或考虑使用 &lt;code&gt;sync.Map&lt;/code&gt; 。&lt;/p&gt;
+&lt;h1 id=&#34;闭包中的循环变量&#34;&gt;闭包中的循环变量&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+import &amp;#34;sync&amp;#34;
+
+func main() {
+    wg := sync.WaitGroup{}
+
+    for _, v := range []int{1, 2, 3, 4} {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+
+            fmt.Println(v)
+        }()
+    }
+
+    wg.Wait()
+    fmt.Println(&amp;#34;main done&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可能希望输出 1，2，3，4，但实际上 v 的值在每个 goroutine 中都可能是 4 。&lt;/p&gt;
+&lt;p&gt;解决方式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+import &amp;#34;sync&amp;#34;
+
+func main() {
+    wg := sync.WaitGroup{}
+
+    for _, v := range []int{1, 2, 3, 4} {
+        wg.Add(1)
+
+        go func(v int) {
+            defer wg.Done()
+
+            fmt.Println(v)
+        }(v)
+    }
+
+    wg.Wait()
+    fmt.Println(&amp;#34;main done&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;将循环变量作为参数传递给闭包。&lt;/p&gt;
+&lt;h1 id=&#34;error不被检查&#34;&gt;Error不被检查&lt;/h1&gt;
+&lt;p&gt;Go没有其他语言那样的异常机制，它使用 error 来传递错误。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;f, _ := os.Open(&amp;#34;filename.ext&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上述代码，错误被忽略，可能导致后续操作在文件上失败。&lt;/p&gt;
+&lt;p&gt;解决方法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;f, err := os.Open(&amp;#34;filename.ext&amp;#34;)
+if err != nil {
+	log.Fatal(err)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;始终检查错误并处理。&lt;/p&gt;
+&lt;h1 id=&#34;不正确的string转换&#34;&gt;不正确的String转换&lt;/h1&gt;
+&lt;p&gt;直接将 byte 切片转换为 string 会导致不可预期的结果，特别是当 byte 切片中包含非 UTF-8 字符时。&lt;/p&gt;
+&lt;p&gt;解决方式： 使用正确的转换方法，如 utf8.Valid 检查是否为有效的 UTF-8。&lt;/p&gt;
+&lt;h1 id=&#34;失效的goroutine&#34;&gt;失效的Goroutine&lt;/h1&gt;
+&lt;p&gt;若主goroutine结束，其他goroutine也会立即停止。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	go func() {
+		time.Sleep(2 * time.Second)
+		fmt.Println(&amp;#34;This will never get printed&amp;#34;)
+	}()
+	fmt.Println(&amp;#34;main done&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;main done
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决方法：使用 &lt;code&gt;sync.WaitGroup&lt;/code&gt; 或其他同步机制来确保所有goroutine完成。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;sync&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		time.Sleep(2 * time.Second)
+		fmt.Println(&amp;#34;This will never get printed&amp;#34;)
+	}()
+
+	wg.Wait()
+	fmt.Println(&amp;#34;main done&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;This will never get printed
+main done
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;变量阴影&#34;&gt;变量阴影&lt;/h1&gt;
+&lt;p&gt;可能会不小心创建了一个同名的局部变量，从而“阴影”了外部的变量。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;x := 5
+func f() {
+    x, err := doSomething() // 这里 unintentionally 阴影了外部的 x
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(x) // 这可能不是你期望的 x 的值
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：始终注意变量的作用域，使用 go vet 来识别此类问题。&lt;/p&gt;
+&lt;h1 id=&#34;使用--比较复杂的数组和结构&#34;&gt;使用 == 比较复杂的数组和结构&lt;/h1&gt;
+&lt;p&gt;Go允许使用 == 来比较数组和结构，但若它们本身包含不可比较的字段（如map或函数），则会导致编译错误。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Person struct {
+    Name string
+    Ages map[string]int
+}
+
+func main() {
+    p1 := Person{Name: &amp;#34;Alice&amp;#34;, Ages: map[string]int{&amp;#34;Bob&amp;#34;: 30}}
+    p2 := Person{Name: &amp;#34;Alice&amp;#34;, Ages: map[string]int{&amp;#34;Bob&amp;#34;: 30}}
+    fmt.Println(p1 == p2) // 编译错误
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决：为复杂的数据结构实现自己的比较函数或者使用第三方库。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+import &amp;#34;reflect&amp;#34;
+
+type Person struct {
+    Name string
+    Ages map[string]int
+}
+
+func main() {
+    p1 := Person{Name: &amp;#34;Alice&amp;#34;, Ages: map[string]int{&amp;#34;Bob&amp;#34;: 30}}
+    p2 := Person{Name: &amp;#34;Alice&amp;#34;, Ages: map[string]int{&amp;#34;Bob&amp;#34;: 30}}
+    fmt.Println(reflect.DeepEqual(p1,p2)) // 正确比较
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;非显式的接口实现&#34;&gt;非显式的接口实现&lt;/h1&gt;
+&lt;p&gt;Go 使用非显式的接口实现，这意味着只要类型实现了接口的所有方法，它就被认为实现了该接口。这可能导致意外实现了某个接口。&lt;/p&gt;
+&lt;p&gt;解决方法：虽然这是 Go 的特性，但是在可能的情况下，为类型提供明确的文档，说明它实现了哪些接口。&lt;/p&gt;
+&lt;h1 id=&#34;小心defer使用&#34;&gt;小心defer使用&lt;/h1&gt;
+&lt;p&gt;虽然 defer 是处理资源清理的好方法，但使用它时仍然需要注意。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+    for i := 0; i &amp;lt; 10; i++ {
+        defer fmt.Println(i)
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可能期望它在循环的每次迭代后立即输出，但实际上它会在函数返回时输出，并且顺序是反的。&lt;/p&gt;
+&lt;p&gt;解决： 理解 defer 的行为和用途，并仔细考虑何时使用它。&lt;/p&gt;
+&lt;h1 id=&#34;容易被忽视的零值&#34;&gt;容易被忽视的零值&lt;/h1&gt;
+&lt;p&gt;Go 的每种类型都有一个零值，例如，数值类型为 0，bool 类型为 false，string 为 &amp;ldquo;&amp;quot;。但这有时可能导致意外的行为，尤其是当结构体有复杂的嵌套时。&lt;/p&gt;
+&lt;p&gt;解决方法：在初始化结构时，明确指定所有期望的值，避免依赖零值。&lt;/p&gt;
+&lt;h1 id=&#34;指针和零值&#34;&gt;指针和零值&lt;/h1&gt;
+&lt;p&gt;指针的零值是 nil ，而不是指向零初始化的值。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var p *int
+fmt.Println(*p) // 这会引发 panic，因为 p 是 nil，没有值可以解引用
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决： 始终确保指针已初始化并指向有效的内存地址。&lt;/p&gt;
+&lt;h1 id=&#34;在切片上的原位修改&#34;&gt;在切片上的原位修改&lt;/h1&gt;
+&lt;p&gt;切片其实是底层数组的一个视图。在一个切片上的修改可能影响其他引用相同底层数组的切片。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+    original := []int{1, 2, 3, 4, 5}
+    subset := original[1:4]
+    subset[0] = 9
+    fmt.Println(original) // 输出：[1 9 3 4 5]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：如果不想修改原始数据，要使用 copy 创建一个新的切片副本。&lt;/p&gt;
+&lt;h1 id=&#34;错误地使用接口类型&#34;&gt;错误地使用接口类型&lt;/h1&gt;
+&lt;p&gt;Go 中的接口是静态类型的，但它们可以持有任何值。很多新手尝试将接口值直接转换为另一种类型，而不是使用类型断言。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func MyFunc(a interface{}) {
+    str := a.(string)
+    fmt.Println(str)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;调用 MyFunc(123) 会引发panic。&lt;/p&gt;
+&lt;p&gt;解决：在使用类型断言前，要检查是否成功。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+    MyFunc(&amp;#34;123&amp;#34;)
+    MyFunc(123)
+}
+
+func MyFunc(a interface{}) {
+    str := a.(string)
+    fmt.Println(str)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;忽略goroutine泄漏&#34;&gt;忽略Goroutine泄漏&lt;/h1&gt;
+&lt;p&gt;Goroutines 是轻量级的，但它们并非完全没有成本。未正确终止的 Goroutines 会导致内存泄漏。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func leakyFunc() {
+    for {
+        go func() {
+            time.Sleep(time.Hour)
+        }()
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决： 确保为 Goroutines 设计合适的退出策略，例如使用 context 或 select 和 channel 机制。&lt;/p&gt;
+&lt;h1 id=&#34;没有初始化的结构体字段&#34;&gt;没有初始化的结构体字段&lt;/h1&gt;
+&lt;p&gt;在 Go 中，如果结构体的字段没有显式初始化，它们将被赋予零值。这可能导致意外的行为，尤其是当你期望它们有一个非零的默认值时。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Config struct {
+    Timeout time.Duration
+}
+
+c := Config{}
+fmt.Println(c.Timeout) // 输出：0s，可能不是你期望的默认超时值
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决： 创建返回正确初始化的结构体的工厂函数或构造函数。&lt;/p&gt;
+&lt;h1 id=&#34;忽略channel的返回值&#34;&gt;忽略channel的返回值&lt;/h1&gt;
+&lt;p&gt;当从已关闭的 channel 读取时，你将接收该类型的零值，而不会得到任何明确的“channel 已关闭”的错误。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ch := make(chan int)
+close(ch)
+val := &amp;lt;-ch
+fmt.Println(val) // 输出：0，可能误导你认为 channel 传递了一个 0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决： 使用两个返回值的形式来检查 channel 是否已关闭：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;val, ok := &amp;lt;-ch
+if !ok {
+    fmt.Println(&amp;#34;Channel is closed&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+	ch := make(chan int)
+	close(ch)
+	val := &amp;lt;-ch
+	fmt.Println(val) // 输出：0，可能误导你认为 channel 传递了一个 0
+
+	ch1 := make(chan int)
+	close(ch1)
+	val1, ok := &amp;lt;-ch
+	if !ok {
+		fmt.Println(&amp;#34;Channel is closed&amp;#34;) // 检查 channel 是否已关闭
+	} else {
+		fmt.Println(val1) // 输出正确的值
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;非法的字符串操作&#34;&gt;非法的字符串操作&lt;/h1&gt;
+&lt;p&gt;Go 的字符串是不可变的，尝试修改字符串会导致编译错误。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;str := &amp;#34;hello&amp;#34;
+str[0] = &amp;#39;H&amp;#39; // 编译错误
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决： 使用切片和 string 转换函数来实现字符串的变化。&lt;/p&gt;
+&lt;h1 id=&#34;range循环的陷阱&#34;&gt;range循环的陷阱&lt;/h1&gt;
+&lt;p&gt;在 for … range 循环中，范围变量的值在每次迭代中都会被重用，这可能会导致意外的闭包行为。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+    funcs := []func(){}
+    for _, val := range []int{1, 2, 3} {
+        funcs = append(funcs, func() {
+            fmt.Println(val)
+        })
+    }
+    for _, f := range funcs {
+        f() // 会三次打印 3，而不是 1, 2, 3
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;正确的写法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+    funcs := []func(){}
+    for _, val := range []int{1, 2, 3} {
+        v := val
+        funcs = append(funcs, func() {
+            fmt.Println(v)
+        })
+    }
+
+    for _, f := range funcs {
+        f() // 会三次打印 3，而不是 1, 2, 3
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决： 在循环体内部为范围变量创建一个新的局部变量。&lt;/p&gt;
+&lt;h1 id=&#34;对nil切片和nil-map的误解&#34;&gt;对nil切片和nil map的误解&lt;/h1&gt;
+&lt;p&gt;虽然 nil 切片和 nil map 都表示“没有元素”的集合，但它们在使用时的行为是不同的。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var s []int
+var m map[string]int
+
+s = append(s, 1) // 正确的，你可以 append 到 nil 切片
+m[&amp;#34;key&amp;#34;] = 1     // 运行时 panic，不能直接赋值给 nil map
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决：在使用 map 之前，确保使用 make 初始化它。&lt;/p&gt;
+&lt;h1 id=&#34;小心map并发访问&#34;&gt;小心map并发访问&lt;/h1&gt;
+&lt;p&gt;Go的map不是并发安全的，多个goroutine同时读写map时可能导致运行时错误。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+import &amp;#34;sync&amp;#34;
+
+func main() {
+    m := make(map[string]int)
+    wg := sync.WaitGroup{}
+
+
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+
+        m[&amp;#34;key&amp;#34;] = 1
+        fmt.Printf(&amp;#34;1: %v \n&amp;#34;,m)
+    }()
+
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+
+        m[&amp;#34;key&amp;#34;] = 2
+        fmt.Printf(&amp;#34;2: %v \n&amp;#34;,m)
+    }()
+
+    wg.Wait()
+
+    fmt.Println(m)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2: map[key:2] 
+1: map[key:1] 
+map[key:1]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决：使用互斥锁（如：sync.Mutex）来同步对map的访问，或考虑使用并发安全的数据结构，如 sync.Map 。&lt;/p&gt;
+&lt;h1 id=&#34;方法和指针接收者&#34;&gt;方法和指针接收者&lt;/h1&gt;
+&lt;p&gt;当定义方法时，区分值接收者和指针接收者是很重要的，特别是当你想修改接收者中的值时。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type Counter struct {
+	count int
+}
+
+func (c Counter) Add() {
+	c.count++
+}
+
+func (c *Counter) AddPtr() {
+	c.count++
+}
+func main() {
+
+	counter := Counter{}
+	counter.Add()
+	fmt.Println(counter.count) // 输出 0，因为 Add() 没有改变原值
+
+	counter.AddPtr()
+	fmt.Println(counter.count) // 输出 1，因为 AddPtr() 修改了原值
+}
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Go中的JSON序列化与反序列化</title>
+      <link>https://tinklespring.com/posts/go%E4%B8%AD%E7%9A%84json%E5%BA%8F%E5%88%97%E5%8C%96%E4%B8%8E%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/</link>
+      <pubDate>Wed, 13 Sep 2023 09:13:42 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/go%E4%B8%AD%E7%9A%84json%E5%BA%8F%E5%88%97%E5%8C%96%E4%B8%8E%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;JSON 是一种流行的数据交换格式，在Go中经常需要将结构体实例序列化为JSON字符串保存和传输。本文介绍使用Go中的&lt;code&gt;encoding/json&lt;/code&gt;包将结构体序列化为JSON数据。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;目录&#34;&gt;目录&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href=&#34;#JSON%e5%ba%8f%e5%88%97%e5%8c%96%e6%a6%82%e8%bf%b0&#34;&gt;JSON序列化概述&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e5%ae%9a%e4%b9%89%e5%8f%af%e5%ba%8f%e5%88%97%e5%8c%96%e7%9a%84%e7%bb%93%e6%9e%84%e4%bd%93&#34;&gt;定义可序列化的结构体&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e5%ba%8f%e5%88%97%e5%8c%96&#34;&gt;使用json.Marshal序列化&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e5%ae%9a%e5%88%b6%e5%ba%8f%e5%88%97%e5%8c%96%e9%80%bb%e8%be%91&#34;&gt;定制序列化逻辑&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e5%8f%8d%e5%ba%8f%e5%88%97%e5%8c%96&#34;&gt;使用json.Unmarshal反序列化&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e5%a4%84%e7%90%86%e7%a9%ba%e5%80%bc%e5%92%8c%e9%bb%98%e8%ae%a4%e5%80%bc&#34;&gt;处理空值和默认值&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e5%b5%8c%e5%a5%97%e5%af%b9%e8%b1%a1%e5%92%8c%e5%8c%bf%e5%90%8d%e5%ad%97%e6%ae%b5&#34;&gt;嵌套对象和匿名字段&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e5%ba%8f%e5%88%97%e5%8c%96%e7%a9%ba%e6%8e%a5%e5%8f%a3&#34;&gt;序列化interface{}&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#stream%e7%bc%96%e7%a0%81%e5%99%a8&#34;&gt;stream编码器&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#JSON%e4%b8%8eXML%e5%af%b9%e6%af%94&#34;&gt;JSON与XML对比&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e6%96%87%e6%9c%ac%e6%a0%bc%e5%bc%8f%e7%9a%84%e4%bc%98%e7%82%b9&#34;&gt;文本格式的优点&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e8%a7%84%e8%8c%83&#34;&gt;使用规范&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#%e5%ba%8f%e5%88%97%e5%8c%96%e6%80%a7%e8%83%bd%e4%bc%98%e5%8c%96&#34;&gt;序列化性能优化&lt;/a&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;json序列化概述&#34;&gt;JSON序列化概述&lt;/h2&gt;
+&lt;p&gt;JSON是一种非常流行的结构化数据格式，被广泛用于网络传输和数据存储中。Go主要通过json包来处理JSON数据，有两个核心的函数：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;json.Marshal&lt;/code&gt; 序列化Go对象为JOSN格式字节流&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;json.Unmarshal&lt;/code&gt; JSON数据解析为Go对象&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;定义可序列化的结构体&#34;&gt;定义可序列化的结构体&lt;/h2&gt;
+&lt;p&gt;想要将一个结构体实例序列化为JSON，需要确保结构体字段可被json包访问，通常有两种方式：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;字段首字母答谢，可以被外部包访问&lt;/li&gt;
+&lt;li&gt;通过tag指定字段名&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;比如：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type User struct {
+	ID int `json:&amp;#34;id&amp;#34;`
+	Name string `json:&amp;#34;name&amp;#34;`
+	Age int
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;使用序列化&#34;&gt;使用序列化&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;encoding/json&amp;#34;
+	&amp;#34;fmt&amp;#34;
+)
+
+type User struct {
+	Name string `json:&amp;#34;name&amp;#34;`
+	Age  int    `json:&amp;#34;age&amp;#34;`
+}
+
+func main() {
+	user := User{&amp;#34;John&amp;#34;, 20}
+
+	// 序列化
+	buf, err := json.Marshal(user)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// 打印JSON
+	fmt.Println(string(buf))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{&amp;#34;name&amp;#34;:&amp;#34;John&amp;#34;,&amp;#34;age&amp;#34;:20}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;定制序列化逻辑&#34;&gt;定制序列化逻辑&lt;/h2&gt;
+&lt;p&gt;若需要控制序列化的细节，可以实现Marshaler接口，这样可以灵活控制各字段编码过程。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;encoding/json&amp;#34;
+	&amp;#34;fmt&amp;#34;
+)
+
+type User struct {
+	Name string `json:&amp;#34;name&amp;#34;`
+	Age  int    `json:&amp;#34;age&amp;#34;`
+}
+
+// 实现Marshaler接口
+func (u User) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`{&amp;#34;name&amp;#34;:&amp;#34;%s&amp;#34;}`, u.Name)), nil
+}
+
+func main() {
+	u := User{&amp;#34;John&amp;#34;, 20}
+
+	jsonBytes, _ := json.Marshal(u)
+	fmt.Println(string(jsonBytes)) // {&amp;#34;name&amp;#34;:&amp;#34;John&amp;#34;}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;使用反序列化&#34;&gt;使用反序列化&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;encoding/json&amp;#34;
+	&amp;#34;fmt&amp;#34;
+)
+
+type User struct {
+	Name string `json:&amp;#34;name&amp;#34;`
+	Age  int    `json:&amp;#34;age&amp;#34;`
+}
+
+func main() {
+	jsonStr := `{&amp;#34;name&amp;#34;:&amp;#34;John&amp;#34;,&amp;#34;age&amp;#34;:20}`
+
+	// 反序列化到user
+	var user User
+	err := json.Unmarshal([]byte(jsonStr), &amp;amp;user)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(user.Name) // John
+	fmt.Println(user.Age)  // 20
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;传入JSON数据以及对象指针，即可解析。&lt;/p&gt;
+&lt;h2 id=&#34;处理空值和默认值&#34;&gt;处理空值和默认值&lt;/h2&gt;
+&lt;p&gt;对于空值的序列化，默认会忽略空值字段：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type User struct {
+  Name string
+  Age  int
+}
+
+u := User{&amp;#34;John&amp;#34;, 0} 
+
+jsonBytes, _ := json.Marshal(u)
+
+fmt.Println(string(jsonBytes)) // {&amp;#34;Name&amp;#34;:&amp;#34;John&amp;#34;}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以通过定义 MarshalJSON 方法自定义处理空值的编码。&lt;/p&gt;
+&lt;p&gt;反序列化时，需要处理不存在的字段，可以使用指针或默认值。&lt;/p&gt;
+&lt;h2 id=&#34;嵌套对象和匿名字段&#34;&gt;嵌套对象和匿名字段&lt;/h2&gt;
+&lt;p&gt;对于嵌套的对象字段和内嵌匿名类型，也可以正常序列化和反序列化:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Info struct {
+  Addr string
+}
+
+type User struct {
+  Info // 嵌套Info
+  
+  Name string
+}
+
+u := User{Info{&amp;#34;Beijing&amp;#34;}, &amp;#34;Tom&amp;#34;}
+
+jsonBytes, _ := json.Marshal(u)
+
+fmt.Println(string(jsonBytes)) // {&amp;#34;Addr&amp;#34;:&amp;#34;Beijing&amp;#34;,&amp;#34;Name&amp;#34;:&amp;#34;Tom&amp;#34;}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;编码后嵌套的类型将被内联到结果中。&lt;/p&gt;
+&lt;h2 id=&#34;序列化空接口&#34;&gt;序列化空接口&lt;/h2&gt;
+&lt;p&gt;json包可以处理任意的 interface{} 值：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;data := map[string]interface{}{
+  &amp;#34;name&amp;#34;: &amp;#34;John&amp;#34;,
+  &amp;#34;age&amp;#34;: 20,
+}
+
+jsonBytes, _ := json.Marshal(data)
+
+fmt.Println(string(jsonBytes))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但编码结果会包含类型信息和Base64编码后的值，这比定制序列化更低效。&lt;/p&gt;
+&lt;h2 id=&#34;stream编码器&#34;&gt;stream编码器&lt;/h2&gt;
+&lt;p&gt;也可以使用streaming模式的encoder来进行序列化：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+  &amp;#34;encoding/json&amp;#34;
+  &amp;#34;os&amp;#34;
+)
+
+func main() {
+  type User struct {
+    Name string
+    Age  int
+  }
+  
+  user := User{&amp;#34;John&amp;#34;, 20}
+  
+  // 使用stream encoder
+  enc := json.NewEncoder(os.Stdout)
+  enc.Encode(user)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这种编码方式很灵活，可以实现各种自定义输出格式。&lt;/p&gt;
+&lt;h2 id=&#34;json与xml对比&#34;&gt;JSON与XML对比&lt;/h2&gt;
+&lt;p&gt;JSON对比XML优点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;读取和解析更加方便快捷&lt;/li&gt;
+&lt;li&gt;存储占用更小且具有可读性&lt;/li&gt;
+&lt;li&gt;支持更多语言与平台&lt;/li&gt;
+&lt;li&gt;性能和解析速度更快&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;文本格式的优点&#34;&gt;文本格式的优点&lt;/h2&gt;
+&lt;p&gt;JSON与其他二进制序列化格式相比，文本格式JSON优点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;可读性强,便于打印调试&lt;/li&gt;
+&lt;li&gt;可复用现有文本处理工具&lt;/li&gt;
+&lt;li&gt;不依赖语言和平台&lt;/li&gt;
+&lt;li&gt;可支持部分更新修改&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;使用规范&#34;&gt;使用规范&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;格式化打印 JSON 数据&lt;/li&gt;
+&lt;li&gt;为类型和字段定义 Canonical 名称&lt;/li&gt;
+&lt;li&gt;提供完整的文档&lt;/li&gt;
+&lt;li&gt;版本控制 JSON 接口&lt;/li&gt;
+&lt;li&gt;采用更灵活的 schema 描述&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;序列化性能优化&#34;&gt;序列化性能优化&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;提前指定好对象大小&lt;/li&gt;
+&lt;li&gt;重用分配的内存&lt;/li&gt;
+&lt;li&gt;尽量避免解析嵌套数据&lt;/li&gt;
+&lt;li&gt;按需完成自定义编码&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go语言Mutex互斥锁</title>
+      <link>https://tinklespring.com/posts/go%E8%AF%AD%E8%A8%80mutex%E4%BA%92%E6%96%A5%E9%94%81/</link>
+      <pubDate>Tue, 05 Sep 2023 11:16:34 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/go%E8%AF%AD%E8%A8%80mutex%E4%BA%92%E6%96%A5%E9%94%81/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;在并发编程中，我们常常会遇到多个 goroutine 同时访问共享资源的情况，这可能会导致数据的不一致性。为了解决这个问题，Go 语言提供了互斥锁（Mutex）机制。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;mutex定义和使用&#34;&gt;Mutex定义和使用&lt;/h1&gt;
+&lt;p&gt;Mutex 是 Go 语言中 sync 包提供的一个结构体，它有两个方法：&lt;code&gt;Lock()&lt;/code&gt; 和 &lt;code&gt;Unlock()&lt;/code&gt;。可以通过创建 Mutex 的实例，然后在访问共享资源之前调用 Lock() 方法，访问结束后调用 Unlock() 方法来保证对共享资源的访问是线程安全的。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Lock()&lt;/code&gt;：加锁方法&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Unlock()&lt;/code&gt;：解锁方法&lt;/p&gt;
+&lt;p&gt;例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+import &amp;#34;sync&amp;#34;
+import &amp;#34;time&amp;#34;
+
+
+var counter int
+var lock sync.Mutex
+
+func increment() {
+    // 加锁保证累加安全
+    lock.Lock()
+    defer lock.Unlock()
+    counter++
+}
+
+func main() {
+    for i := 0; i &amp;lt; 1000; i++ {
+        go increment()
+    }
+
+    // 等待 increment() 全部执行完毕
+    time.Sleep(time.Second)
+    fmt.Println(counter)
+}
+
+// 打印输出
+1000
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这个例子中，有一个共享的全局变量 counter，并且希望在 increment() 函数中安全地对 counter 进行加一操作。&lt;/p&gt;
+&lt;p&gt;为了实现这个目标，我们使用了 Mutex：在增加 counter 之前我们先调用 lock.Lock() 来获取锁，增加 counter 之后我们调用 defer lock.Unlock() 来释放锁。这样我们就确保了每次只有一个 goroutine 可以访问 counter，从而保证了 counter 的正确性。&lt;/p&gt;
+&lt;h1 id=&#34;mutex工作原理&#34;&gt;Mutex工作原理&lt;/h1&gt;
+&lt;h3 id=&#34;mutex数据结构&#34;&gt;Mutex数据结构&lt;/h3&gt;
+&lt;p&gt;src/sync/mutex.go: Mutex中的互斥锁定义：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// A Mutex is a mutual exclusion lock.
+// The zero value for a Mutex is an unlocked mutex.
+//
+// A Mutex must not be copied after first use.
+//
+// In the terminology of the Go memory model,
+// the n&amp;#39;th call to Unlock “synchronizes before” the m&amp;#39;th call to Lock
+// for any n &amp;lt; m.
+// A successful call to TryLock is equivalent to a call to Lock.
+// A failed call to TryLock does not establish any “synchronizes before”
+// relation at all.
+type Mutex struct {
+    state int32
+    sema  uint32
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;Mutex.state&lt;/code&gt; 表示互斥锁的状态，比如是否被锁定等。是32位的整型变量，内部实现时把该变量分成了四份，用于记录Mutex的四种状态：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Locked&lt;/code&gt;：表示该 Mutex 是否已被锁定，0 表示没有锁定，1 表示已被锁定。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Woken&lt;/code&gt;：表示是否有协程已被唤醒，0 表示没有协程唤醒，1 表示已有协程被唤醒，正在加锁过程中。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Starving&lt;/code&gt;：表示该 Mutex 是否处于饥饿状态，0 表示没有饥饿，1 表示饥饿状态，表明有协程阻塞了超过 1ms。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Waiter&lt;/code&gt;：表示阻塞等待锁的协程个数，协程解锁时根据此值来判断是否需要释放信号量。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/1.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Mutex.sema&lt;/code&gt; 表示信号量，协程阻塞等待该信号量，解锁的协程释放信号量从而唤醒等待的信号量的协程。&lt;/p&gt;
+&lt;p&gt;协程之间的抢锁实际上是争夺给 Locked 赋值的权利，能给 Locked 置为 1，则说明抢锁成功。抢不到则阻塞等待 Mutex.sema 信号量，一旦持有锁的协程解锁，那么等待的协程会依次被唤醒。&lt;/p&gt;
+&lt;h3 id=&#34;mutex如何保证并发安全&#34;&gt;Mutex如何保证并发安全&lt;/h3&gt;
+&lt;p&gt;Mutex 的工作原理其实很简单：在内部，它维护了一个标志位，表示当前是否有 goroutine 持有这个 Mutex。&lt;/p&gt;
+&lt;p&gt;当一个 goroutine 调用 Lock 方法时，如果标志位为 0，即表示当前没有 goroutine 持有这个 Mutex，那么这个 goroutine 就可以获取这个 Mutex，并将标志位设置为 1；如果标志位为 1，表示当前已经有 goroutine 持有这个 Mutex，那么这个 goroutine 就需要等待，直到标志位变为 0。&lt;/p&gt;
+&lt;p&gt;当一个 goroutine 调用 Unlock 方法时，它会将标志位设置为 0，表示它已经不再持有这个 Mutex。如果此时有其它的 goroutine 在等待这个 Mutex，那么其中一个 goroutine 就可以获取这个 Mutex，并将标志位设置为 1。&lt;/p&gt;
+&lt;p&gt;通过这种方式，Mutex 实现了对共享资源的互斥访问，从而保证了并发安全。&lt;/p&gt;
+&lt;p&gt;下面图示分析加锁解锁过程。&lt;/p&gt;
+&lt;h3 id=&#34;加锁过程&#34;&gt;加锁过程&lt;/h3&gt;
+&lt;h5 id=&#34;简单加锁&#34;&gt;简单加锁&lt;/h5&gt;
+&lt;p&gt;若当前只有一个协程在加锁，没有其他协程干扰：&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/2.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h5 id=&#34;加锁被阻塞&#34;&gt;加锁被阻塞&lt;/h5&gt;
+&lt;p&gt;如果协程加锁时锁已经被其它协程占用了，此时加锁过程如下，Waiter 计数器加 1 ，协程 2 将被阻塞，直到 Locked 值变为 0 后才会被唤醒。&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/3.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h3 id=&#34;解锁过程&#34;&gt;解锁过程&lt;/h3&gt;
+&lt;h5 id=&#34;简单解锁&#34;&gt;简单解锁&lt;/h5&gt;
+&lt;p&gt;如果解锁时没有其它线程阻塞，则直接 Locked 置为 0 即可：&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/4.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h5 id=&#34;解锁并唤醒协程&#34;&gt;解锁并唤醒协程&lt;/h5&gt;
+&lt;p&gt;如果解锁时有一个或多个协程阻塞，如下图所示，协程 1 解锁过程分为两个步骤：&lt;/p&gt;
+&lt;p&gt;1.先把 Locked 置为 0。&lt;/p&gt;
+&lt;p&gt;2.然后查看 Waiter &amp;gt; 0，释放一个信号量，唤醒一个阻塞的协程，被唤醒的协程 2 把 Locked 置为 1 ，于是协程 2 获得了锁。&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/Go%e8%af%ad%e8%a8%80Mutex%e4%ba%92%e6%96%a5%e9%94%81/5.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;h3 id=&#34;mutex的模式&#34;&gt;Mutex的模式&lt;/h3&gt;
+&lt;p&gt;前面分析加锁和解锁的过程只关注了 Waiter 和 Locked 位的变化，下面我们一起分析 Starving 位的作用。&lt;/p&gt;
+&lt;p&gt;为了充分理解 Starving 位 的作用，我们需要先了解什么是自旋？&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;自旋过程&lt;/strong&gt;&lt;br&gt;
+协程加锁时，如果当前的 Locked = 1，则说明该锁被其它协程持有，尝试加锁的协程并不是马上转入阻塞，而是会持续的探测 Locked 位是否变成了 0，这样的过程被称为自旋。&lt;/p&gt;
+&lt;p&gt;自旋的好处：当加锁失败时不必立即转入阻塞，有一定的机会立马获取到锁，这样更充分地利用了CPU，避免频繁的协程切换。&lt;/p&gt;
+&lt;p&gt;自旋的问题：如果在自旋的过程中获得锁，那么之前已经被阻塞的协程将无法获得锁。如果加锁的协程非常的多的话，会导致每次新来的协程都通过自旋获得了锁，那么被阻塞的协程将很难有机会获得锁，从而进入“饥饿”状态（长时间得不到运行）。&lt;/p&gt;
+&lt;p&gt;每个 Mutex 都有两种模式，称为 Normal 和 Starving 模式。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Normal模式&lt;/strong&gt; &lt;br&gt;
+默认情况下，Mutex 的模式是 Normal。&lt;/p&gt;
+&lt;p&gt;作用：在 Normal 模式下，协程如果加锁不成功则不会立即转入阻塞排队，而是判断是否满足自旋的条件，如果满足则会启动自旋的过程，尝试抢锁。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Starving模式&lt;/strong&gt; &lt;br&gt;
+自旋的过程中能抢到锁，则一定意味着同一时刻有协程释放了锁。同时释放锁的时候去判断有阻塞等待的协程，那么还会释放一个信号量来唤醒一个等待协程，被唤醒的协程得到 CPU 后开始运行，这时会发现锁已经被抢占了（自旋的协程更快抢占了锁），那么被唤醒的协程只好再次阻塞，不过阻塞前会先判断自上次阻塞到本次阻塞经过了多长的时间，如果超过了 1 ms，则会将 Mutex 标记为 “饥饿” 模式，然后再阻塞。&lt;/p&gt;
+&lt;p&gt;在“饥饿”模式下，则不会启动自旋过程了，这样一旦有协程释放了锁，那么一定会唤醒协程，被唤醒的协程将成功获得锁，同时也会把 Waiter 计数减 1。&lt;/p&gt;
+&lt;h3 id=&#34;woken状态&#34;&gt;Woken状态&lt;/h3&gt;
+&lt;p&gt;Woken 状态用于加锁和解锁过程的通信，比如，同一个时刻，两个协程一个在加锁，另一个在解锁。正在加锁的协程可能处于自旋的过程中，此时把 Woken 标记为 1，用于通知解锁协程不必释放信号量了，好比在告知解锁协程：你只管解锁好了，不必释放信号量，因为我马上就会拿到锁了。&lt;/p&gt;
+&lt;h3 id=&#34;mutex的公平性&#34;&gt;Mutex的公平性&lt;/h3&gt;
+&lt;p&gt;在许多并发系统中，公平性是一个重要的问题：我们希望每个 goroutine 都能公平地获取到 Mutex。然而，Go 语言的 Mutex 并不保证公平性。&lt;/p&gt;
+&lt;p&gt;当一个 goroutine 调用 Lock 方法时，如果当前有其它的 goroutine 已经在等待这个 Mutex，那么这个 goroutine 将被放入等待队列的尾部；但是，如果当前没有其它的 goroutine 在等待这个 Mutex，那么这个 goroutine 就可以直接获取这个 Mutex，无需等待。&lt;/p&gt;
+&lt;p&gt;这种设计可以提高系统的整体性能，因为它避免了不必要的上下文切换。但是，它也可能导致某些 goroutine 长时间无法获取到 Mutex。如果你的应用需要公平的 Mutex，你可以使用 sync.Cond 来实现。&lt;/p&gt;
+&lt;h1 id=&#34;mutex常见问题&#34;&gt;Mutex常见问题&lt;/h1&gt;
+&lt;h3 id=&#34;避免死锁&#34;&gt;避免死锁&lt;/h3&gt;
+&lt;p&gt;死锁是并发编程中一个常见的问题。如果一个 goroutine 持有一个 Mutex，然后再次尝试获取同一个 Mutex，那么它就会被阻塞，因为 Mutex 已经被它自己持有，只有当它释放 Mutex 后，它才能再次获取。这就是典型的死锁情况。&lt;/p&gt;
+&lt;p&gt;为了避免死锁，你需要确保每次获取 Mutex 的操作都有对应的释放操作，并且避免在持有 Mutex 的情况下再次获取同一个 Mutex。&lt;/p&gt;
+&lt;h3 id=&#34;使用defer释放mutex&#34;&gt;使用defer释放Mutex&lt;/h3&gt;
+&lt;p&gt;在 Go 语言中，我们通常使用 defer 语句来确保 Mutex 能够在函数退出时被正确释放，即使在函数中发生了 panic。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func increment() {
+    lock.Lock()
+    defer lock.Unlock()
+    counter++
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这个例子中，无论 increment 函数是否正常退出，或者在执行过程中发生了 panic，defer 语句都会确保 lock.Unlock() 被执行，从而避免了死锁。&lt;/p&gt;
+&lt;h3 id=&#34;避免在持有mutex时进行io操作&#34;&gt;避免在持有Mutex时进行I/O操作&lt;/h3&gt;
+&lt;p&gt;在持有 Mutex 的情况下进行 I/O 操作是非常危险的，因为 I/O 操作可能会花费很长时间，这将导致我们持有 Mutex 的时间过长，从而阻塞其他 goroutine。为了避免这个问题，我们应该在释放 Mutex 后再进行 I/O 操作。&lt;/p&gt;
+&lt;h3 id=&#34;不能重复解锁&#34;&gt;不能重复解锁&lt;/h3&gt;
+&lt;p&gt;为什么不能重复解锁呢？为什么 Go 不能设计为可以多次执行 Unlock()也不会触发 panic 呢？&lt;/p&gt;
+&lt;p&gt;原因：如果多次执行 Unlock()，那么可能每次都释放一个信号量，释放一个信号量就会唤醒另一个协程，这样会唤醒多个协程，多个协程被唤醒后会继续在 Lock()里抢锁，势必会增加 Lock() 实现的复杂度，也会导致不必要的协程切换。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>同步、异步、阻塞、非阻塞以及多路复用</title>
+      <link>https://tinklespring.com/posts/%E5%90%8C%E6%AD%A5%E5%BC%82%E6%AD%A5%E9%98%BB%E5%A1%9E%E9%9D%9E%E9%98%BB%E5%A1%9E%E4%BB%A5%E5%8F%8A%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/</link>
+      <pubDate>Tue, 05 Sep 2023 08:39:00 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/%E5%90%8C%E6%AD%A5%E5%BC%82%E6%AD%A5%E9%98%BB%E5%A1%9E%E9%9D%9E%E9%98%BB%E5%A1%9E%E4%BB%A5%E5%8F%8A%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;经常会看到IO模型，同步阻塞，同步非阻塞，异步阻塞，异步非阻塞等等，看起来很晕。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;《UNIX网络编程：卷一》第六章 ，看看IO模型的本质。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Socket与文件描述符的关系&lt;/li&gt;
+&lt;li&gt;进程的五状态模型&lt;/li&gt;
+&lt;li&gt;用户态与内核态的区别&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;socket与文件描述符&#34;&gt;Socket与文件描述符&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;socket：&lt;br&gt;
+socket是一种网络通信的抽象，它允许进程通过网络进行通信。socket提供了一种机制，使进程能够通过网络连接到其他进程，并在网络上进行数据传输。在编程中，socket通常通过操作系统提供的套接字API（比如POSIX套接字或windows套接字）来创建和使用。这些套接字API允许程序员创建套接字、绑定地址、监听连接请求，接收连接、发送和接收数据等。套接字通常用于网络通信，例如TCP和UDP连接，用于构建客户端和服务器应用程序。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;文件描述符：&lt;br&gt;
+文件描述符是操作系统内核用来标识打开文件或其他 I/O 设备的整数。在 Unix-like 操作系统中，文件、套接字、管道等都被抽象为文件描述符。文件描述符的范围通常是 0 到 ulimit -n，其中 0 表示标准输入（stdin），1 表示标准输出（stdout），2 表示标准错误（stderr），而其他文件描述符用于表示打开的文件、套接字等。文件描述符在进程之间可以继承、共享和传递。这允许一个进程在创建子进程时，将已打开的文件或套接字传递给子进程。文件描述符在编程中用于进行 I/O 操作，如读取或写入文件、读取或写入套接字等。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;两者之间的关系：&lt;br&gt;
+在 Unix-like 操作系统中，Socket 也可以被表示为文件描述符。这意味着你可以使用与文件 I/O 相同的系统调用来进行套接字 I/O。例如，你可以使用 read() 和 write() 等系统调用来读取和写入套接字，就像操作文件一样。通过文件描述符，你可以将套接字的输入和输出重定向到文件，也可以将文件的内容写入套接字。这种能力使得在网络编程中可以将套接字与文件操作结合起来，实现数据的读写和处理。&lt;/p&gt;
+&lt;p&gt;Socket 是网络通信的一种抽象，而文件描述符是一种通用的 I/O 抽象，它们可以用于操作文件、套接字和其他 I/O 设备，并且在某些情况下，它们可以交叉使用。&lt;/p&gt;
+&lt;h1 id=&#34;进程的五状态模型&#34;&gt;进程的五状态模型&lt;/h1&gt;
+&lt;p&gt;进程的五状态模型是操作系统中描述进程状态的一种经典模型：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;创建（New）： 进程被创建时处于这个状态。在这个阶段，操作系统正在为进程分配资源，初始化进程的数据结构等。创建状态通常是非常短暂的，一旦进程准备好运行，它就会进入就绪状态。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;就绪（Ready）： 进程已经准备好运行，但由于操作系统调度算法或其他原因，暂时没有执行。在就绪状态下的进程通常等待着分配给它的 CPU 时间片。多个进程可能同时处于就绪状态，等待 CPU 时间。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;运行（Running）： 进程被分配到 CPU 并且正在执行。在运行状态下的进程正在消耗 CPU 时间，执行它的指令。操作系统会根据调度算法决定哪个进程应该在某一时刻运行。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;阻塞（Blocked）： 进程在某种条件下停止执行，通常是因为等待某个事件的发生，比如等待磁盘 I/O 完成、等待用户输入等。当事件发生时，进程将从阻塞状态转换为就绪状态，然后可以继续执行。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;终止（Terminated）： 进程已经执行完毕或被终止。在这个状态下，进程的资源被释放，包括内存、文件描述符等。终止状态通常是进程的最终状态。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这个五状态模型有助于操作系统在多任务环境中管理和调度进程。操作系统的调度器负责在这些状态之间转换进程，以便合理分配 CPU 时间，确保系统的高效性和公平性。此外，操作系统可以通过监控进程的状态来处理异常情况，例如进程崩溃或无响应。不同的操作系统可能会在模型中添加其他状态或细分这些状态以满足其需求，但通常都基于这个基本模型构建。&lt;/p&gt;
+&lt;h1 id=&#34;用户态与内核态&#34;&gt;用户态与内核态&lt;/h1&gt;
+&lt;p&gt;用户态（User Mode）和内核态（Kernel Mode）是操作系统中两种不同的运行级别或权限级别。这两种模式之间的主要区别在于进程对计算机硬件和操作系统资源的访问权限以及对指令的执行能力。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;权限级别：
+用户态：在用户态中，进程的权限受到限制，通常只能访问自己的内存空间和被允许的系统资源。用户态进程不能直接访问硬件设备或执行特权指令。&lt;br&gt;
+内核态：内核态具有更高的权限，允许操作系统内核访问系统的所有资源，包括硬件设备和系统内存。内核态可以执行特权指令，例如修改页表、控制中断等。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;系统调用：
+用户态：当用户态的进程需要执行特权操作（例如文件读写、网络通信、创建新进程等），它必须通过系统调用（System Call）请求内核来执行这些操作。系统调用是用户态和内核态之间的接口。&lt;br&gt;
+内核态：内核态中的操作系统内核可以直接执行这些特权操作，而无需系统调用。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;中断和异常处理：
+用户态：在用户态中，进程通常不能直接响应硬件中断或异常。当硬件发生中断或异常时，操作系统内核会接管控制并处理，然后可能唤醒相关的用户态进程。&lt;br&gt;
+内核态：内核态中的操作系统内核可以直接处理硬件中断和异常，包括时钟中断、硬件故障、设备IO完成等。内核可以执行必要的操作，然后选择继续执行当前进程或切换到其他进程。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;性能开销：
+用户态：用户态的进程之间的切换通常比较快速，但涉及到系统调用时，会有一定的性能开销。&lt;br&gt;
+内核态：内核态的进程之间的切换可能更为昂贵，因为涉及更高的权限级别和更多的上下文切换。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;用户态和内核态之间的切换是操作系统的核心机制，有助于保护系统的稳定性和安全性，同时允许用户程序执行必要的系统操作。&lt;/p&gt;
+&lt;h1 id=&#34;io的流程&#34;&gt;IO的流程&lt;/h1&gt;
+&lt;p&gt;在区分各种IO模型的区别之前，我们需要先了解一个IO，在操作系统的层面究竟发生了哪些事情。注意，我们说的IO模型对IO的优化，都是基于读IO。&lt;/p&gt;
+&lt;p&gt;假设我们需要等待Socket的数据，也就是说当前是一个读操作的IO，那么在操作系统层面需要分为两步：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;等待数据被写入Socket的缓冲区中&lt;/li&gt;
+&lt;li&gt;将Socket缓冲区中的数据拷贝到应用程序中&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;我们可以很容易的发现，第一步是由对方决定的，对方决定了什么时候把数据发送过来。第二步是由操作系统决定的，操作系统需要陷入内核态拷贝数据。&lt;/p&gt;
+&lt;p&gt;而我们的同步异步、阻塞非阻塞也是从这里出发的。&lt;/p&gt;
+&lt;p&gt;这里先提一下，阻塞和非阻塞指的是第一个阶段，进程等待缓冲区被写入数据的方式；同步和异步指的是第二个阶段，进程需不需要等待操作系统把数据从缓冲区拷贝到应用中。&lt;/p&gt;
+&lt;h1 id=&#34;五种io模型&#34;&gt;五种IO模型&lt;/h1&gt;
+&lt;h4 id=&#34;阻塞&#34;&gt;阻塞&lt;/h4&gt;
+&lt;p&gt;在同步阻塞的IO模型中，在第一阶段“等待数据被写入Socket的缓冲区中”，操作系统会把当前的进程设置为阻塞状态，直到缓冲区被写入数据这个进程才被唤醒。&lt;/p&gt;
+&lt;p&gt;这也就造成了一个问题，当操作系统把这个进程置为阻塞态的时候，这个进程就什么事都做不了了。&lt;/p&gt;
+&lt;h4 id=&#34;非阻塞&#34;&gt;非阻塞&lt;/h4&gt;
+&lt;p&gt;为了解决“同步阻塞”进程可能无期限阻塞的情况，于是产生了“同步非阻塞”。&lt;/p&gt;
+&lt;p&gt;在这种IO模型中，如果发现这个Socket里面没有准备好的数据就返回一个错误，而不是把这个进程设置为阻塞状态。&lt;/p&gt;
+&lt;p&gt;也就是说我们可以轮询这个Socket查看有无准备好的数据。&lt;/p&gt;
+&lt;h4 id=&#34;多路复用&#34;&gt;多路复用&lt;/h4&gt;
+&lt;p&gt;假设此时我们的服务器需要管理很多的IO请求，如果给每一个IO都分配一个进程/线程，自旋的等待有无数据到来，无疑是很浪费资源的。&lt;/p&gt;
+&lt;p&gt;如果我们用一个进程，轮询所有的IO请求，又会使IO的响应变得很慢。&lt;/p&gt;
+&lt;p&gt;因此，产生了多路复用IO。&lt;/p&gt;
+&lt;p&gt;多路复用IO就是用一条线程，同时监听多个IO请求，并且在有IO请求产生的时候返回。&lt;/p&gt;
+&lt;p&gt;注意，虽然我们的IO多路复用也会阻塞，但是这里的阻塞是应用层面的，也就是说在多路复用的方法上进行阻塞，而不是在操作系统层面去阻塞。&lt;/p&gt;
+&lt;h4 id=&#34;信号驱动&#34;&gt;信号驱动&lt;/h4&gt;
+&lt;p&gt;在以上的IO模型中，都是需要应用自己去“询问”Socket是否已经准备好了数据，而信号驱动就是由Socket“主动”告诉你有没有准备好数据。&lt;/p&gt;
+&lt;p&gt;这么做的好处在于第一阶段程序不需要任何的等待与轮询，只需要在收到了信号通知之后去处理这个IO即可。&lt;/p&gt;
+&lt;h4 id=&#34;异步io&#34;&gt;异步IO&lt;/h4&gt;
+&lt;p&gt;在以上的四种IO操作中，无论第一个阶段是如何进行优化的，在第二阶段都需要陷入内核态来拷贝数据。&lt;/p&gt;
+&lt;p&gt;异步IO就是为了解决这个问题。&lt;/p&gt;
+&lt;p&gt;异步IO在解决了阻塞这个问题后，同样把陷入内核态来拷贝数据的时间也节省了。&lt;/p&gt;
+&lt;p&gt;这样，当程序需要进行IO的时候，只需要发出IO的请求，然后就可以继续执行后面的代码，直到IO完成操作系统会通知程序。&lt;/p&gt;
+&lt;p&gt;同样的，异步IO是非阻塞的。&lt;/p&gt;
+&lt;h1 id=&#34;总结&#34;&gt;总结&lt;/h1&gt;
+&lt;p&gt;阻塞跟非阻塞，是在等待数据这个阶段的；同步跟非同步，指的是需不需要等待CPU进行数据的拷贝。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go关键字与标识符</title>
+      <link>https://tinklespring.com/posts/go%E5%85%B3%E9%94%AE%E5%AD%97%E4%B8%8E%E6%A0%87%E8%AF%86%E7%AC%A6/</link>
+      <pubDate>Tue, 05 Sep 2023 08:20:10 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/go%E5%85%B3%E9%94%AE%E5%AD%97%E4%B8%8E%E6%A0%87%E8%AF%86%E7%AC%A6/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;关键字和标识符是每个编程语言的基础元素，用于构成语法结构，Go也有关键字和标识符。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;go语言关键字&#34;&gt;Go语言关键字&lt;/h1&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;break&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;default&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;func&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;interface&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;select&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;case&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;defer&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;go&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;map&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;struct&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;chan&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;else&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;goto&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;package&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;switch&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;const&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;fallthrough&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;if&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;range&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;type&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;continue&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;for&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;import&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;return&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;var&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;关键字是语言本身预留，不能作为标识符使用。&lt;/p&gt;
+&lt;h1 id=&#34;命名规范&#34;&gt;命名规范&lt;/h1&gt;
+&lt;p&gt;标识符是开发者定义的用于标记各种程序要素的名称：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;变量名&lt;/li&gt;
+&lt;li&gt;常量名&lt;/li&gt;
+&lt;li&gt;函数名&lt;/li&gt;
+&lt;li&gt;类型名&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;命名须遵守以下规范：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;只能包含字母、数字和下划线&lt;/li&gt;
+&lt;li&gt;第一个字符必须是字母或下划线&lt;/li&gt;
+&lt;li&gt;严格区分大小写&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;合法的标识符&#34;&gt;合法的标识符&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;age // 小写标识符
+Age // 大写标识符
+_count // 以下划线开头
+user123 // 数字开头无效
+
+MAX_SIZE // 常量命名规范
+ThisIsVarName // 混合命名
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;保留字&#34;&gt;保留字&lt;/h1&gt;
+&lt;p&gt;除了关键字，Go中也有一些保留字，现在不是关键字，但未来可能称为关键字。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;&lt;/th&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;append&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;imag&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;new&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;cap&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;len&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;real&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;complex&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;make&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;unsafe&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;这些保留字不建议作为标识符使用。&lt;/p&gt;
+&lt;h1 id=&#34;预声明标识符&#34;&gt;预声明标识符&lt;/h1&gt;
+&lt;p&gt;此外，Go中也有一些预声明标识符，可以直接使用：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;true false iota nil
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;样式规则&#34;&gt;样式规则&lt;/h1&gt;
+&lt;p&gt;Go中关键字和标识符有严格的大小写区分。&lt;/p&gt;
+&lt;h1 id=&#34;命名建议&#34;&gt;命名建议&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;userName // 不好,混合了多种命名
+user_name // 不好,下划线连接
+
+UserID // 好,大写驼峰
+
+MAX_COUNT // 好,常量全大写
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;注意&#34;&gt;注意&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;同一个作用域不能声明同名标识符&lt;/li&gt;
+&lt;li&gt;内置标识符不能重复使用&lt;/li&gt;
+&lt;li&gt;避免使用与关键字或保留字相似的标识符&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>类型转换与类型断言</title>
+      <link>https://tinklespring.com/posts/%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2%E4%B8%8E%E7%B1%BB%E5%9E%8B%E6%96%AD%E8%A8%80/</link>
+      <pubDate>Tue, 29 Aug 2023 10:18:09 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2%E4%B8%8E%E7%B1%BB%E5%9E%8B%E6%96%AD%E8%A8%80/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;Go变量类型包含基础类型和复合类型，类型转换和类型断言一般是对基础类型的处理，基础类型包含整数、浮点数、布尔和字符串。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;整数类型又称为整型，分为有符号和无符号，各自又包含不同大小，8位、16位、32位和64位，其中int32和uint8类型别名分别为&lt;code&gt;rune&lt;/code&gt;和&lt;code&gt;byte&lt;/code&gt;。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;浮点数类型分为float32和float64，为避免精度丢失，一般选择float64，float32和float64之间可以转换，整型和浮点数类型之间也可以转换，需要注意精度丢失的问题。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;布尔类型只有两个，true 和 false，零值为 false 。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;字符串类型是一组使用双引号引起来的字节序列，可以包含任意数据，它不可以改变，因为多个字符串可以共享同一块内存空间。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;类型转换&#34;&gt;类型转换&lt;/h1&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>字符串转换</title>
+      <link>https://tinklespring.com/posts/%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%BD%AC%E6%8D%A2/</link>
+      <pubDate>Tue, 29 Aug 2023 08:33:57 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%BD%AC%E6%8D%A2/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;&lt;code&gt;strconv&lt;/code&gt;包在字符串和数值类型转换中非常重要，提供了字符串和基本数值类型之间的相互转换的功能。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;基本数值类型转换&#34;&gt;基本数值类型转换&lt;/h1&gt;
+&lt;p&gt;strconv 可以实现数值和字符串两种类型的相互转换：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;strconv.Itoa(123) //整型转字符串
+strconv.Atoi(&amp;#34;123&amp;#34;)  //字符串转整型
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;支持的类型有 int、float、bool等。&lt;/p&gt;
+&lt;h1 id=&#34;转换语法&#34;&gt;转换语法&lt;/h1&gt;
+&lt;p&gt;strconv 转换函数命名遵循 &amp;ldquo;源类型&amp;rdquo; To &amp;ldquo;目标类型&amp;rdquo; 的格式：&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Itoa&lt;/code&gt; :  int 到  string&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;i := 123
+s := strconv.Itoa(i)
+fmt.Printf(&amp;#34;%T %v\n&amp;#34;, s, s)  //string 123
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;Atoi&lt;/code&gt; ： string 到 int  (ASCII to integer，将ASCII字符串转换为整数)&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;s := &amp;#34;456&amp;#34;
+i, err := strconv.Atoi(s)
+if err != nil {
+  fmt.Println(err)
+} else {
+  fmt.Printf(&amp;#34;%T %v\n&amp;#34;, i, i) // int 456
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;指定进制的字符串转整数&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;num, err := strconv.ParseInt(&amp;#34;1101&amp;#34;, 2, 64)  //strconv.ParseInt参数有三个：要转换的字符串，指定的进制，整数的位大小；返回两个值：转换后的整数和一个错误
+if err != nil {
+  fmt.Println(&amp;#34;解析错误&amp;#34;)
+} else {
+  fmt.Println(num)
+}
+// 输出:
+// 13
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;FormatFloat&lt;/code&gt; : float 到 string&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;f := 3.1415926
+s := strconv.FormatFloat(f, &amp;#39;f&amp;#39;, 2, 64)  //四个参数：要转换的浮点数值，转换的格式f为常规格式，精度，浮点数的位大小/64意思是float64
+fmt.Printf(&amp;#34;%T %v\n&amp;#34;, s, s) // string 3.14
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;ParseBool&lt;/code&gt; : string 到 bool&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;s := &amp;#34;true&amp;#34;
+b, err := strconv.ParseBool(s)
+if err != nil {
+  fmt.Println(err)
+} else {
+  fmt.Printf(&amp;#34;%T %v&amp;#34;, b, b) // bool true
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;错误处理&#34;&gt;错误处理&lt;/h1&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;大多数strconv在失败时会返回一个错误：  
+v, err := strconv.Atoi(&amp;#34;abc&amp;#34;)
+if err != nil {
+  // 处理错误
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;parse系列函数&#34;&gt;Parse系列函数&lt;/h1&gt;
+&lt;p&gt;Parse 函数会尝试转换整个字符串，并返回未转换的部分：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;v, err := strconv.ParseInt(&amp;#34;123abc&amp;#34;, 10, 64)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这里 v 是123，err会指出有余下未转换的部分。&lt;/p&gt;
+&lt;h1 id=&#34;format系列函数&#34;&gt;Format系列函数&lt;/h1&gt;
+&lt;p&gt;Format 函数可以精细控制输出格式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;strconv.FormatFloat(3.14, &amp;#39;f&amp;#39;, 2, 64) // 小数点后2位
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;支持如精度、位长等。&lt;/p&gt;
+&lt;h1 id=&#34;is系列函数&#34;&gt;Is系列函数&lt;/h1&gt;
+&lt;p&gt;Is 函数用来判断一个字符串是否可以转换为指定类型：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;strconv.IsDigit(&amp;#39;1&amp;#39;) // true
+strconv.IsNumber(&amp;#34;123&amp;#34;) // true
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;append系列函数&#34;&gt;Append系列函数&lt;/h1&gt;
+&lt;p&gt;可以将转换后的值append到现有缓冲区：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;buf := []byte(&amp;#34;Prefix:&amp;#34;)
+strconv.AppendInt(buf, 123, 10)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;避免多次拼接字符串。&lt;/p&gt;
+&lt;h1 id=&#34;quote-与-unquote&#34;&gt;Quote 与 Unquote&lt;/h1&gt;
+&lt;p&gt;这俩实现了Go字符串语法与strcov字符串转换之间的转化，用于在字符串周围添加或移除引号，对于处理字符串中的特殊字符、转义序列和字符串字面值很有用。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;strconv.Unquote(`&amp;#34;Hello&amp;#34;`) // Hello
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

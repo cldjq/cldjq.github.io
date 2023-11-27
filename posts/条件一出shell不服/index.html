@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.111.3"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>条件一出shell不服&nbsp;&ndash;&nbsp;承离的觉前</title><link rel="stylesheet" href="/css/core.min.9a7f2879a85596aa8bb441c1ca6e947369fd320951af876cdc9ea5b7a4f118e3f30d06f1f17ca4b156d2052ae90eef7c.css" integrity="sha384-mn8oeahVlqqLtEHBym6Uc2n9MglRr4ds3J6lt6TxGOPzDQbx8XyksVbSBSrpDu98"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="条件一出shell不服" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHXKH6D389"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-VHXKH6D389');
+</script>
+
+<body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">条件一出shell不服</h1><p class="article date">Wednesday, March 25, 2020</p></section><article class="article markdown-body"><h4 id="if-最常用的条件">if 最常用的条件</h4>
+<pre tabindex="0"><code>if [ 条件测试 ]
+then
+    做这个
+fi
+</code></pre><p>fi意思是if语句结束。then是&quot;那么&quot;的意思。<br>
+&ldquo;做这个&quot;只有在&quot;条件测试&quot;为真时，才会执行。<br>
+注意：if 后边的 [] 中的“条件测试”两边必须要空格。</p>
+<p>另一种写法:</p>
+<pre tabindex="0"><code>if [ 条件测试 ];then
+    做这个
+fi
+</code></pre><p>例子：</p>
+<pre tabindex="0"><code>#!/bin/bash
+name=&#39;william&#39;
+if [ $name = &#39;william&#39; ]
+then
+    echo &#34;hello $name&#34;
+fi
+</code></pre><blockquote>
+<p>shell中，”等于“使用一个<code>=</code>表示的，用<code>==</code>表示等于的判断也可以。</p>
+</blockquote>
+<h4 id="else-否则">else 否则</h4>
+<p>若“如果”的判断条件不成立，那么“否则” else</p>
+<pre tabindex="0"><code>if [ 条件测试 ]
+then
+    做这个
+else
+    做那个
+fi
+</code></pre><p>例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+name1=&#39;abc&#39;
+name2=&#39;def&#39;
+if [ $name1 = $name2 ]
+then
+    echo &#34;the same name&#34;
+else
+    echo &#34;different name&#34;
+fi
+</code></pre><h4 id="elif-否则如果">elif 否则，如果</h4>
+<p>elif是 else if 的缩写，表示“否则 - 如果”</p>
+<pre tabindex="0"><code>if [ 条件测试1 ]
+then
+    做事情1
+elif [ 条件测试2 ]
+then
+    做事情2
+elif [ 条件测试3 ]
+    做事情3
+else
+    做事情4
+fi
+</code></pre><p>例：</p>
+<pre tabindex="0"><code>#/bin/bash
+if [ $1 = &#39;a&#39; ]
+then
+    echo &#34;hello a&#34;
+elif [ $1 = &#39;b&#39; ]
+then
+    echo &#34;hello b&#34;
+elif [ $1 = &#39;c&#39; ]
+then
+    echo &#34;hello c&#34;
+elif [ $1 = &#39;d&#39; ]
+then
+    echo &#34;hello d&#34;
+else
+    echo &#34;sorry,i don not know you&#34;
+fi
+</code></pre><p>可以写任意多个elif，但是if有且只能有一个，else不一定要有且最多只能有一个。<br>
+可以有<code>if...else...</code>组成的，也可以有<code>if...elif...else...</code>组成的，还可以有<code>if..elif..</code>组成的。</p>
+<h4 id="条件测试">条件测试</h4>
+<h5 id="不同的测试类型">不同的测试类型</h5>
+<p>在bash中可以做三种测试：测试字符串，测试数字，测试文件。</p>
+<h6 id="测试字符串">测试字符串</h6>
+<p><code>$string1 = $string2</code>  两个字符串是否相等。shell大小写敏感，A和a不一样<br>
+<code>$string1 != $string2</code> 两个字符串是否不同<br>
+<code>-z $string</code>  字符串string是否为空，z是zero的首字母<br>
+<code>-n $string</code>  字符串string是否不为空。n是not的首字母</p>
+<p>例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+if [ -z $1 ]
+then
+    echo &#34;no parameter&#34;
+else
+    echo &#34;the parameter is $1&#34;
+fi
+</code></pre><h6 id="测试数字">测试数字</h6>
+<p>shell把所有变量都看成是字符串，但还是可以做数字的条件测试。<br>
+<code>$num1 -eq $num2</code> 两个数字是否相等，和判断字符串所用的符号<code>=</code>不一样，eq是equal的缩写，“等于”的意思。<br>
+<code>$num1 -ne $num2</code> 两个数字是否不同，ne 是 not equal 的缩写。<br>
+<code>$num1 -lt $num2</code> 数字num1是否小于num2，lt 是 lower than 的缩写<br>
+<code>$num1 -le $num2</code> 数字num1是否小于或等于num2，le是 lower or equal 的缩写<br>
+<code>$num1 -gt $num2</code> 数字num1是否大于num2，gt 是 greater than 的缩写<br>
+<code>$num1 -ge $num2</code> 数字num1是否大于或等于num2，ge 是 greater or equal 的缩写</p>
+<p>例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+if [ $1 -ge 10 ]
+then
+    echo &#34;greater than 10 or equal to 10&#34;
+else
+    echo &#34;lower than 10&#34;
+fi
+</code></pre><h6 id="测试文件">测试文件</h6>
+<p><code>-e $file</code> 文件是否存在，e 是exist<br>
+<code>-d $file</code> 文件是否是一个目录，Linux一切都是文件，目录也是文件的一种，d 是directory<br>
+<code>-f $file</code> 文件是否是一个文件，f是file<br>
+<code>-L $file</code> 文件是否是一个符号链接文件，L 是link<br>
+<code>-r $file</code> 文件是否可读，r 是readable<br>
+<code>-w $file</code> 文件是否可写，w 是writable<br>
+<code>-x $file</code> 文件是否可执行，x 是executable<br>
+<code>$file1 -nt $file2</code> file1是否比file2新，nt 是newer than<br>
+<code>$file1 -ot $file2</code> file1是否比file2旧，ot 是older than</p>
+<p>例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+read -p &#39;enter a directory:&#39; file
+if [ -d $file ]
+then
+    echo &#34;$file is a directory&#34;
+else
+    echo &#34;$file is not a directory&#34;
+fi
+</code></pre><h6 id="一次测试多个条件">一次测试多个条件</h6>
+<p>在一个条件测试中，可以同时测试多个条件。<br>
+<code>&amp;&amp;</code> 表示逻辑与，符号两端条件必须全为真，整个才为真，有一个不为真，整个为假<br>
+<code>||</code> 表示逻辑或，符号两端条件只需有一个为真，整个为真，只有当两个都为假时，整个才是假的</p>
+<p>例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+if [ $# -ge 1 ] &amp;&amp; [ $1 = &#39;love&#39; ]
+then
+    echo &#34;great&#34;
+else
+    echo &#34;terrible&#34;
+fi
+</code></pre><p>在做多个条件的判断时，按照从左到右的顺序判断，若前一个测试条件决定了整个测试条件的结果，那么后一个的条件旧不会被判断。</p>
+<h6 id="反转测试">反转测试</h6>
+<p>可以用“否定”来反转测试条件，用 <code>!</code> 感叹号。</p>
+<p>例：</p>
+<pre tabindex="0"><code>#!/bin/bash
+read -p &#39;enter a file :&#39; file
+if [ ! -e $file ]
+then
+    echo &#34;$file does not exist&#34;
+else
+    echo &#34;$file exists&#34;
+fi
+</code></pre><p><code>! -e $file</code> 表示“如果文件file不存在”</p>
+<h4 id="case-测试多个条件">case 测试多个条件</h4>
+<pre tabindex="0"><code>#/bin/bash
+if [ $1 = &#39;a&#39; ]
+then
+    echo &#34;hello a&#34;
+elif [ $1 = &#39;b&#39; ]
+then
+    echo &#34;hello b&#34;
+elif [ $1 = &#39;c&#39; ]
+then
+    echo &#34;hello c&#34;
+elif [ $1 = &#39;d&#39; ]
+then
+    echo &#34;hello d&#34;
+else
+    echo &#34;sorry,i don not know you&#34;
+fi
+</code></pre><p>上边对同一个变量做测试，可以改写成：</p>
+<pre tabindex="0"><code>#!/bin/bash
+case $1 in
+    &#34;a&#34;)
+        echo &#34;Hello a !&#34;
+        ;;
+    &#34;b&#34;)
+        echo &#34;Hello b !&#34;
+        ;;
+    &#34;c&#34;)
+        echo &#34;Hello c !&#34;
+        ;;
+    &#34;d&#34;)
+        echo &#34;Hello d !&#34;
+        ;;
+    *)
+        echo &#34;Sorry, I do not know you.&#34;
+        ;;
+esac
+</code></pre><p><code>case $1 in</code> : <code>$1</code> 表示我们要测试的变量是输入的第一个参数，in 表示 “在……之中”的意思。<br>
+<code>&quot;a&quot;</code> : 测试其中一个case，<code>$1</code>是否等于“a”。也可以用通配符来匹配多个字符，例如 <code>&quot;a*&quot;)</code> 可以匹配所有以a开头的字符串。<br>
+<code>;;</code> : 类似于其他编程语言中的“break”，表示结束case的读取，程序跳转到esac后面执行。<br>
+<code>esac</code> : 是case反写，表示case语句结束。</p>
+<p>case语句相当于其他编程语言中的switch语句。</p>
+<p>也可以在case语句的匹配项中做“或”的匹配：</p>
+<pre tabindex="0"><code>#!/bin/bash
+case $1 in
+    &#34;dog&#34; | &#34;cat&#34; | &#34;pig&#34;)
+        echo &#34;it is a mammal&#34;
+        ;;
+    &#34;pigeon&#34; | &#34;swallow&#34;)
+        echo &#34;it is a bird&#34;
+        ;;
+    *)
+        echo &#34;do not konw what it is&#34;
+        ;;
+esac
+</code></pre></article><section class="article labels"><a class="category" href=/categories/linux/>Linux</a><a class="tag" href=/tags/shell/>Shell</a></section>
+</div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/%E5%BE%AA%E7%8E%AF%E5%BE%80%E5%A4%8Dshell%E5%BC%80%E8%B7%AF/"><span class="iconfont icon-article"></span>循环往复shell开路</a></p><p><a class="link" href="/posts/%E5%8F%98%E9%87%8F%E5%9C%A8%E6%89%8Bshell%E4%B8%8D%E6%84%81/"><span class="iconfont icon-article"></span>变量在手shell不愁</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "cldjq" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">承离的觉前</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a><span>&nbsp;&amp;&nbsp;</span><a href="https://tinklespring.com" 
+        target="_blank" rel="noopener noreferrer">TinkleSpring</a>
+<a href='https://ipv6-test.com/validate.php?url=referer'
+  ><img src='https://ipv6-test.com/button-ipv6-80x15.png' 
+        alt='ipv6 ready' title='ipv6 ready' border='0' 
+/></a>
+</p></div>
+</section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script><script src="/js/hljs.min.6f979583f61e4ec5f0b94f94eab2e130ee628032474d374414dba4e33cc12097a0d01fe65b33378b23f6d3b053b95445.js" integrity="sha384-b5eVg/YeTsXwuU&#43;U6rLhMO5igDJHTTdEFNuk4zzBIJeg0B/mWzM3iyP207BTuVRF"></script><script>hljs.initHighlightingOnLoad();</script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-VHXKH6D389', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>
