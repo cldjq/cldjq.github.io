@@ -5,10 +5,102 @@
     <description>Recent content in Golang on 承离的觉前</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Thu, 14 Sep 2023 11:10:03 +0800</lastBuildDate>
+    <lastBuildDate>Wed, 06 Dec 2023 15:31:28 +0800</lastBuildDate>
     
         <atom:link href="https://tinklespring.com/categories/golang/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Go匿名结构体提高搬砖效率</title>
+      <link>https://tinklespring.com/posts/go%E5%8C%BF%E5%90%8D%E7%BB%93%E6%9E%84%E4%BD%93%E6%8F%90%E9%AB%98%E6%90%AC%E7%A0%96%E6%95%88%E7%8E%87/</link>
+      <pubDate>Wed, 06 Dec 2023 15:31:28 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/go%E5%8C%BF%E5%90%8D%E7%BB%93%E6%9E%84%E4%BD%93%E6%8F%90%E9%AB%98%E6%90%AC%E7%A0%96%E6%95%88%E7%8E%87/</guid>
+      <description>&lt;p&gt;提高效率体现在两方面：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;减少一些不会复用的类型定义&lt;/li&gt;
+&lt;li&gt;节省给类型起名字的时间&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;通过匿名结构体名字就知道，本身没有类型名字，能节省起名字的时间，也能减少起错名字带来的误解。&lt;/p&gt;
+&lt;h1 id=&#34;具名结构体&#34;&gt;具名结构体&lt;/h1&gt;
+&lt;p&gt;具名结构体就是平时的普通结构体。&lt;/p&gt;
+&lt;p&gt;结构体是用于把一组字段组织在一起，在Go语言里抽象表达现实世界的事物，类似“蓝图”一样。&lt;/p&gt;
+&lt;p&gt;比如定义一个名字为car的结构体在程序里表示“小汽车” ：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type car struct {
+	make	string
+	model	string
+	mileage	int
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;用这个结构体的地方通过其名字引用其即可，比如创建上面定义的结构体实例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;newCar := car{
+	make:    &amp;#34;Ford&amp;#34;,
+	model:   &amp;#34;taurus&amp;#34;,
+	mileage: 200000,
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;匿名结构体&#34;&gt;匿名结构体&lt;/h1&gt;
+&lt;p&gt;匿名结构体顾名思义就是没有名字的结构体，通常只用于在代码中仅使用一次的结构类型，比如：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func showMyCar() {
+	newCar := struct {
+		make	string
+		model	string
+		mileage	int
+	}{
+		make:	&amp;#34;Ford&amp;#34;,
+		model:	&amp;#34;Taurus&amp;#34;,
+		mileage: 200000,
+	}
+	fmt.Printlb(newCar.mode)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面函数中声明的匿名结构体赋值给了函数中的变量，所以只能在函数中使用。&lt;/p&gt;
+&lt;p&gt;若一个结构体初始化后只被使用一次，那么使用匿名结构体就很方便，不用在程序的package中定义太多的结构体类型，比如在解析接口的响应到结构体后，就可以使用匿名结构体。&lt;/p&gt;
+&lt;h2 id=&#34;用于解析接口响应&#34;&gt;用于解析接口响应&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func createCarHandler(w http.ResponseWriter, req *http.Request) {
+    defer req.Body.Close()
+    decoder := json.NewDecoder(req.Body)
+    newCar := struct {
+        Make    string `json:&amp;#34;make&amp;#34;`
+        Model   string `json:&amp;#34;model&amp;#34;`
+        Mileage int    `json:&amp;#34;mileage&amp;#34;`
+    }{}
+    err := decoder.Decode(&amp;amp;newCar)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    ......
+    return
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面这种代码一般在控制层写，可以通过匿名结构体实例解析到请求后再去创建对应的DTO或者领域对象供服务层或者领域层使用。&lt;/p&gt;
+&lt;p&gt;为什么不把API响应解析到DTO对象里？匿名结构体的使用场景是在觉得定一个struct不值得、不方便的情况下使用。比如程序拿到接口响应后需要按业务规则加工下才能创建DTO实例这种情况，就很适合用匿名结构体先解析响应。&lt;/p&gt;
+&lt;h2 id=&#34;比map更健壮&#34;&gt;比map更健壮&lt;/h2&gt;
+&lt;p&gt;使用匿名解析接口响应要比把响应解析到&lt;code&gt;map[string]interface{}&lt;/code&gt;类型的变量里要好，json数据解析到匿名结构体的时候在解析的过程中会进行类型检查，更安全。使用的时候直接通过&lt;code&gt;s.FieldName&lt;/code&gt;访问字段也比&lt;code&gt;map&lt;/code&gt;访问起来更方便和直观。&lt;/p&gt;
+&lt;h2 id=&#34;用于定义项目约定的公共字段&#34;&gt;用于定义项目约定的公共字段&lt;/h2&gt;
+&lt;p&gt;除了上述结构体初始化只使用一次的情况，在项目中定义各个接口的返回或者DTO时，有的公共字段使用匿名结构体声明类型也很方便。&lt;/p&gt;
+&lt;p&gt;一般在启动项目的时候我们都会约定项目提供的接口的响应值结构，比如响应里必须包含&lt;code&gt;Code、Msg、Data&lt;/code&gt;三个字段，每个接口会再细分定义返回的Data的结构，这个时候用匿名结构体能节省一部分编码效率。&lt;/p&gt;
+&lt;p&gt;比如下面这个 &lt;code&gt;Response&lt;/code&gt; 的结构体类型定义：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type UserCouponResponse struct {
+ Code int64  `json:&amp;#34;code&amp;#34;`
+ Msg  string `json:&amp;#34;message&amp;#34;`
+ Data []*struct {
+  CouponId           int    `json:&amp;#34;couponId&amp;#34;`
+  ProdCode           string `json:&amp;#34;prodCode&amp;#34;`
+  UserId             int64  `json:&amp;#34;userId&amp;#34;`
+  CouponStatus       int    `json:&amp;#34;couponStatus&amp;#34;`
+  DiscountPercentage int    `json:&amp;#34;discount&amp;#34;`
+ } `json:&amp;#34;data&amp;#34;`
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;就可以先省去定义一个 UserCoupon 类型。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type UserCoupon struct {
+    CouponId           int    `json:&amp;#34;couponId&amp;#34;`
+    ProdCode           string `json:&amp;#34;prodCode&amp;#34;`
+    UserId             int64  `json:&amp;#34;userId&amp;#34;`
+    CouponStatus       int    `json:&amp;#34;couponStatus&amp;#34;`
+    DiscountPercentage int    `json:&amp;#34;discount&amp;#34;`
+} 
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当然，如果 UserCoupon 是你的项目其他地方也会用到的类型，那么先声明，顺带在 Response 结构体里也使用也是没问题的。只要会多次用到的类型都建议声明成正常的结构体类型。&lt;/p&gt;
+&lt;p&gt;匿名结构体只在自己觉得“这还要定义个类型？”时使用。&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Go语言RWMutex读写互斥锁</title>
@@ -1732,84 +1824,6 @@ MAX_COUNT // 好,常量全大写
 &lt;/blockquote&gt;
 &lt;h1 id=&#34;类型转换&#34;&gt;类型转换&lt;/h1&gt;
 </description>
-    </item>
-    
-    <item>
-      <title>字符串转换</title>
-      <link>https://tinklespring.com/posts/%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%BD%AC%E6%8D%A2/</link>
-      <pubDate>Tue, 29 Aug 2023 08:33:57 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%BD%AC%E6%8D%A2/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;&lt;code&gt;strconv&lt;/code&gt;包在字符串和数值类型转换中非常重要，提供了字符串和基本数值类型之间的相互转换的功能。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;基本数值类型转换&#34;&gt;基本数值类型转换&lt;/h1&gt;
-&lt;p&gt;strconv 可以实现数值和字符串两种类型的相互转换：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;strconv.Itoa(123) //整型转字符串
-strconv.Atoi(&amp;#34;123&amp;#34;)  //字符串转整型
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;支持的类型有 int、float、bool等。&lt;/p&gt;
-&lt;h1 id=&#34;转换语法&#34;&gt;转换语法&lt;/h1&gt;
-&lt;p&gt;strconv 转换函数命名遵循 &amp;ldquo;源类型&amp;rdquo; To &amp;ldquo;目标类型&amp;rdquo; 的格式：&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;Itoa&lt;/code&gt; :  int 到  string&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;i := 123
-s := strconv.Itoa(i)
-fmt.Printf(&amp;#34;%T %v\n&amp;#34;, s, s)  //string 123
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;Atoi&lt;/code&gt; ： string 到 int  (ASCII to integer，将ASCII字符串转换为整数)&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;s := &amp;#34;456&amp;#34;
-i, err := strconv.Atoi(s)
-if err != nil {
-  fmt.Println(err)
-} else {
-  fmt.Printf(&amp;#34;%T %v\n&amp;#34;, i, i) // int 456
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;指定进制的字符串转整数&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;num, err := strconv.ParseInt(&amp;#34;1101&amp;#34;, 2, 64)  //strconv.ParseInt参数有三个：要转换的字符串，指定的进制，整数的位大小；返回两个值：转换后的整数和一个错误
-if err != nil {
-  fmt.Println(&amp;#34;解析错误&amp;#34;)
-} else {
-  fmt.Println(num)
-}
-// 输出:
-// 13
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;FormatFloat&lt;/code&gt; : float 到 string&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;f := 3.1415926
-s := strconv.FormatFloat(f, &amp;#39;f&amp;#39;, 2, 64)  //四个参数：要转换的浮点数值，转换的格式f为常规格式，精度，浮点数的位大小/64意思是float64
-fmt.Printf(&amp;#34;%T %v\n&amp;#34;, s, s) // string 3.14
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;ParseBool&lt;/code&gt; : string 到 bool&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;s := &amp;#34;true&amp;#34;
-b, err := strconv.ParseBool(s)
-if err != nil {
-  fmt.Println(err)
-} else {
-  fmt.Printf(&amp;#34;%T %v&amp;#34;, b, b) // bool true
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;错误处理&#34;&gt;错误处理&lt;/h1&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;大多数strconv在失败时会返回一个错误：  
-v, err := strconv.Atoi(&amp;#34;abc&amp;#34;)
-if err != nil {
-  // 处理错误
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;parse系列函数&#34;&gt;Parse系列函数&lt;/h1&gt;
-&lt;p&gt;Parse 函数会尝试转换整个字符串，并返回未转换的部分：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;v, err := strconv.ParseInt(&amp;#34;123abc&amp;#34;, 10, 64)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这里 v 是123，err会指出有余下未转换的部分。&lt;/p&gt;
-&lt;h1 id=&#34;format系列函数&#34;&gt;Format系列函数&lt;/h1&gt;
-&lt;p&gt;Format 函数可以精细控制输出格式：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;strconv.FormatFloat(3.14, &amp;#39;f&amp;#39;, 2, 64) // 小数点后2位
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;支持如精度、位长等。&lt;/p&gt;
-&lt;h1 id=&#34;is系列函数&#34;&gt;Is系列函数&lt;/h1&gt;
-&lt;p&gt;Is 函数用来判断一个字符串是否可以转换为指定类型：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;strconv.IsDigit(&amp;#39;1&amp;#39;) // true
-strconv.IsNumber(&amp;#34;123&amp;#34;) // true
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;append系列函数&#34;&gt;Append系列函数&lt;/h1&gt;
-&lt;p&gt;可以将转换后的值append到现有缓冲区：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;buf := []byte(&amp;#34;Prefix:&amp;#34;)
-strconv.AppendInt(buf, 123, 10)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;避免多次拼接字符串。&lt;/p&gt;
-&lt;h1 id=&#34;quote-与-unquote&#34;&gt;Quote 与 Unquote&lt;/h1&gt;
-&lt;p&gt;这俩实现了Go字符串语法与strcov字符串转换之间的转化，用于在字符串周围添加或移除引号，对于处理字符串中的特殊字符、转义序列和字符串字面值很有用。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;strconv.Unquote(`&amp;#34;Hello&amp;#34;`) // Hello
-&lt;/code&gt;&lt;/pre&gt;</description>
     </item>
     
   </channel>
