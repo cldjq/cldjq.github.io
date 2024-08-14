@@ -136,6 +136,9 @@ func main() {
 <li>go可以使用地球上任何语言的任何字符，因为go 使用Unicode标准来存储rune，rune被保存为数字代码，而不是字符本身，如果把rune传递给 <code>fmt.Println</code> ，会在输出中看到数字代码，而不是原始字符。</li>
 <li>与字符串字面量一样，转义序列也可以用在rune字面量中，用来表示程序代码中难以包含的字符。</li>
 </ul>
+<blockquote>
+<p><code>rune</code>是<code>int32</code>的别名。</p>
+</blockquote>
 <h1 id="布尔值">布尔值</h1>
 <p>布尔值只能是两个值的其中一个：<code>true</code> 或 <code>false</code> .</p>
 <p>他们对条件语句特别有用，条件语句只在条件为 <code>true</code> 或 <code>false</code> 时才会运行代码。</p>
