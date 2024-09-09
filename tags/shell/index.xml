@@ -105,6 +105,65 @@ for index, note := range notes {
        fmt.Println(index, note)
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;切片&#34;&gt;切片&lt;/h1&gt;
+&lt;p&gt;声明一个保存切片的变量，使用一对空方括号，后面跟着这个切片所保存的元素类型 :&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var mySlice []string
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;除了不指定大小，与声明一个数组变量的语法完全相同。&lt;/p&gt;
+&lt;p&gt;声明切片调用内建的&lt;code&gt;make&lt;/code&gt;函数：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var notes []string   //声明一个切片变量
+notes = make([]string, 7)  //创建7个字符串的切片
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;primes := make([]int, 5)
+primes[0] = 2
+primes[1] = 3
+fmt.Println(primes[0])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/6-%e5%88%87%e7%89%87/%e5%88%87%e7%89%87%e4%bf%9d%e5%ad%98%e7%9a%84%e5%85%83%e7%b4%a0.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;	notes := []string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
+	fmt.Println(notes[3], notes[6], notes[0])
+	primes := []int{
+		2,
+		3,
+		5,
+	}
+	fmt.Println(primes[0], primes[1], primes[2])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;每个切片都构建在一个底层的数组之上，实际上是底层的数组存储了切片的数据；切片仅仅是数组中的一部分（或者所有）元素的视图。&lt;/p&gt;
+&lt;p&gt;当使用 &lt;code&gt;make&lt;/code&gt; 函数或者切片字面量创建一个切片的时候，底层的数组会自动创建出来（只有通过切片，才能访问它），但也可以创建一个数组，然后再基于数组通过切片运算符创建一个切片。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;mySlice := myArray[1:3]&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;切片运算符有两个索引，其中一个标识切片开始的位置，另一个标识切片在此位置之前结束。&lt;/p&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/6-%e5%88%87%e7%89%87/%e5%88%87%e7%89%87%e8%bf%90%e7%ae%97%e7%ac%a6.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;underlyingArray := [5]string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;}
+slice4 := underlyingArray[:3]
+fmt.Println(slice4)
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;underlyingArray := [5]string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;, &amp;#34;e&amp;#34;}
+slice5 := underlyingArray[1:]
+fmt.Println(slice5)
+&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
+&lt;p&gt;注意：通常情况下使用&lt;code&gt;make&lt;/code&gt;和&lt;code&gt;切片字面量&lt;/code&gt;来创建切片，而不是创建一个数组，这样就不用关心底层数组的问题。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/6-%e5%88%87%e7%89%87/append%e5%87%bd%e6%95%b0%e8%bf%bd%e5%8a%a0%e5%88%87%e7%89%87.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;调用append函数，惯例是将函数的返回值赋给传入的那个切片变量，若只保存一个切片，就无需考虑多个切片是否共享同一个底层数组的问题。&lt;/p&gt;
+&lt;p&gt;通常并不需要担心切片是 nil 还是空的，可以同样对待它们。&lt;/p&gt;
+&lt;h2 id=&#34;可变长参数函数&#34;&gt;可变长参数函数&lt;/h2&gt;
+&lt;p&gt;可变长参数函数的最后一个参数接收一个切片类型的变长参数，这个切片可以被函数当作普通切片来处理。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func myFunc(param1 int, param2 ...string) {
+       //function code here
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;函数定义中最后一个参数是可变长参数，不能放到其他必须参数前。&lt;/p&gt;
+&lt;p&gt;调用可变长参数函数，在传入的切片变量后面加省略号&lt;code&gt;...&lt;/code&gt;:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func severalInts(numbers ...int) {
+       fmt. Println(numbers)
+}
+func mix(num int, flag bool, strings ...string) {
+       fmt.Println(num, flag, strings)
+}
+func main() {
+       intSlice := []int{1, 2, 3}
+       severalInts(intSlice...)   //使用int切片代替可变参数
+       stringsSlice := []string{&amp;#34;a&amp;#34;, &amp;#34;b&amp;#34;, &amp;#34;c&amp;#34;, &amp;#34;d&amp;#34;}
+       mix(1, true, stringsSlice...)   //使用string切片代替可变参数
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;映射&#34;&gt;映射&lt;/h1&gt;
 </description>
     </item>
     

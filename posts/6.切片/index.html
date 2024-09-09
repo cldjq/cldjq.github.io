@@ -133,8 +133,7 @@ fmt.Printf(&#34;intSlice: %#v, stringSlice: %#v\n&#34;, intSlice, stringSlice)  
 <pre tabindex="0"><code>intSlice: []int(nil), stringSlice: []string(nil)
 </code></pre><p>在其他语言中，需要在使用切片变量前先测试是否包含切片，但在go中，函数有意被写成对待nil的切片就像它是一个空切片一样。</p>
 <pre tabindex="0"><code>fmt.Println(len(intSlice))  //把nil切片传递给len函数，返回0，就像传入一个空的切片
-</code></pre><p>append函数也会把nil切片看作是一个空的切
-片，若append传入了空的切片，会在切片里增加一个元素并返回只有一个元素的切片。 若传入nil切片，也会得到只有一个元素的切片。实际上并没有一个切片来追加元素，append函数会在幕后创建一个切片。</p>
+</code></pre><p>append函数也会把nil切片看作是一个空的切片，若append传入了空的切片，会在切片里增加一个元素并返回只有一个元素的切片。 若传入nil切片，也会得到只有一个元素的切片。实际上并没有一个切片来追加元素，append函数会在幕后创建一个切片。</p>
 <pre tabindex="0"><code>intSlice = append(intSlice, 27)   //向append传入一个nil切片
 fmt.Printf(&#34;intSlice: %#v\n&#34;, intSlice)
 </code></pre><p>输出：</p>
