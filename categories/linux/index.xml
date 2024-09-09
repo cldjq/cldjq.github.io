@@ -56,7 +56,56 @@ func main() {
 	cans, remainder := floatParts(1.26)
 	fmt.Println(cans, remainder)
 }
-&lt;/code&gt;&lt;/pre&gt;</description>
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;数组&#34;&gt;数组&lt;/h1&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/5-%e6%95%b0%e7%bb%84/%e5%a3%b0%e6%98%8e%e6%95%b0%e7%bb%84.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;数组中包含的值称为它的&lt;code&gt;元素&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;数组保存特定数量的元素，不能增长或收缩，要声明保存数组的变量，需要在方括号&lt;code&gt;[]&lt;/code&gt;中指定它所保存的元素数量，后跟数组所保存的元素类型。&lt;/p&gt;
+&lt;p&gt;要设置数组元素的值或稍后检索值，需要一种方法来指定哪个元素，数组中的元素从0开始编号，一个元素的编号称为其&lt;code&gt;索引&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;例如，创建一个由7个字符串组成的数组：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var notes [7]string
+notes[0] = &amp;#34;do&amp;#34;    //给第一个元素赋值
+notes[1] = &amp;#34;re&amp;#34;
+notes[2] = &amp;#34;mi&amp;#34;
+fmt.Println(notes[0])   //打印第一个元素
+fmt.Println(notes[1])   //打印第二个元素
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;与变量一样，当创建一个数组时，其所包含的所有值都被初始化为该数组所保存类型的零值。默认情况下，一个 int 值数组用0填充。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var primes [5]int
+primes[0] = 2
+fmt.Println(primes[0])   //打印显示赋值的元素
+fmt.Println(primes[2])   //打印未显式赋值的元素
+fmt.Println(primes[4])   //打印未显式赋值的元素
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2
+0
+0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若事先知道数组应该保存哪些值，可以使用数组字面量来初始化数组。数组字面量的开头与数组类型类似，其元素的数量将放在方括号中，后跟元素的类型，再后面跟大括号，里面是每个元素应该具有的初始值列表，元素值用逗号分隔。&lt;/p&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/5-%e6%95%b0%e7%bb%84/%e6%95%b0%e7%bb%84%e5%ad%97%e9%9d%a2%e9%87%8f.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var notes [3]string = [3]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;数组字面量&lt;/code&gt;允许使用短变量声明：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
+primes := [5]int{2, 3, 5, 7, 11}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;写成多行:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;text := [3]string{
+       &amp;#34;this is a series of long strings&amp;#34;,
+       &amp;#34;which would be awkward to place&amp;#34;,
+       &amp;#34;together on a single line&amp;#34;,    //末尾的逗号是必须的。
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;循环访问数组&#34;&gt;循环访问数组&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
+for i := 0; i &amp;lt; len(notes); i++ {
+       fmt.Println(i, notes[i])
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;forrange-遍历数组&#34;&gt;for..range 遍历数组&lt;/h2&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/5-%e6%95%b0%e7%bb%84/forrange.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;notes := [7]string{&amp;#34;do&amp;#34;, &amp;#34;re&amp;#34;, &amp;#34;mi&amp;#34;, &amp;#34;fa&amp;#34;, &amp;#34;so&amp;#34;, &amp;#34;la&amp;#34;, &amp;#34;ti&amp;#34;}
+for index, note := range notes {
+       fmt.Println(index, note)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;切片&#34;&gt;切片&lt;/h1&gt;
+</description>
     </item>
     
     <item>

@@ -55,7 +55,56 @@ func main() {
 	cans, remainder := floatParts(1.26)
 	fmt.Println(cans, remainder)
 }
-</code></pre></article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
+</code></pre><h1 id="数组">数组</h1>
+<p><img  src="/img/Golang/5-%e6%95%b0%e7%bb%84/%e5%a3%b0%e6%98%8e%e6%95%b0%e7%bb%84.png"
+        alt/></p>
+<p>数组中包含的值称为它的<code>元素</code>。</p>
+<p>数组保存特定数量的元素，不能增长或收缩，要声明保存数组的变量，需要在方括号<code>[]</code>中指定它所保存的元素数量，后跟数组所保存的元素类型。</p>
+<p>要设置数组元素的值或稍后检索值，需要一种方法来指定哪个元素，数组中的元素从0开始编号，一个元素的编号称为其<code>索引</code>。</p>
+<p>例如，创建一个由7个字符串组成的数组：</p>
+<pre tabindex="0"><code>var notes [7]string
+notes[0] = &#34;do&#34;    //给第一个元素赋值
+notes[1] = &#34;re&#34;
+notes[2] = &#34;mi&#34;
+fmt.Println(notes[0])   //打印第一个元素
+fmt.Println(notes[1])   //打印第二个元素
+</code></pre><p>与变量一样，当创建一个数组时，其所包含的所有值都被初始化为该数组所保存类型的零值。默认情况下，一个 int 值数组用0填充。</p>
+<pre tabindex="0"><code>var primes [5]int
+primes[0] = 2
+fmt.Println(primes[0])   //打印显示赋值的元素
+fmt.Println(primes[2])   //打印未显式赋值的元素
+fmt.Println(primes[4])   //打印未显式赋值的元素
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>2
+0
+0
+</code></pre><p>若事先知道数组应该保存哪些值，可以使用数组字面量来初始化数组。数组字面量的开头与数组类型类似，其元素的数量将放在方括号中，后跟元素的类型，再后面跟大括号，里面是每个元素应该具有的初始值列表，元素值用逗号分隔。</p>
+<p><img  src="/img/Golang/5-%e6%95%b0%e7%bb%84/%e6%95%b0%e7%bb%84%e5%ad%97%e9%9d%a2%e9%87%8f.png"
+        alt/></p>
+<pre tabindex="0"><code>var notes [3]string = [3]string{&#34;do&#34;, &#34;re&#34;, &#34;mi&#34;}
+</code></pre><p><code>数组字面量</code>允许使用短变量声明：</p>
+<pre tabindex="0"><code>notes := [7]string{&#34;do&#34;, &#34;re&#34;, &#34;mi&#34;, &#34;fa&#34;, &#34;so&#34;, &#34;la&#34;, &#34;ti&#34;}
+primes := [5]int{2, 3, 5, 7, 11}
+</code></pre><p>写成多行:</p>
+<pre tabindex="0"><code>text := [3]string{
+       &#34;this is a series of long strings&#34;,
+       &#34;which would be awkward to place&#34;,
+       &#34;together on a single line&#34;,    //末尾的逗号是必须的。
+}
+</code></pre><h2 id="循环访问数组">循环访问数组</h2>
+<pre tabindex="0"><code>notes := [7]string{&#34;do&#34;, &#34;re&#34;, &#34;mi&#34;, &#34;fa&#34;, &#34;so&#34;, &#34;la&#34;, &#34;ti&#34;}
+for i := 0; i &lt; len(notes); i++ {
+       fmt.Println(i, notes[i])
+}
+</code></pre><h2 id="forrange-遍历数组">for..range 遍历数组</h2>
+<p><img  src="/img/Golang/5-%e6%95%b0%e7%bb%84/forrange.png"
+        alt/></p>
+<pre tabindex="0"><code>notes := [7]string{&#34;do&#34;, &#34;re&#34;, &#34;mi&#34;, &#34;fa&#34;, &#34;so&#34;, &#34;la&#34;, &#34;ti&#34;}
+for index, note := range notes {
+       fmt.Println(index, note)
+}
+</code></pre><h1 id="切片">切片</h1>
+</article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
 <div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/go%E5%8C%BF%E5%90%8D%E7%BB%93%E6%9E%84%E4%BD%93%E6%8F%90%E9%AB%98%E6%90%AC%E7%A0%96%E6%95%88%E7%8E%87/"><span class="iconfont icon-article"></span>Go匿名结构体提高搬砖效率</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
