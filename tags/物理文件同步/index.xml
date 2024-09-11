@@ -164,6 +164,48 @@ func main() {
        mix(1, true, stringsSlice...)   //使用string切片代替可变参数
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;映射&#34;&gt;映射&lt;/h1&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/7-%e6%98%a0%e5%b0%84/map%e8%af%ad%e6%b3%95.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var ranks map[string]int    //声明一个映射变量
+ranks = make(map[string]int) //真正创建一个映射
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ranks := make(map[string]int)   //创建一个映射并声明一个用于保存它的变量
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/7-%e6%98%a0%e5%b0%84/%e6%98%a0%e5%b0%84%e5%ad%97%e9%9d%a2%e9%87%8f.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;多行映射字面量：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;elements := map[string]string{
+        &amp;#34;H&amp;#34;: &amp;#34;Hydrogen&amp;#34;,
+        &amp;#34;Li&amp;#34;: &amp;#34;Lithium&amp;#34;,
+}   //多行映射字面量
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;声明映射变量不是创建映射，需要 make 或使用映射字面量创建映射后才能赋值，当然未赋值的映射变量零值是 nil，意味着没有映射存在来增加键或者值。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;golang 中，map 的设计：访问键，会返回两个值，第二值为 bool 类型；第二个 bool 值是可选的，如果要忽略，可以不用显示&lt;code&gt;_&lt;/code&gt;。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+func main() {
+	counters := map[string]int{&amp;#34;a&amp;#34;: 3, &amp;#34;b&amp;#34;: 0}
+	value, ok := counters[&amp;#34;a&amp;#34;]
+	fmt.Println(value, ok)
+	value, _ = counters[&amp;#34;b&amp;#34;]
+	fmt.Println(value)
+	value = counters[&amp;#34;b&amp;#34;]
+	fmt.Println(value)
+	value, ok = counters[&amp;#34;c&amp;#34;]
+	fmt.Println(value, ok)
+	_, ok = counters[&amp;#34;d&amp;#34;]
+	fmt.Println(ok)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;3 true
+0
+0
+0 false   //没有“c”这个键，为其值(这里map 的值为 int 类型)的零值
+false
+&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
+&lt;p&gt;if 语句后的条件必须为 true，因为 if 是用来判断某个条件是否成立的。条件为 true 时，执行相应代码；为 false 时，不执行代码。&lt;/p&gt;
+&lt;/blockquote&gt;
 </description>
     </item>
     

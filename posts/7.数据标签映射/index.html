@@ -146,7 +146,7 @@ fmt.Println(elements[&#34;Li&#34;])
 </code></pre><p>与切片字面量一样，花括号为空创建一个空的映射：</p>
 <pre tabindex="0"><code>emptyMap := map[string]float64{}
 </code></pre><h1 id="映射中的零值">映射中的零值</h1>
-<p>对于数组和切片，若访问一个没有赋值过的键，会得到一个零值，根据值类型 不行，零值不一定是0。比如映射的值类型是string，零值就是空字符串。</p>
+<p>对于数组和切片，若访问一个没有赋值过的键，会得到一个零值，根据值类型不同，零值不一定是0。比如映射的值类型是string，零值就是空字符串。</p>
 <p>与数组和切片一样，零值可以更安全地修改映射的值，即使在没有给它赋值的情况下。</p>
 <pre tabindex="0"><code>counters := make(map[string]int)
 counters[&#34;a&#34;]++
@@ -180,7 +180,7 @@ func main() {
 <pre tabindex="0"><code>Alma is failing!
 Carl is failing!
 </code></pre><p>为解决此问题，访问映射键的时候可选地获取第2个布尔类型的值，若这个键已经被赋过值，返回true，否则返回false。通常情况下，开发者会将这个布尔值赋给一个名为<code>ok</code>的变量。</p>
-<pre tabindex="0"><code>counters := map[string]int{&#34;a&#34;: 3, &#34;b&#34;, 0}
+<pre tabindex="0"><code>counters := map[string]int{&#34;a&#34;: 3, &#34;b&#34;: 0}
 var value int
 var ok bool
 value, ok = counters[&#34;a&#34;]   //访问一个已经被赋值过的值
@@ -220,7 +220,7 @@ for _, item := range data {
 }    //处理每个字符
 letters := []string{&#34;a&#34;, &#34;b&#34;, &#34;c&#34;, &#34;d&#34;, &#34;e&#34;}   //是否这些字符都在映射中存在
 for _, letter := range letters {
-        count, ok := counts[letters]    //获取当前字符的计数以及是否出现的指示
+        count, ok := counts[letter]    //获取当前字符的计数以及是否出现的指示
         if !ok {   //如果字母未找到
                 fmt.Printf(&#34;%s: not found\n&#34;, letter)
         } else {   //如果字母找到

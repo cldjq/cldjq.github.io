@@ -163,6 +163,48 @@ func main() {
        mix(1, true, stringsSlice...)   //使用string切片代替可变参数
 }
 </code></pre><h1 id="映射">映射</h1>
+<p><img  src="/img/Golang/7-%e6%98%a0%e5%b0%84/map%e8%af%ad%e6%b3%95.png"
+        alt/></p>
+<pre tabindex="0"><code>var ranks map[string]int    //声明一个映射变量
+ranks = make(map[string]int) //真正创建一个映射
+</code></pre><pre tabindex="0"><code>ranks := make(map[string]int)   //创建一个映射并声明一个用于保存它的变量
+</code></pre><p><img  src="/img/Golang/7-%e6%98%a0%e5%b0%84/%e6%98%a0%e5%b0%84%e5%ad%97%e9%9d%a2%e9%87%8f.png"
+        alt/></p>
+<p>多行映射字面量：</p>
+<pre tabindex="0"><code>elements := map[string]string{
+        &#34;H&#34;: &#34;Hydrogen&#34;,
+        &#34;Li&#34;: &#34;Lithium&#34;,
+}   //多行映射字面量
+</code></pre><p>声明映射变量不是创建映射，需要 make 或使用映射字面量创建映射后才能赋值，当然未赋值的映射变量零值是 nil，意味着没有映射存在来增加键或者值。</p>
+<blockquote>
+<p>golang 中，map 的设计：访问键，会返回两个值，第二值为 bool 类型；第二个 bool 值是可选的，如果要忽略，可以不用显示<code>_</code>。</p>
+</blockquote>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+func main() {
+	counters := map[string]int{&#34;a&#34;: 3, &#34;b&#34;: 0}
+	value, ok := counters[&#34;a&#34;]
+	fmt.Println(value, ok)
+	value, _ = counters[&#34;b&#34;]
+	fmt.Println(value)
+	value = counters[&#34;b&#34;]
+	fmt.Println(value)
+	value, ok = counters[&#34;c&#34;]
+	fmt.Println(value, ok)
+	_, ok = counters[&#34;d&#34;]
+	fmt.Println(ok)
+}
+</code></pre><p>输出：</p>
+<pre tabindex="0"><code>3 true
+0
+0
+0 false   //没有“c”这个键，为其值(这里map 的值为 int 类型)的零值
+false
+</code></pre><blockquote>
+<p>if 语句后的条件必须为 true，因为 if 是用来判断某个条件是否成立的。条件为 true 时，执行相应代码；为 false 时，不执行代码。</p>
+</blockquote>
 </article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
 <div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/go%E5%8C%BF%E5%90%8D%E7%BB%93%E6%9E%84%E4%BD%93%E6%8F%90%E9%AB%98%E6%90%AC%E7%A0%96%E6%95%88%E7%8E%87/"><span class="iconfont icon-article"></span>Go匿名结构体提高搬砖效率</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
