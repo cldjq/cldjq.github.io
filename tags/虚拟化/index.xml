@@ -206,6 +206,36 @@ false
 &lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
 &lt;p&gt;if 语句后的条件必须为 true，因为 if 是用来判断某个条件是否成立的。条件为 true 时，执行相应代码；为 false 时，不执行代码。&lt;/p&gt;
 &lt;/blockquote&gt;
+&lt;h2 id=&#34;对映射进行循环&#34;&gt;对映射进行循环&lt;/h2&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/7-%e6%98%a0%e5%b0%84/%e6%98%a0%e5%b0%84for...range%e5%be%aa%e7%8e%af.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;其中一个变量保存键，另一个变量保存值，自动遍历映射中每一个条目。&lt;/p&gt;
+&lt;p&gt;for&amp;hellip;range 循环是一个非有序的 键/值 对集合，若需要按照特定顺序，需要自己写代码实现，比如:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;sort&amp;#34;
+)
+
+func main() {
+	grades := map[string]float64{&amp;#34;Alma&amp;#34;: 74.2, &amp;#34;Rohit&amp;#34;: 86.5, &amp;#34;Carl&amp;#34;: 59.7}
+	var names []string
+	for name := range grades {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	fmt.Println(names)
+	for _, name := range names {
+		fmt.Printf(&amp;#34;%s has a grade of %0.1f%%\n&amp;#34;, name, grades[name])
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[Alma Carl Rohit]
+Alma has a grade of 74.2%
+Carl has a grade of 59.7%
+Rohit has a grade of 86.5%
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;结构体&#34;&gt;结构体&lt;/h1&gt;
 </description>
     </item>
     
