@@ -45,7 +45,7 @@ fmt.Printf(&#34;%#v\n&#34;, myStruct)
 }
 myStruct.number = 3.14
 myStruct.word = &#34;pie&#34;
-myStruct.toggle = &#34;true&#34;   //给struct字段赋值
+myStruct.toggle = true   //给struct字段赋值
 fmt.Println(myStruct.number)  
 fmt.Println(myStruct.word)
 fmt.Println(myStruct.toggle)  //从struct字段取值
@@ -243,8 +243,20 @@ func main() {
 	applyDiscount(&amp;s) //传入一个指针，而不是struct
 	fmt.Println(s.rate)
 }
-</code></pre><p>在double函数中，需要使用 * 运算符来获取指针指向的值，当在applyDiscount函数中设置rate字段时不需要 * 吗？<br>
-使用点运算符在struct指针和struct上都可以访问字段。</p>
+</code></pre><p>在double函数中，需要使用 * 运算符来获取指针指向的值，当在applyDiscount函数中设置rate字段时不需要 * 吗？</p>
+<p><code>使用点运算符在struct指针和struct上都可以访问字段。</code></p>
+<pre tabindex="0"><code>//自动解引用的写法
+s.rate = 4.99
+
+//显式解引用的写法
+(*s).rate = 4.99
+</code></pre><p>golang中以下场景会自动解引用：</p>
+<ul>
+<li>结构体指针访问字段。</li>
+<li>指针类型的接收者方法调用。</li>
+<li>指针类型的数组或切片访问元素。</li>
+<li>值类型参数的函数调用中传递指针。</li>
+</ul>
 <h1 id="通过指针访问struct的字段">通过指针访问struct的字段</h1>
 <p>若尝试打印一个变量的指针，会看到其指向的内存地址：</p>
 <pre tabindex="0"><code>func main() {
@@ -297,8 +309,9 @@ func main() {
 答：defaultSubscriber函数返回了一个struct值，若调用者保存了返回的值，那么struct值中的字段同时会被保存。只有函数修改已经存在的struct而没有返回它们的时候需要使用指针来保存修改项。<br>
 若需要时，defaultSubscriber可以返回一个struct的指针。</p>
 <h1 id="使用指针传递大型struct">使用指针传递大型struct</h1>
-<p>函数行参接收一个函数调用的实参的拷贝，即使是struct也是这样，若传递一个有很多字段的比较大的struct，会占用很多内存，会为原始的struct和被拷贝的struct都划分空间。</p>
-<p>除非struct字段少，否则要向函数传入struct的指针，即使函数并不修改struct也是如此。当传递一个struct指针时，内存中只有一个原始的struct，并可以读取、修改等操作，都不会产生一个额外的拷贝。</p>
+<p>函数形参接收一个函数调用的实参的拷贝，即使 struct 也是如此，如果传递一个有很多字段的大的 struct，会占用很多电脑内存，它会为原始的 struct 和被拷贝的 struct 都划分空间。</p>
+<p>函数行参接收一个它们被调用时的参数的拷贝，即使是struct也是这样。</p>
+<p>除非struct只有一些小字段，否则向函数传入struct的指针是一个<code>好主意</code>，即使函数并不想修改struct也是如此。当传递一个struct指针时，内存中只有一个原始的struct，并可以读取、修改等操作，都不会产生一个额外的拷贝。</p>
 <pre tabindex="0"><code>package main
 
 import &#34;fmt&#34;

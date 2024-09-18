@@ -235,6 +235,29 @@ Alma has a grade of 74.2%
 Carl has a grade of 59.7%
 Rohit has a grade of 86.5%
 </code></pre><h1 id="结构体">结构体</h1>
+<p><img  src="/img/Golang/8-struct/type%e7%b1%bb%e5%9e%8b.png"
+        alt/></p>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+type car struct { //定义一个名为car的类型，car的基础类型是有下面这些字段的struct
+	name     string
+	topSpeed float64
+}
+
+func main() {
+	var porsche car                //定义一个car类型的变量
+	porsche.name = &#34;Porsche 911 R&#34; //访问struct的字段
+	porsche.topSpeed = 323
+	fmt.Println(&#34;Name:&#34;, porsche.name)
+	fmt.Println(&#34;Top speed:&#34;, porsche.topSpeed)
+}
+</code></pre><p>不要使用一个已经存在的类型名称作为变量名！</p>
+<h2 id="struct-字面量">struct 字面量</h2>
+<p>代码定义一个 struct 且挨个给其赋值很讨厌，像切片与映射一样，Go 提供了 struct 字面量来让你创建一个 struct 并同时给其字段赋值。</p>
+<p><img  src="/img/Golang/8-struct/type%e5%ad%97%e9%9d%a2%e9%87%8f.png"
+        alt/></p>
 </article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
 <div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/go%E5%8C%BF%E5%90%8D%E7%BB%93%E6%9E%84%E4%BD%93%E6%8F%90%E9%AB%98%E6%90%AC%E7%A0%96%E6%95%88%E7%8E%87/"><span class="iconfont icon-article"></span>Go匿名结构体提高搬砖效率</a></p></section><section class="article discussion"><div id="disqus_thread"></div>

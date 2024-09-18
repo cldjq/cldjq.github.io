@@ -236,6 +236,29 @@ Alma has a grade of 74.2%
 Carl has a grade of 59.7%
 Rohit has a grade of 86.5%
 &lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;结构体&#34;&gt;结构体&lt;/h1&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/8-struct/type%e7%b1%bb%e5%9e%8b.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;fmt&amp;#34;
+
+type car struct { //定义一个名为car的类型，car的基础类型是有下面这些字段的struct
+	name     string
+	topSpeed float64
+}
+
+func main() {
+	var porsche car                //定义一个car类型的变量
+	porsche.name = &amp;#34;Porsche 911 R&amp;#34; //访问struct的字段
+	porsche.topSpeed = 323
+	fmt.Println(&amp;#34;Name:&amp;#34;, porsche.name)
+	fmt.Println(&amp;#34;Top speed:&amp;#34;, porsche.topSpeed)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不要使用一个已经存在的类型名称作为变量名！&lt;/p&gt;
+&lt;h2 id=&#34;struct-字面量&#34;&gt;struct 字面量&lt;/h2&gt;
+&lt;p&gt;代码定义一个 struct 且挨个给其赋值很讨厌，像切片与映射一样，Go 提供了 struct 字面量来让你创建一个 struct 并同时给其字段赋值。&lt;/p&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/8-struct/type%e5%ad%97%e9%9d%a2%e9%87%8f.png&#34;
+        alt/&gt;&lt;/p&gt;
 </description>
     </item>
     
