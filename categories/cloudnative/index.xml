@@ -259,6 +259,14 @@ func main() {
 &lt;p&gt;代码定义一个 struct 且挨个给其赋值很讨厌，像切片与映射一样，Go 提供了 struct 字面量来让你创建一个 struct 并同时给其字段赋值。&lt;/p&gt;
 &lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/8-struct/type%e5%ad%97%e9%9d%a2%e9%87%8f.png&#34;
         alt/&gt;&lt;/p&gt;
+&lt;h1 id=&#34;方法&#34;&gt;方法&lt;/h1&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/9-type/%e5%ae%9a%e4%b9%89%e6%96%b9%e6%b3%95.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img  src=&#34;https://tinklespring.com/img/Golang/9-type/%e6%96%b9%e6%b3%95%e6%8e%a5%e6%94%b6%e5%99%a8.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;只能获取保存在变量中的指针！！&lt;/p&gt;
+&lt;/blockquote&gt;
 </description>
     </item>
     

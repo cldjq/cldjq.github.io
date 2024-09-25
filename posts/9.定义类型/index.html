@@ -46,8 +46,17 @@ busFuel = Liters(Gallons(63.0) * 3.785)
 fmt.Printf(&#34;Gallons: %0.1f Liters: %0.1f\n&#34;, carFuel, busFuel)
 </code></pre><h1 id="定义类型和运算符">定义类型和运算符</h1>
 <p>一个定义类型提供与所有基础类型相同的运算，基于float64类型，提供算数运算符<code>+、-、*、/</code>，也提供比较运算<code>==、&gt;、&lt;</code>。</p>
-<p>并且基于基础类型string的类型，支持<code>+、==、&gt;、&lt;</code>，但是不支持<code>-</code>，因为 - 对于string不是合法的运算符。</p>
-<p>一个定义类型可以被用来与字面值一起运算：</p>
+<p>并且基于基础类型string的类型，支持<code>+、==、&gt;、&lt;</code>，但是不支持<code>-</code>，因为 <code>-</code> 对于string不是合法的运算符。</p>
+<pre tabindex="0"><code>type Title string
+
+func main() {
+    fmt.Println(Title(&#34;Alien&#34;) == Title(&#34;Alien&#34;))
+    fmt.Println(Title(&#34;Alien&#34;) &lt; Title(&#34;Alien&#34;))
+    fmt.Println(Title(&#34;Alien&#34;) &gt; Title(&#34;Alien&#34;))
+    fmt.Println(Title(&#34;Alien&#34;) + &#34;s&#34;)
+    fmt.Println(Title(&#34;Jaws 2&#34;) - &#34;2&#34;) // 这行无法执行
+}
+</code></pre><p>一个定义类型可以被用来与字面值一起运算：</p>
 <pre tabindex="0"><code>fmt.Println(Liters(1.2) + 3.4)
 fmt.Println(Gallons(5.5) - 2.2)
 fmt.Println(Gallons(1.2) == 1.2)
@@ -63,9 +72,9 @@ true
 <pre tabindex="0"><code>carFuel = Gallons(Liters(40.0) * 0.264)
 busFuel = Liters(Gallons(63.0) * 3.785)
 
-	func ToGallons(l Liters) Gallons {
+        func ToGallons(l Liters) Gallons {
                 return Gallons(l * 0.364)
-	}
+        }
 
         func ToLiters(g Gallons) Liters {
                 return Liters(g * 3.785)
@@ -87,7 +96,13 @@ Bus fuel: 118.1 litters
 type Milliliters float64
 type Gallons float64
 </code></pre><p>也需要将Milliliters类型进行转换，但如果增加一个Milliliters转换为Gallons的函数，会产生错误，不能在同一个包中出现两个ToGallons函数！</p>
-<p>可以分别修改两个ToGallons函数的名字：LitersToGallons和MillilitersToGallons：</p>
+<pre tabindex="0"><code>func ToGallons(l Liters) Gallons {
+    return Gallons(l * 0.254)
+}
+func ToGallons(m Milliliters) Gallons {
+    return Gallons(m * 0.000264)
+}
+</code></pre><p>可以分别修改两个ToGallons函数的名字：LitersToGallons和MillilitersToGallons：</p>
 <pre tabindex="0"><code>func LitersToGallons(l Liters) Gallons {
         return Gallons(l * 0.264)
 }
