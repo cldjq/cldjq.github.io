@@ -248,7 +248,7 @@ func main() {
 }
 </code></pre><p>Date的字段未导出，从main包中访问，会导致编译错误。</p>
 <h1 id="通过导出的方法访问未导出的字段">通过导出的方法访问未导出的字段</h1>
-<p>可以间接访问字段。未导出的变量、struct字段、函数、方法等仍然能被相同包的导出的函数或者方法访问。所以当mian包中的代码在Date值上调用导出方法SetYear时，SetYear可以修改Date的year字段，即使year是未导出的。导出方法SetYear可以更新未导出的month字段等。</p>
+<p>可以间接访问字段。未导出的变量、struct字段、函数、方法等仍然能被相同包的导出的函数或者方法访问。所以当main包中的代码在Date值上调用导出方法SetYear时，SetYear可以修改Date的year字段，即使year是未导出的。导出方法SetYear可以更新未导出的month字段等。</p>
 <p>修改main包来使用setter方法，可以更新Date值的字段。</p>
 <pre tabindex="0"><code>package main
 
@@ -340,9 +340,9 @@ func (d *Date) Day() int {
 答：Go允许这样做，但不推荐。Go社区大会讨论后决定在getter方法前面去掉Get前缀，保留它只会让后继者感到困惑。Go仍然对setter方法使用Set前缀，因为需要区分同一个字段的setter方法和getter方法。</p>
 <hr>
 <p>练习：</p>
-<p>要求：
-1.字段未导出<br>
-2.为每个字段增加一个getter方法（遵守约定：一个getter方法应该与它访问的字段名称相同，若需要导出，首字母大写）<br>
+<p>要求：<br>
+1.将字段改为未导出的；  <br>
+2.为每个字段增加一个getter方法（遵守约定：一个getter方法应该与它访问的字段名称相同，若需要导出，首字母大写）； <br>
 3.为setter方法增加校验，SetLatitude若接收到小于-90或大于90的值返回错误，Setlongitude若接收到小于-180大于180的值返回错误。</p>
 <pre tabindex="0"><code>package geo
 
@@ -376,7 +376,7 @@ func (c *Coordinates) SetLongitude(longitude float64) error {
 	c.longitude = longitude
 	return nil
 }
-</code></pre><p>main 包代码要求：
+</code></pre><p>main 包代码要求：<br>
 1.遍历每个settter方法，保存error返回值<br>
 2.若error不为nil，使用log.Fatal函数记录错误并退出<br>
 3.若设置字段没有错误，调用所有getter方法输出字段值</p>
