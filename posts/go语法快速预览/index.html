@@ -266,7 +266,57 @@ func main() {
 <blockquote>
 <p>只能获取保存在变量中的指针！！</p>
 </blockquote>
-</article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
+<h1 id="接口">接口</h1>
+<p><code>一个接口是特定值预期具有的一组方法。</code><br>
+<img  src="/img/Golang/11-interface/interface.png"
+        alt/></p>
+<p><code>任何拥有接口定义的所有方法的类型被称作'满足那个接口'。</code></p>
+<p>一个满足接口的类型可以用在任何需要接口的地方。</p>
+<p>一个类型可以满足多个接口，一个接口可以有多个类型满足它。</p>
+<p>接口类型的变量可以保存任何实现了该接口的具体类型的值，接口在 Go 中被设计为一组方法的集合，任何实现了这些方法的类型都被视为实现了该接口。</p>
+<h2 id="类型断言">类型断言</h2>
+<p>当将一个具体类型的值赋给一个接口类型的变量时，<code>类型断言</code>能够取回具体类型的值。<br>
+<img  src="/img/Golang/11-interface/%e7%b1%bb%e5%9e%8b%e6%96%ad%e8%a8%80.png"
+        alt/></p>
+<p><code>var robot Robot = noiseMaker.(Robot)</code> : 从接口变量 noiseMaker 中提取其持有的具体类型为 Robot 的值。</p>
+<h2 id="当类型断言失败时避免程序异常">当类型断言失败时避免程序异常</h2>
+<pre tabindex="0"><code>package main
+
+import (
+    &#34;fmt&#34;
+    &#34;reflect&#34;
+)
+
+type Robot string
+
+func (r Robot) MakeSound() {
+    fmt.Println(&#34;Beep Boop&#34;)
+}
+
+func (r Robot) Walk() {
+    fmt.Println(&#34;Powering legs&#34;)
+}
+
+type NoiseMaker interface {
+    MakeSound()
+}
+
+func main() {
+    var noiseMaker NoiseMaker = Robot(&#34;Botco Ambler&#34;)
+    noiseMaker.MakeSound()
+
+    // 获取具体类型信息
+    fmt.Println(&#34;Type of noiseMaker:&#34;, reflect.TypeOf(noiseMaker))
+
+    // 类型断言，提取具体类型的值
+    robot, ok := noiseMaker.(Robot)
+    if ok {
+        robot.Walk()
+    } else {
+        fmt.Println(&#34;noiseMaker 并非 Robot 类型&#34;)
+    }
+}
+</code></pre></article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
 <div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/go%E5%8C%BF%E5%90%8D%E7%BB%93%E6%9E%84%E4%BD%93%E6%8F%90%E9%AB%98%E6%90%AC%E7%A0%96%E6%95%88%E7%8E%87/"><span class="iconfont icon-article"></span>Go匿名结构体提高搬砖效率</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">

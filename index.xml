@@ -267,7 +267,57 @@ func main() {
 &lt;blockquote&gt;
 &lt;p&gt;只能获取保存在变量中的指针！！&lt;/p&gt;
 &lt;/blockquote&gt;
-</description>
+&lt;h1 id=&#34;接口&#34;&gt;接口&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;一个接口是特定值预期具有的一组方法。&lt;/code&gt;&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/11-interface/interface.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;任何拥有接口定义的所有方法的类型被称作&#39;满足那个接口&#39;。&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;一个满足接口的类型可以用在任何需要接口的地方。&lt;/p&gt;
+&lt;p&gt;一个类型可以满足多个接口，一个接口可以有多个类型满足它。&lt;/p&gt;
+&lt;p&gt;接口类型的变量可以保存任何实现了该接口的具体类型的值，接口在 Go 中被设计为一组方法的集合，任何实现了这些方法的类型都被视为实现了该接口。&lt;/p&gt;
+&lt;h2 id=&#34;类型断言&#34;&gt;类型断言&lt;/h2&gt;
+&lt;p&gt;当将一个具体类型的值赋给一个接口类型的变量时，&lt;code&gt;类型断言&lt;/code&gt;能够取回具体类型的值。&lt;br&gt;
+&lt;img  src=&#34;https://tinklespring.com/img/Golang/11-interface/%e7%b1%bb%e5%9e%8b%e6%96%ad%e8%a8%80.png&#34;
+        alt/&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;var robot Robot = noiseMaker.(Robot)&lt;/code&gt; : 从接口变量 noiseMaker 中提取其持有的具体类型为 Robot 的值。&lt;/p&gt;
+&lt;h2 id=&#34;当类型断言失败时避免程序异常&#34;&gt;当类型断言失败时避免程序异常&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;reflect&amp;#34;
+)
+
+type Robot string
+
+func (r Robot) MakeSound() {
+    fmt.Println(&amp;#34;Beep Boop&amp;#34;)
+}
+
+func (r Robot) Walk() {
+    fmt.Println(&amp;#34;Powering legs&amp;#34;)
+}
+
+type NoiseMaker interface {
+    MakeSound()
+}
+
+func main() {
+    var noiseMaker NoiseMaker = Robot(&amp;#34;Botco Ambler&amp;#34;)
+    noiseMaker.MakeSound()
+
+    // 获取具体类型信息
+    fmt.Println(&amp;#34;Type of noiseMaker:&amp;#34;, reflect.TypeOf(noiseMaker))
+
+    // 类型断言，提取具体类型的值
+    robot, ok := noiseMaker.(Robot)
+    if ok {
+        robot.Walk()
+    } else {
+        fmt.Println(&amp;#34;noiseMaker 并非 Robot 类型&amp;#34;)
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;</description>
     </item>
     
     <item>

@@ -256,30 +256,30 @@ func main() {
 }
 </code></pre><p><code>若一个类型声明了指针接收器方法，那么就只能将那个类型的指针传递给接口变量。</code></p>
 <p>Switch类型的toggle方法需要使用指针类型的接收器，这样才能修改接收器。</p>
-<pre tabindex="0"><code>pacakge main
+<pre tabindex="0"><code>package main
 
 import &#34;fmt&#34;
 
 type Switch string
 
 func (s *Switch) toggle() {
-        if *s == &#34;on&#34; {
-                *s = &#34;off&#34;
+    if *s == &#34;on&#34; {
+        *s = &#34;off&#34;
 	} else {
-                *s = &#34;on&#34;
+        *s = &#34;on&#34;
 	}
-        fmt.Println(*s)
+    fmt.Println(*s)
 }
 
 type Toggleable interface {
-        toggle()
+    toggle()
 }
 
 func main() {
-        s := Switch(&#34;off&#34;)
-        var t Toggleable = s
-        t.toggle()
-        t.toggle()
+    s := Switch(&#34;off&#34;)
+    var t Toggleable = s
+    t.toggle()
+    t.toggle()
 }
 </code></pre><p>但是当把Switch的值赋给Toggleable的时候导致错误：</p>
 <pre tabindex="0"><code>Switch does not implement Toggleable (toggle method has pointer receive)
@@ -338,7 +338,7 @@ type NoiseMaker interface {
 func main() {
         var noiseMaker NoiseMaker = Robot(&#34;Botco Ambler&#34;)  //定义一个接口类型的变量，并且将满足接口的类型值赋给它
         noiseMaker.MakeSound()  //调用接口中的方法
-        var robot Robot = noiseMaker.(Robot)  //使用类型断言取回具体类型
+        var robot Robot = noiseMaker.(Robot)  //使用类型断言取回具体类型的值
         robot.Walk()  //调用在具体类型（而不是接口）上定义的方法
 }
 </code></pre><p>输出：</p>
@@ -398,9 +398,9 @@ func TryOut(player Player) {
         player.Play(&#34;Test Track&#34;)
         player.Stop()
         recorder, ok := player.(gadget.TapeRecorder)  //将第二个返回值赋给变量
-	if ok {  //仅仅在原值是TapeRecorder的时候调用Record方法
-                recorder.Record()
-	}
+    	if ok {  //仅仅在原值是TapeRecorder的时候调用Record方法
+            recorder.Record()
+	    }
 }
 
 func main() {
@@ -415,7 +415,8 @@ Playing Test Track  //TapePlayer被传入
 Stopped!  //类型断言未成功，Record没有被调用
 </code></pre><p>与之前一样，在main方法中，首先传入了TapeRecorder值调用TryOut，TryOut获取传入的Player接口值，并调用Play和Stop方法。Player的值的具体类型是TapeRecorder的断言成功了，然后Record方法在TapeRecorder值上被调用。然后传入TapePlayer调用TryOut，这个调用在之前程序中停止，因为类型断言异常。Play和Stop被调用，类型断言失败，因为Player值保存着TapePlayer而不是TapeRecorder，因为捕获了ok值中的第二个返回值，类型断言不会导致异常，因为仅仅将ok值设置为false，导致if语句中的代码不被执行，也就导致了Record没有被调用。（因为TapePlayer值没有Record方法）</p>
 <h1 id="error接口">error接口</h1>
-<p><code>一个错误值就是任何含有名为Error的方法的值，此方法返回string</code>。</p>
+<p><code>一个错误值就是任何含有名为Error的方法的值，此方法返回string</code>。<br>
+error类型是一个接口：</p>
 <pre tabindex="0"><code>type error interface {
         Error() string
 }
@@ -433,7 +434,7 @@ func main() {
 }
 </code></pre><p>如果需要一个error值，也需要追踪除了错误信息字符串之外更多的信息，可以创建自己的满足error接口的类型并保存需要的信息。</p>
 <p>例：有一个程序监控一些设备保证它们不会过热。
-这个OverheatError类型可能游泳，有个确保满足error的Error方法，它使用float64作为基础类型，允许追踪过载的温度。</p>
+这个OverheatError类型可能有用，有个确保满足error的Error方法，它使用float64作为基础类型，允许追踪过载的温度。</p>
 <pre tabindex="0"><code>type OverheatError float64  //定义一个基础类型是float64的类型
 func (o OverheatError) Error() string {  //满足error接口
         return fmt.Sprintf(&#34;OverheatError by %0.2f degrees!&#34;, o)  //在错误信息中使用温度
@@ -508,16 +509,16 @@ func main() {
 <pre tabindex="0"><code>thing.MakeSound undefined (type interface {} is interface with no mehtods)
 </code></pre><p>为了在空接口类型的值上调用方法，需要使用类型断言来获得具体类型的值。</p>
 <pre tabindex="0"><code>func AcceptAnything(thing interface{}) {
-        fmt.Println(thing)
-        whistle, ok := thing.(Whistle)  //使用类型断言来获得Whistle
+    fmt.Println(thing)
+    whistle, ok := thing.(Whistle)  //使用类型断言来获得Whistle
 	if ok {
-                whistle.MakeSound()  //调用Whistle上的方法
+        whistle.MakeSound()  //调用Whistle上的方法
 	}
 }
 
 func main() {
-        AcceptAnything(3.1415)
-        AcceptAnything(Whistle(&#34;Toyco Canary&#34;))
+    AcceptAnything(3.1415)
+    AcceptAnything(Whistle(&#34;Toyco Canary&#34;))
 }
 </code></pre><p>最好写一个接收特定具体类型的函数：</p>
 <pre tabindex="0"><code>func AcceptWhistle(whistle Whistle) {  //接收Whistle
