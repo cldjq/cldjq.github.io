@@ -94,7 +94,7 @@ func main() {
 }
 </code></pre><p>但是运行这个程序，将只能看到来自main函数末尾的Println调用的输出，不会看到来自a或b函数的任何内容。</p>
 <p>Go程序在main goroutine（调用main函数的goroutine）结束后立即停止运行，即使其他goroutine仍在运行，main函数在a和b函数中的代码运行之前就完成了。</p>
-<p>需要保持main goroutine运行，知道aheb函数goroutine完成，需要暂停main goroutine一段时间，这样其他goroutine就可以运行。</p>
+<p>需要保持main goroutine运行，直到a和b函数goroutine完成，需要暂停main goroutine一段时间，这样其他goroutine就可以运行。</p>
 <pre tabindex="0"><code>func main() {
 	go a()
 	go b()

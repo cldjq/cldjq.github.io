@@ -175,8 +175,8 @@ Goodbye!
 2023/08/18 10:38:37 I don&#39;t want to talk.
 </code></pre><p>defer 关键字确保函数调用发生，即使调用函数提前退出。</p>
 <p>当return语句被执行时：<br>
-1.return语句首先计算其返回值（如果有的话），并保存在内部变量中；
-2.执行所有defer语句；
+1.return语句首先计算其返回值（如果有的话），并保存在内部变量中；<br>
+2.执行所有defer语句；<br>
 3.实际返回已保存的返回值，并退出函数；</p>
 <p>在Socialize函数中的return语句被执行时，首先保存了要返回的错误值，然后执行defer，最后再执行return返回错误值，退出函数。</p>
 <p><code>先执行defer，最后执行return</code></p>
@@ -341,7 +341,7 @@ func scanDirectory(path string) error { //递归函数，接受要扫描的路�
 		return err
 	}
 	for _, file := range files {
-		filePath := filepath.Join(path, file.Name()) //应斜杠将目录路径和文件名连接起来
+		filePath := filepath.Join(path, file.Name()) //用斜杠将目录路径和文件名连接起来
 		if file.IsDir() {                            //如果这是一个目录
 			err := scanDirectory(filePath) //递归调用scanDirectory，这次是用子目录的路径
 			if err != nil {

@@ -21,7 +21,37 @@
 <h1 id="循环">循环</h1>
 <p><img  src="/img/Golang/2-%e6%9d%a1%e4%bb%b6%e4%b8%8e%e5%be%aa%e7%8e%af/%e5%be%aa%e7%8e%af.png"
         alt/></p>
-<h1 id="声明函数参数">声明函数参数</h1>
+<h1 id="if初始化语句">if初始化语句</h1>
+<p><img  src="/img/Golang/14-%e5%85%b6%e4%bd%99%e7%9a%84%e4%b8%9c%e4%b8%9c/if%e5%be%aa%e7%8e%af.png"
+        alt/></p>
+<h1 id="switch">switch</h1>
+<p>当需要根据表达式的值执行几个操作时，可能会导致if语句和else子句的混乱，switch语句是更有效的方式：写下 switch 关键字，然后是条件表达式，再添加几个case表达式，每个case表达式都有一个条件表达式可能有的值，选择其值与条件表达式匹配的第一个case，并运行其代码，其他case表达式则被忽略。还可以提供一个default语句，如果没有匹配的case，那么运行该语句。</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+	&#34;math/rand&#34;
+	&#34;time&#34;
+)
+
+func awardPrize() {
+	switch rand.Intn(3) + 1 { //条件表达式
+	case 1: //如果结果是1
+		fmt.Println(&#34;you win a cruise!&#34;) //打印这条消息
+	case 2:
+		fmt.Println(&#34;you win a car!&#34;)
+	case 3:
+		fmt.Println(&#34;you win a goat!&#34;)
+	default: //如果结果不是以上任何一个
+		panic(&#34;invalid door number&#34;) //那么产生panic
+	}
+}
+
+func main() {
+	rand.Seed(time.Now().Unix())
+	awardPrize()
+}
+</code></pre><h1 id="声明函数参数">声明函数参数</h1>
 <p><img  src="/img/Golang/3-%e5%87%bd%e6%95%b0/%e5%a3%b0%e6%98%8e%e5%87%bd%e6%95%b0%e5%8f%82%e6%95%b0.png"
         alt/></p>
 <h1 id="函数返回值">函数返回值</h1>
@@ -316,7 +346,73 @@ func main() {
         fmt.Println(&#34;noiseMaker 并非 Robot 类型&#34;)
     }
 }
-</code></pre></article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
+</code></pre><h1 id="goroutine">goroutine</h1>
+<h2 id="channel">channel</h2>
+<p><img  src="/img/Golang/13-goroutine/channel.png"
+        alt/></p>
+<p>实际创建channel需要调用内置的<code>make</code>函数：</p>
+<pre tabindex="0"><code>var myChannel chan float64
+myChannel = make(chan float64)
+</code></pre><p>短变量声明：</p>
+<pre tabindex="0"><code>myChannel := make(chan float64)  // 创建一个channel并立即声明一个变量
+</code></pre><h2 id="使用channel发送和接收值">使用channel发送和接收值</h2>
+<p><img  src="/img/Golang/13-goroutine/channel%e5%8f%91%e9%80%81%e5%80%bc.png"
+        alt/>
+<img  src="/img/Golang/13-goroutine/channel%e6%8e%a5%e6%94%b6%e5%80%bc.png"
+        alt/></p>
+<p>发送值：<code>myChannel &lt;- 3.14</code> <br>
+接收值: <code>&lt;-myChannel</code></p>
+<h2 id="有缓冲的channel">有缓冲的channel</h2>
+<p><img  src="/img/Golang/14-%e5%85%b6%e4%bd%99%e7%9a%84%e4%b8%9c%e4%b8%9c/%e5%88%9b%e5%bb%ba%e7%bc%93%e5%86%b2channel.png"
+        alt/></p>
+<h1 id="一级函数">一级函数</h1>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+)
+
+func sayHi() {     // 正常声明一个函数
+	fmt.Println(&#34;Hi&#34;)
+}
+
+func main() {
+	var myFunction func()   //声明一个类型为&#34;func()&#34; 的变量，这个变量可以保存一个函数
+	myFunction = sayHi     // 将sayHi函数赋值给变量
+	//myFunction := sayHi
+	myFunction()   //调用存储在变量中的函数
+}
+</code></pre><p>将 sayHi 函数本身赋值给 myFunction ，这里没写成 sayHi()  ，因为这样会调用sayHi函数，只输入函数名，不加括号。<br>
+在下一行中，在myFunction变量名后面包含了括号，这将调用存储在myFunction变量中的函数。</p>
+<h2 id="将函数传递给其他函数">将函数传递给其他函数</h2>
+<p>将函数作为参数传递给其他函数。</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+)
+
+func sayHi() {
+	fmt.Println(&#34;Hi&#34;)
+}
+
+func sayBye() {
+	fmt.Println(&#34;Bye&#34;)
+}
+
+func twice(theFunction func()) {  //&#34;twice&#34;函数接收另一个函数作为参数
+	theFunction()
+	theFunction()
+}
+
+func main() {
+	twice(sayHi)
+	twice(sayBye)
+}
+</code></pre><h2 id="函数作为类型">函数作为类型</h2>
+<p>函数的参数和返回值是其类型的一部分，保存函数的变量需要指定函数应该具有哪些参数和返回值。<br>
+该变量只能保存参数的数量和类型以及返回值与指定类型匹配的函数。</p>
+</article><section class="article labels"><a class="category" href=/categories/golang/>Golang</a><a class="tag" href=/tags/%E6%89%93%E6%80%AA%E5%8D%87%E7%BA%A7/>打怪升级</a></section>
 </div>
 <div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/go%E5%8C%BF%E5%90%8D%E7%BB%93%E6%9E%84%E4%BD%93%E6%8F%90%E9%AB%98%E6%90%AC%E7%A0%96%E6%95%88%E7%8E%87/"><span class="iconfont icon-article"></span>Go匿名结构体提高搬砖效率</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
