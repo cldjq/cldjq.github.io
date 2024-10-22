@@ -16,9 +16,101 @@
     <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
         <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
     <h1 class="article title">移除元素</h1><p class="article date">Monday, October 21, 2024</p></section><article class="article markdown-body"><h1 id="题目">题目</h1>
-</article><section class="article labels"><a class="category" href=/categories/golang%E7%AE%97%E6%B3%95/>Golang算法</a><a class="tag" href=/tags/golang%E7%AE%97%E6%B3%95-%E6%95%B0%E7%BB%84/>Golang算法-数组</a></section>
+<p>给你一个数组 <code>nums</code> 和一个值 <code>val</code>，你需要<strong>原地</strong>移除所有数值等于<code>val</code>的元素，并返回移除后数组的新长度。</p>
+<p>不要使用额外的数组空间，你必须仅使用<code>O(1)</code>额外空间并<strong>原地</strong>修改输入数组。</p>
+<p>元素的顺序可以改变。你不需要考虑数组中超出新长度后面的元素。</p>
+<h1 id="说明">说明</h1>
+<p>为什么返回数值是整数，但输出的答案是数组呢?</p>
+<p>请注意，输入数组是以「引用」方式传递的，这意味着在函数里修改输入数组对于调用者是可见的。</p>
+<p>你可以想象内部操作如下:</p>
+<pre tabindex="0"><code>// nums 是以“引用”方式传递的。也就是说，不对实参作任何拷贝
+int len = removeElement(nums, val);
+
+// 在函数里修改输入数组对于调用者是可见的。
+// 根据你的函数返回的长度, 它会打印出数组中 该长度范围内 的所有元素。
+for (int i = 0; i &lt; len; i++) {
+    print(nums[i]);
+}
+</code></pre><h1 id="示例">示例</h1>
+<h2 id="示例1">示例1</h2>
+<pre tabindex="0"><code>输入：nums = [3,2,2,3], val = 3
+输出：2, nums = [2,2]
+解释：函数应该返回新的长度 2, 并且 nums 中的前两个元素均为 2。你不需要考虑数组中超出新长度后面的元素。例如，函数返回的新长度为 2 ，而 nums = [2,2,3,3] 或 nums = [2,2,0,0]，也会被视作正确答案。
+</code></pre><h2 id="示例2">示例2</h2>
+<pre tabindex="0"><code>输入：nums = [0,1,2,2,3,0,4,2], val = 2
+输出：5, nums = [0,1,4,0,3]
+解释：函数应该返回新的长度 5, 并且 nums 中的前五个元素为 0, 1, 3, 0, 4。注意这五个元素可为任意顺序。你不需要考虑数组中超出新长度后面的元素。
+</code></pre><h1 id="提示">提示</h1>
+<ul>
+<li>0 &lt;= nums.length &lt;= 100</li>
+<li>0 &lt;= nums[i] &lt;= 50</li>
+<li>0 &lt;= val &lt;= 100</li>
+</ul>
+<h1 id="解题思路">解题思路</h1>
+<h2 id="思路">思路</h2>
+<ol>
+<li>暴力破解法（双循环）
+暴力破解法很容易想到, 就是第一层循环遍历数组, 然后当找到元素跟目标值一致的时候，即开启第二个循环，将当前元素后的所有数组元素向前移动一位，同时注意，遍历数组的临时变量i和数组大小也要跟随着减小1。</li>
+</ol>
+<p>显而易见:</p>
+<ul>
+<li>时间复杂度：O(n^2)</li>
+<li>空间复杂度：O(1)</li>
+</ul>
+<ol start="2">
+<li>高效率法（单循环）
+我们转变思路，定义一个目标索引值dest_index=0, 只使用一次循环, 在每次数组遍历中，判断当前遍历数组的元素值和目标值不相等的时候，我们将即arr[dest_index]=当前遍历数组的元素值, 同时dest_index++。 总体来说, 即忽略掉目标值。</li>
+</ol>
+<p>显而易见:</p>
+<ul>
+<li>时间复杂度：O(n)</li>
+<li>空间复杂度：O(1)</li>
+</ul>
+<h1 id="实现">实现</h1>
+<ol>
+<li>暴力破解法（双循环）</li>
+</ol>
+<pre tabindex="0"><code>package main
+
+import &#34;fmt&#34;
+
+// 暴力破解法（双循环）
+func removeElement1(nums []int, val int) int {
+	size := len(nums)
+	for i := 0; i &lt; len(nums); i++ {
+		if nums[i] == val { // 数组值等于目标值，目标值后的元素整体就向前移动
+			if i == size-1 {
+				nums = nums[0:i]
+			} else {
+				nums = append(nums[0:i], nums[i+1:]...)
+			}
+			size -= 1 // 数组整体大小减1
+			i -= 1    // 数组i也需要减1
+		}
+	}
+	return len(nums)
+}
+
+// 高效率（单循环）
+func removeElement(nums []int, val int) int {
+	var dest_index = 0
+
+	for i := 0; i &lt; len(nums); i++ {
+		if nums[i] != val {
+			nums[dest_index] = nums[i]
+			dest_index += 1
+		}
+	}
+	return dest_index
+}
+
+func main() {
+	fmt.Println(removeElement([]int{3, 2, 2, 3}, 3))
+	fmt.Println(removeElement([]int{0, 1, 2, 2, 3, 0, 4, 2}, 2))
+}
+</code></pre></article><section class="article labels"><a class="category" href=/categories/golang%E7%AE%97%E6%B3%95/>Golang算法</a><a class="tag" href=/tags/golang%E7%AE%97%E6%B3%95-%E6%95%B0%E7%BB%84/>Golang算法-数组</a></section>
 </div>
-<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/%E4%BA%8C%E5%88%86%E6%9F%A5%E6%89%BE/"><span class="iconfont icon-article"></span>二分查找</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/%E6%9C%89%E5%BA%8F%E6%95%B0%E7%BB%84%E7%9A%84%E5%B9%B3%E6%96%B9/"><span class="iconfont icon-article"></span>有序数组的平方</a></p><p><a class="link" href="/posts/%E4%BA%8C%E5%88%86%E6%9F%A5%E6%89%BE/"><span class="iconfont icon-article"></span>二分查找</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
     window.disqus_config = function () {
     
