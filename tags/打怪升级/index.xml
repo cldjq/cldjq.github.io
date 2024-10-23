@@ -11,6 +11,16 @@
     
     
     <item>
+      <title>长度最小的子数组</title>
+      <link>https://tinklespring.com/posts/%E9%95%BF%E5%BA%A6%E6%9C%80%E5%B0%8F%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/</link>
+      <pubDate>Wed, 23 Oct 2024 12:00:35 +0800</pubDate>
+      
+      <guid>https://tinklespring.com/posts/%E9%95%BF%E5%BA%A6%E6%9C%80%E5%B0%8F%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/</guid>
+      <description>&lt;h1 id=&#34;题目&#34;&gt;题目&lt;/h1&gt;
+</description>
+    </item>
+    
+    <item>
       <title>有序数组的平方</title>
       <link>https://tinklespring.com/posts/%E6%9C%89%E5%BA%8F%E6%95%B0%E7%BB%84%E7%9A%84%E5%B9%B3%E6%96%B9/</link>
       <pubDate>Tue, 22 Oct 2024 14:02:38 +0800</pubDate>
@@ -19,7 +29,67 @@
       <description>&lt;h1 id=&#34;题目&#34;&gt;题目&lt;/h1&gt;
 &lt;p&gt;给你一个按 &lt;strong&gt;非递减顺序&lt;/strong&gt; 排序的整数数组 nums，返回 &lt;strong&gt;每个数字的平方&lt;/strong&gt; 组成的新数组，要求也按 &lt;strong&gt;非递减顺序&lt;/strong&gt; 排序。&lt;/p&gt;
 &lt;h1 id=&#34;示例&#34;&gt;示例&lt;/h1&gt;
-</description>
+&lt;h2 id=&#34;示例1&#34;&gt;示例1&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;输入：nums = [-4,-1,0,3,10]
+输出：[0,1,9,16,100]
+解释：平方后，数组变为 [16,1,0,9,100]
+排序后，数组变为 [0,1,9,16,100]
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;示例2&#34;&gt;示例2&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;输入：nums = [-7,-3,2,3,11]
+输出：[4,9,9,49,121]
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;提示&#34;&gt;提示&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;1 &amp;lt;= nums.length &amp;lt;= 10^4&lt;/li&gt;
+&lt;li&gt;-10^4 &amp;lt;= nums[i] &amp;lt;= 10^4&lt;/li&gt;
+&lt;li&gt;nums 已按 &lt;strong&gt;非递减顺序&lt;/strong&gt; 排序&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;进阶&#34;&gt;进阶&lt;/h1&gt;
+&lt;p&gt;请你设计时间复杂度为 O(n) 的算法解决本问题。&lt;/p&gt;
+&lt;h1 id=&#34;解题思路&#34;&gt;解题思路&lt;/h1&gt;
+&lt;p&gt;前提：这是一个有序数组，只是数组中的元素可能是负值。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;直接排序&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;将数组 nums 中的数平方后直接排序。&lt;/p&gt;
+&lt;p&gt;时间复杂度：O(nlogn)，其中 n 是数组 nums 的长度。&lt;br&gt;
+空间复杂度：O(logn)。除了存储答案的数组以外，我们需要 O(logn) 的栈空间进行排序。&lt;/p&gt;
+&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;双指针法&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;使用两个指针分别指向位置 0 和 n-1 ，每次比较两个指针对应的数，选择较大的那个 &lt;strong&gt;逆序&lt;/strong&gt; 放入答案并移动指针。此法无需处理某一指针移动至边界的情况。&lt;/p&gt;
+&lt;p&gt;时间复杂度：O(n)，其中 n 是数组 nums 的长度。&lt;br&gt;
+空间复杂度：O(1)。除了存储答案的数组以外，我们只需要维护常量空间。&lt;/p&gt;
+&lt;h1 id=&#34;实现&#34;&gt;实现&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;直接排序&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func sortedSquares(nums []int) []int {
+    ans := make([]int, len(nums))
+    for i, v := range nums {
+        ans[i] = v * v
+    }
+    sort.Ints(ans)
+    return ans
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;双指针法&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func sortedSquares(nums []int) []int {
+    n := len(nums)
+    ans := make([]int, n)
+    i, j := 0, n-1
+    for pos := n - 1; pos &amp;gt;= 0; pos-- {
+        if v, w := nums[i]*nums[i], nums[j]*nums[j]; v &amp;gt; w {
+            ans[pos] = v
+            i++
+        } else {
+            ans[pos] = w
+            j--
+        }
+    }
+    return ans
+}
+&lt;/code&gt;&lt;/pre&gt;</description>
     </item>
     
     <item>
@@ -1759,242 +1829,6 @@ func main() {
 	fmt.Println(counter.count) // 输出 1，因为 AddPtr() 修改了原值
 }
 &lt;/code&gt;&lt;/pre&gt;</description>
-    </item>
-    
-    <item>
-      <title>Go中的JSON序列化与反序列化</title>
-      <link>https://tinklespring.com/posts/go%E4%B8%AD%E7%9A%84json%E5%BA%8F%E5%88%97%E5%8C%96%E4%B8%8E%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/</link>
-      <pubDate>Wed, 13 Sep 2023 09:13:42 +0800</pubDate>
-      
-      <guid>https://tinklespring.com/posts/go%E4%B8%AD%E7%9A%84json%E5%BA%8F%E5%88%97%E5%8C%96%E4%B8%8E%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;JSON 是一种流行的数据交换格式，在Go中经常需要将结构体实例序列化为JSON字符串保存和传输。本文介绍使用Go中的&lt;code&gt;encoding/json&lt;/code&gt;包将结构体序列化为JSON数据。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h1 id=&#34;目录&#34;&gt;目录&lt;/h1&gt;
-&lt;ol&gt;
-&lt;li&gt;&lt;a href=&#34;#JSON%e5%ba%8f%e5%88%97%e5%8c%96%e6%a6%82%e8%bf%b0&#34;&gt;JSON序列化概述&lt;/a&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;#%e5%ae%9a%e4%b9%89%e5%8f%af%e5%ba%8f%e5%88%97%e5%8c%96%e7%9a%84%e7%bb%93%e6%9e%84%e4%bd%93&#34;&gt;定义可序列化的结构体&lt;/a&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e5%ba%8f%e5%88%97%e5%8c%96&#34;&gt;使用json.Marshal序列化&lt;/a&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;#%e5%ae%9a%e5%88%b6%e5%ba%8f%e5%88%97%e5%8c%96%e9%80%bb%e8%be%91&#34;&gt;定制序列化逻辑&lt;/a&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e5%8f%8d%e5%ba%8f%e5%88%97%e5%8c%96&#34;&gt;使用json.Unmarshal反序列化&lt;/a&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;#%e5%a4%84%e7%90%86%e7%a9%ba%e5%80%bc%e5%92%8c%e9%bb%98%e8%ae%a4%e5%80%bc&#34;&gt;处理空值和默认值&lt;/a&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;#%e5%b5%8c%e5%a5%97%e5%af%b9%e8%b1%a1%e5%92%8c%e5%8c%bf%e5%90%8d%e5%ad%97%e6%ae%b5&#34;&gt;嵌套对象和匿名字段&lt;/a&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;#%e5%ba%8f%e5%88%97%e5%8c%96%e7%a9%ba%e6%8e%a5%e5%8f%a3&#34;&gt;序列化interface{}&lt;/a&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;#stream%e7%bc%96%e7%a0%81%e5%99%a8&#34;&gt;stream编码器&lt;/a&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;#JSON%e4%b8%8eXML%e5%af%b9%e6%af%94&#34;&gt;JSON与XML对比&lt;/a&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;#%e6%96%87%e6%9c%ac%e6%a0%bc%e5%bc%8f%e7%9a%84%e4%bc%98%e7%82%b9&#34;&gt;文本格式的优点&lt;/a&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e8%a7%84%e8%8c%83&#34;&gt;使用规范&lt;/a&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;#%e5%ba%8f%e5%88%97%e5%8c%96%e6%80%a7%e8%83%bd%e4%bc%98%e5%8c%96&#34;&gt;序列化性能优化&lt;/a&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;h2 id=&#34;json序列化概述&#34;&gt;JSON序列化概述&lt;/h2&gt;
-&lt;p&gt;JSON是一种非常流行的结构化数据格式，被广泛用于网络传输和数据存储中。Go主要通过json包来处理JSON数据，有两个核心的函数：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;json.Marshal&lt;/code&gt; 序列化Go对象为JOSN格式字节流&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;json.Unmarshal&lt;/code&gt; JSON数据解析为Go对象&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;定义可序列化的结构体&#34;&gt;定义可序列化的结构体&lt;/h2&gt;
-&lt;p&gt;想要将一个结构体实例序列化为JSON，需要确保结构体字段可被json包访问，通常有两种方式：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;字段首字母答谢，可以被外部包访问&lt;/li&gt;
-&lt;li&gt;通过tag指定字段名&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;比如：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type User struct {
-	ID int `json:&amp;#34;id&amp;#34;`
-	Name string `json:&amp;#34;name&amp;#34;`
-	Age int
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;使用序列化&#34;&gt;使用序列化&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;encoding/json&amp;#34;
-	&amp;#34;fmt&amp;#34;
-)
-
-type User struct {
-	Name string `json:&amp;#34;name&amp;#34;`
-	Age  int    `json:&amp;#34;age&amp;#34;`
-}
-
-func main() {
-	user := User{&amp;#34;John&amp;#34;, 20}
-
-	// 序列化
-	buf, err := json.Marshal(user)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// 打印JSON
-	fmt.Println(string(buf))
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{&amp;#34;name&amp;#34;:&amp;#34;John&amp;#34;,&amp;#34;age&amp;#34;:20}
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;定制序列化逻辑&#34;&gt;定制序列化逻辑&lt;/h2&gt;
-&lt;p&gt;若需要控制序列化的细节，可以实现Marshaler接口，这样可以灵活控制各字段编码过程。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;encoding/json&amp;#34;
-	&amp;#34;fmt&amp;#34;
-)
-
-type User struct {
-	Name string `json:&amp;#34;name&amp;#34;`
-	Age  int    `json:&amp;#34;age&amp;#34;`
-}
-
-// 实现Marshaler接口
-func (u User) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`{&amp;#34;name&amp;#34;:&amp;#34;%s&amp;#34;}`, u.Name)), nil
-}
-
-func main() {
-	u := User{&amp;#34;John&amp;#34;, 20}
-
-	jsonBytes, _ := json.Marshal(u)
-	fmt.Println(string(jsonBytes)) // {&amp;#34;name&amp;#34;:&amp;#34;John&amp;#34;}
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;使用反序列化&#34;&gt;使用反序列化&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-	&amp;#34;encoding/json&amp;#34;
-	&amp;#34;fmt&amp;#34;
-)
-
-type User struct {
-	Name string `json:&amp;#34;name&amp;#34;`
-	Age  int    `json:&amp;#34;age&amp;#34;`
-}
-
-func main() {
-	jsonStr := `{&amp;#34;name&amp;#34;:&amp;#34;John&amp;#34;,&amp;#34;age&amp;#34;:20}`
-
-	// 反序列化到user
-	var user User
-	err := json.Unmarshal([]byte(jsonStr), &amp;amp;user)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println(user.Name) // John
-	fmt.Println(user.Age)  // 20
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;传入JSON数据以及对象指针，即可解析。&lt;/p&gt;
-&lt;h2 id=&#34;处理空值和默认值&#34;&gt;处理空值和默认值&lt;/h2&gt;
-&lt;p&gt;对于空值的序列化，默认会忽略空值字段：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type User struct {
-  Name string
-  Age  int
-}
-
-u := User{&amp;#34;John&amp;#34;, 0} 
-
-jsonBytes, _ := json.Marshal(u)
-
-fmt.Println(string(jsonBytes)) // {&amp;#34;Name&amp;#34;:&amp;#34;John&amp;#34;}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以通过定义 MarshalJSON 方法自定义处理空值的编码。&lt;/p&gt;
-&lt;p&gt;反序列化时，需要处理不存在的字段，可以使用指针或默认值。&lt;/p&gt;
-&lt;h2 id=&#34;嵌套对象和匿名字段&#34;&gt;嵌套对象和匿名字段&lt;/h2&gt;
-&lt;p&gt;对于嵌套的对象字段和内嵌匿名类型，也可以正常序列化和反序列化:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Info struct {
-  Addr string
-}
-
-type User struct {
-  Info // 嵌套Info
-  
-  Name string
-}
-
-u := User{Info{&amp;#34;Beijing&amp;#34;}, &amp;#34;Tom&amp;#34;}
-
-jsonBytes, _ := json.Marshal(u)
-
-fmt.Println(string(jsonBytes)) // {&amp;#34;Addr&amp;#34;:&amp;#34;Beijing&amp;#34;,&amp;#34;Name&amp;#34;:&amp;#34;Tom&amp;#34;}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;编码后嵌套的类型将被内联到结果中。&lt;/p&gt;
-&lt;h2 id=&#34;序列化空接口&#34;&gt;序列化空接口&lt;/h2&gt;
-&lt;p&gt;json包可以处理任意的 interface{} 值：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;data := map[string]interface{}{
-  &amp;#34;name&amp;#34;: &amp;#34;John&amp;#34;,
-  &amp;#34;age&amp;#34;: 20,
-}
-
-jsonBytes, _ := json.Marshal(data)
-
-fmt.Println(string(jsonBytes))
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但编码结果会包含类型信息和Base64编码后的值，这比定制序列化更低效。&lt;/p&gt;
-&lt;h2 id=&#34;stream编码器&#34;&gt;stream编码器&lt;/h2&gt;
-&lt;p&gt;也可以使用streaming模式的encoder来进行序列化：&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
-
-import (
-  &amp;#34;encoding/json&amp;#34;
-  &amp;#34;os&amp;#34;
-)
-
-func main() {
-  type User struct {
-    Name string
-    Age  int
-  }
-  
-  user := User{&amp;#34;John&amp;#34;, 20}
-  
-  // 使用stream encoder
-  enc := json.NewEncoder(os.Stdout)
-  enc.Encode(user)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这种编码方式很灵活，可以实现各种自定义输出格式。&lt;/p&gt;
-&lt;h2 id=&#34;json与xml对比&#34;&gt;JSON与XML对比&lt;/h2&gt;
-&lt;p&gt;JSON对比XML优点：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;读取和解析更加方便快捷&lt;/li&gt;
-&lt;li&gt;存储占用更小且具有可读性&lt;/li&gt;
-&lt;li&gt;支持更多语言与平台&lt;/li&gt;
-&lt;li&gt;性能和解析速度更快&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;文本格式的优点&#34;&gt;文本格式的优点&lt;/h2&gt;
-&lt;p&gt;JSON与其他二进制序列化格式相比，文本格式JSON优点：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;可读性强,便于打印调试&lt;/li&gt;
-&lt;li&gt;可复用现有文本处理工具&lt;/li&gt;
-&lt;li&gt;不依赖语言和平台&lt;/li&gt;
-&lt;li&gt;可支持部分更新修改&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;使用规范&#34;&gt;使用规范&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;格式化打印 JSON 数据&lt;/li&gt;
-&lt;li&gt;为类型和字段定义 Canonical 名称&lt;/li&gt;
-&lt;li&gt;提供完整的文档&lt;/li&gt;
-&lt;li&gt;版本控制 JSON 接口&lt;/li&gt;
-&lt;li&gt;采用更灵活的 schema 描述&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;序列化性能优化&#34;&gt;序列化性能优化&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;提前指定好对象大小&lt;/li&gt;
-&lt;li&gt;重用分配的内存&lt;/li&gt;
-&lt;li&gt;尽量避免解析嵌套数据&lt;/li&gt;
-&lt;li&gt;按需完成自定义编码&lt;/li&gt;
-&lt;/ul&gt;
-</description>
     </item>
     
   </channel>
