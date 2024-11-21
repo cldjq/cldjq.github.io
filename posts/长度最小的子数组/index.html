@@ -16,7 +16,76 @@
     <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><img class="site logo" src="/img/logo.png" alt /><span class="site name">承离的觉前</span></a></span>
         <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a><a class="nav item" href="/about">About</a><a class="nav item" href="https://github%2ecom/cldjq"target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></span></div><div class="site slogan"><span class="title">地振高岗 一派溪山千古秀 门朝大海 三合河水万年流</span></div></section><section id="content"><div class="article-container"><section class="article header">
     <h1 class="article title">长度最小的子数组</h1><p class="article date">Wednesday, October 23, 2024</p></section><article class="article markdown-body"><h1 id="题目">题目</h1>
-</article><section class="article labels"><a class="category" href=/categories/golang%E7%AE%97%E6%B3%95/>Golang算法</a><a class="tag" href=/tags/golang%E7%AE%97%E6%B3%95-%E6%95%B0%E7%BB%84/>Golang算法-数组</a></section>
+<p>给定一个含有 n 个正整数的数组和一个正整数 target 。</p>
+<p>找出该数组中满足其总和大于等于 target 的长度最小的 <strong>子数组</strong> <code>[numsl, numsl+1, ..., numsr-1, numsr]</code> ，并返回其长度。如果不存在符合条件的子数组，返回 0 。</p>
+<h1 id="示例">示例</h1>
+<h2 id="示例1">示例1:</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="err">输入：</span><span class="nx">target</span> <span class="p">=</span> <span class="mi">7</span><span class="p">,</span> <span class="nx">nums</span> <span class="p">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl"><span class="err">输出：</span><span class="mi">2</span>
+</span></span><span class="line"><span class="cl"><span class="err">解释：子数组</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span> <span class="err">是该条件下的长度最小的子数组。</span>
+</span></span></code></pre></div><h2 id="示例2">示例2:</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="err">输入：</span><span class="nx">target</span> <span class="p">=</span> <span class="mi">4</span><span class="p">,</span> <span class="nx">nums</span> <span class="p">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl"><span class="err">输出：</span><span class="mi">1</span>
+</span></span></code></pre></div><h2 id="示例3">示例3:</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="err">输入：</span><span class="nx">target</span> <span class="p">=</span> <span class="mi">11</span><span class="p">,</span> <span class="nx">nums</span> <span class="p">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl"><span class="err">输出：</span><span class="mi">0</span>
+</span></span></code></pre></div><h1 id="提示">提示</h1>
+<ul>
+<li>1 &lt;= target &lt;= 10^9</li>
+<li>1 &lt;= nums.length &lt;= 10^5</li>
+<li>1 &lt;= nums[i] &lt;= 10^4</li>
+</ul>
+<h1 id="进阶">进阶</h1>
+<p>如果你已经实现 O(n) 时间复杂度的解法, 请尝试设计一个 O(n log(n)) 时间复杂度的解法。</p>
+<h1 id="解题思路">解题思路</h1>
+<h2 id="1暴力破解法">1.暴力破解法</h2>
+<p>这是我们很容易想到的一种解法, 即写两层for循环, 第一层循环是代表子序列开始位置<code>for i:=0; i&lt;len(arr);i++</code>, 第二层循环是代表子序列结束位置<code>for j:=i;j&lt;len(arr);j++</code>, 然后判断该子序列数组之和和目标值的大小判断。</p>
+<h2 id="2滑动窗口法">2.滑动窗口法</h2>
+<p>所谓滑动窗口，就是不断的调节子序列的起始位置和终止位置，从而得出我们要想的结果。</p>
+<p>如何只使用一个for循环就完成？</p>
+<p>比如数组[2, 3, 1, 2, 4, 3], 我们以窗口尾索引进行第一层for循环遍历, 然后判断该窗口内的总和值是否&gt;=目标值, 不是的话，那么窗口尾索引需要继续向前移动；是的话，我们就需要动态调整该窗口, 将窗口起始索引向前移动一位，然后继续判断，重复该过程。</p>
+<h1 id="实现">实现</h1>
+<h2 id="滑动窗口法">滑动窗口法</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">main</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="s">&#34;fmt&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// 滑动窗口
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">minSubArrayLen</span><span class="p">(</span><span class="nx">target</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">nums</span> <span class="p">[]</span><span class="kt">int</span><span class="p">)</span> <span class="kt">int</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="kd">var</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">size</span>               <span class="p">=</span> <span class="nb">len</span><span class="p">(</span><span class="nx">nums</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">window_sum</span>         <span class="p">=</span> <span class="mi">0</span>        <span class="c1">//窗口值的综合
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="nx">min_window_length</span>  <span class="p">=</span> <span class="nx">size</span> <span class="o">+</span> <span class="mi">1</span> <span class="c1">//最小的窗口长度, 初始化可以初始化为数组长度+1
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="nx">window_start_index</span> <span class="p">=</span> <span class="mi">0</span>        <span class="c1">// 窗口开始索引
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="nx">window_end_index</span>   <span class="p">=</span> <span class="mi">0</span>        <span class="c1">// 窗口结束索引
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="nx">found</span>              <span class="p">=</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">	<span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">for</span> <span class="nx">window_end_index</span> <span class="p">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">window_end_index</span> <span class="p">&lt;</span> <span class="nx">size</span><span class="p">;</span> <span class="nx">window_end_index</span><span class="o">++</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">window_sum</span> <span class="o">+=</span> <span class="nx">nums</span><span class="p">[</span><span class="nx">window_end_index</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 如果滑动窗口总和超过目标值, 那么就不停的动态调整窗口开始位置
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="k">for</span> <span class="nx">window_sum</span> <span class="o">&gt;=</span> <span class="nx">target</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">found</span> <span class="p">=</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">window_length</span> <span class="o">:=</span> <span class="nx">window_end_index</span> <span class="o">-</span> <span class="nx">window_start_index</span> <span class="o">+</span> <span class="mi">1</span>
+</span></span><span class="line"><span class="cl">			<span class="k">if</span> <span class="nx">window_length</span> <span class="p">&lt;</span> <span class="nx">min_window_length</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">				<span class="nx">min_window_length</span> <span class="p">=</span> <span class="nx">window_length</span>
+</span></span><span class="line"><span class="cl">			<span class="p">}</span>
+</span></span><span class="line"><span class="cl">			<span class="c1">// 滑动窗口向前移动一位
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>			<span class="nx">window_sum</span> <span class="o">-=</span> <span class="nx">nums</span><span class="p">[</span><span class="nx">window_start_index</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">window_start_index</span> <span class="o">+=</span> <span class="mi">1</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">found</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="nx">min_window_length</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nf">minSubArrayLen</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">}))</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nf">minSubArrayLen</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">}))</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nf">minSubArrayLen</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">}))</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div></article><section class="article labels"><a class="category" href=/categories/golang%E7%AE%97%E6%B3%95/>Golang算法</a><a class="tag" href=/tags/golang%E7%AE%97%E6%B3%95-%E6%95%B0%E7%BB%84/>Golang算法-数组</a></section>
 </div>
 <div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/%E6%9C%89%E5%BA%8F%E6%95%B0%E7%BB%84%E7%9A%84%E5%B9%B3%E6%96%B9/"><span class="iconfont icon-article"></span>有序数组的平方</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
 <script type="application/javascript">
